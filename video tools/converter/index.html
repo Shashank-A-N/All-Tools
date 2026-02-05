@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>VidCompress.io - Pro Video Tools</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    screens: { 'xs': '360px' },
+                    colors: {
+                        slate: { 850: '#151f32', 900: '#0f172a', 950: '#020617' },
+                        indigo: { 450: '#6366f1', 550: '#4f46e5' },
+                        emerald: { 450: '#10b981', 550: '#059669' }
+                    },
+                    fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+                    animation: {
+                        'slide-up': 'slideUp 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards',
+                        'scale-in': 'scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards',
+                        'float': 'float 6s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        slideUp: { '0%': { opacity: '0', transform: 'translateY(20px) scale(0.98)' }, '100%': { opacity: '1', transform: 'translateY(0) scale(1)' } },
+                        scaleIn: { '0%': { opacity: '0', transform: 'scale(0.9) translateY(10px)' }, '100%': { opacity: '1', transform: 'scale(1) translateY(0)' } },
+                        float: { '0%, 100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-10px)' } }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 10px;
+        }
+
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #475569;
+        }
+
+        .hide {
+            display: none !important;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            background: transparent;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 18px;
+            width: 18px;
+            border-radius: 50%;
+            background: #6366f1;
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1), 0 2px 4px rgba(0, 0, 0, 0.2);
+            transform: translateY(-7px);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .dark input[type=range]::-webkit-slider-thumb {
+            background: #818cf8;
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            background: #e2e8f0;
+            border-radius: 2px;
+        }
+
+        .dark input[type=range]::-webkit-slider-runnable-track {
+            background: #334155;
+        }
+
+        input[type=range]:disabled::-webkit-slider-thumb {
+            background: #94a3b8;
+            cursor: not-allowed;
+        }
+
+        .bg-pattern {
+            background-image: radial-gradient(circle, #6366f1 1px, transparent 1px);
+            background-size: 24px 24px;
+            opacity: 0.05;
+        }
+
+        .dark .bg-pattern {
+            opacity: 0.08;
+        }
+
+        /* Styles for the Main Upload Button (formerly Widget) */
+        .start-video-converter {
+            position: relative;
+            z-index: 10;
+            display: inline-flex !important;
+            align-items: center;
+            justify-content: center;
+            background-color: #4f46e5 !important;
+            /* Indigo 600 */
+            color: white !important;
+            border-radius: 0.75rem !important;
+            /* rounded-xl */
+            padding: 0.75rem 1.5rem !important;
+            font-family: 'Inter', system-ui, sans-serif !important;
+            font-weight: 700 !important;
+            font-size: 0.875rem !important;
+            box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.3) !important;
+            transition: all 0.3s ease !important;
+            cursor: pointer;
+            overflow: hidden;
+            width: auto !important;
+            height: auto !important;
+            margin-top: 1.5rem;
+            text-transform: none !important;
+            border: none !important;
+        }
+
+        .start-video-converter:hover {
+            background-color: #4338ca !important;
+            /* Indigo 700 */
+            transform: scale(1.05);
+        }
+
+        .start-video-converter span {
+            position: relative;
+            z-index: 2;
+        }
+    </style>
+</head>
+
+<body
+    class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans transition-colors duration-500 selection:bg-indigo-500 selection:text-white overflow-x-hidden min-w-[280px]">
+
+    <div class="fixed inset-0 pointer-events-none bg-pattern z-0"></div>
+
+    <!-- Header -->
+    <header
+        class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-200/50 dark:border-slate-800/50 sticky top-0 z-40 transition-all duration-300">
+        <div class="max-w-7xl mx-auto px-3 xs:px-4 md:px-6 h-14 md:h-16 flex items-center justify-between">
+            <div id="logo-btn" class="flex items-center gap-2 md:gap-3 cursor-pointer group shrink-0 select-none mr-2">
+                <div class="relative w-8 h-8 md:w-10 md:h-10 transition-transform duration-300 group-hover:scale-110">
+                    <div
+                        class="absolute inset-0 bg-indigo-500/20 dark:bg-indigo-400/20 rounded-xl rotate-6 group-hover:rotate-12 transition-transform duration-500">
+                    </div>
+                    <div
+                        class="absolute inset-0 bg-gradient-to-br from-indigo-600 to-violet-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-500/30">
+                        <i data-lucide="film" class="w-5 h-5 md:w-6 md:h-6"></i>
+                    </div>
+                </div>
+                <div class="flex flex-col">
+                    <span class="font-bold text-base md:text-xl tracking-tight leading-none">VidCompress<span
+                            class="text-indigo-600 dark:text-indigo-400">.io</span></span>
+                    <span
+                        class="hidden xs:block text-[9px] font-bold text-indigo-500/80 uppercase tracking-[0.2em] translate-x-0.5">Studio</span>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-1.5 md:gap-3 ml-auto">
+                <div id="nav-actions"
+                    class="flex items-center gap-1.5 md:gap-2 mr-1 md:mr-2 border-r border-slate-200 dark:border-slate-700 pr-2 md:pr-4">
+                    <button id="btn-clear-all"
+                        class="hide flex items-center gap-1.5 px-2 md:px-3 py-1.5 text-slate-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-xs font-bold transition-all"
+                        title="Clear All">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        <span class="hidden md:inline">Clear</span>
+                    </button>
+                </div>
+                <button id="theme-toggle"
+                    class="p-2 rounded-full bg-slate-100/50 dark:bg-slate-800/50 hover:bg-white dark:hover:bg-slate-700 hover:text-indigo-500 transition-all">
+                    <i data-lucide="moon" class="w-5 h-5 dark:hidden"></i>
+                    <i data-lucide="sun" class="w-5 h-5 hidden dark:block"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div id="main-view"
+        class="relative z-10 min-h-[calc(100vh-64px)] pb-20 px-2 xs:px-4 md:px-6 pt-4 md:pt-6 transition-all duration-300">
+        <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-6 lg:gap-8">
+            <!-- LEFT: File Manager -->
+            <div class="md:col-span-7 lg:col-span-8 space-y-4 md:space-y-6">
+                <!-- Batch Toolbar -->
+                <div id="batch-toolbar"
+                    class="hide bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm p-3 md:p-4 rounded-2xl shadow-sm border border-slate-200/60 dark:border-slate-800/60 flex items-center justify-center animate-slide-up">
+                    <div
+                        class="flex items-center justify-center gap-3 w-full overflow-x-auto no-scrollbar mask-gradient">
+                        <span class="text-xs font-bold text-slate-500 uppercase flex items-center gap-1.5 shrink-0">
+                            <i data-lucide="layers" class="w-4 h-4 text-indigo-500"></i> <span
+                                class="hidden xs:inline">Batch:</span>
+                        </span>
+                        <div id="format-options-container" class="flex gap-1"></div>
+                    </div>
+                </div>
+
+                <!-- Dropzone -->
+                <div id="dropzone"
+                    class="relative border-3 border-dashed border-slate-300 dark:border-slate-700 rounded-3xl p-6 md:p-12 text-center cursor-pointer transition-all duration-300 flex flex-col items-center justify-center min-h-[220px] md:min-h-[280px] hover:border-indigo-500 dark:hover:border-indigo-400 hover:bg-indigo-50/30 dark:hover:bg-indigo-900/10 group animate-slide-up">
+                    <input type="file" id="file-input" class="hidden" multiple accept="video/*">
+                    <div
+                        class="absolute inset-0 bg-indigo-500/5 dark:bg-indigo-400/5 rounded-3xl scale-0 group-hover:scale-100 transition-transform duration-500 rounded-full blur-3xl">
+                    </div>
+                    <div class="relative z-10 animate-float mb-4 md:mb-6">
+                        <div
+                            class="w-16 h-16 md:w-20 md:h-20 bg-white dark:bg-slate-800 text-indigo-500 dark:text-indigo-400 rounded-3xl flex items-center justify-center shadow-xl shadow-indigo-500/10 group-hover:rotate-6 transition-transform duration-300">
+                            <i data-lucide="clapperboard" class="w-8 h-8 md:w-10 md:h-10"></i>
+                        </div>
+                    </div>
+                    <h3 class="relative z-10 text-lg md:text-2xl font-bold text-slate-800 dark:text-slate-100 mb-2">Drag
+                        & Drop Videos</h3>
+                    <p class="relative z-10 text-xs md:text-sm text-slate-500 dark:text-slate-400 max-w-xs mx-auto">
+                        Support for MP4, WEBM, MOV, MKV, AVI</p>
+
+                    <!-- Main Button (Functionally same as Standard Upload now) -->
+                    <button id="btn-main-upload" class="start-video-converter start-video-converter-sml">
+                        <span>Select files to start</span>
+                    </button>
+
+                    <!-- Redundant link kept for UI balance, but functionality is duplicated in main button -->
+                    <p class="mt-5 text-[10px] text-slate-400 relative z-10">or use our <button id="btn-browse-sim"
+                            class="underline hover:text-indigo-500 font-bold">Standard Upload</button></p>
+                </div>
+
+                <!-- File List -->
+                <div id="file-list-container" class="hide space-y-4">
+                    <div class="flex items-center justify-between px-2 animate-slide-up">
+                        <h3
+                            class="font-bold text-sm md:text-base text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                            <span id="count-text">0 Videos</span>
+                        </h3>
+                        <button id="btn-add-more"
+                            class="text-xs px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-indigo-600 dark:text-indigo-400 font-bold hover:shadow-md transition-all">
+                            + Add
+                        </button>
+                    </div>
+                    <div id="file-list-items" class="space-y-3"></div>
+                </div>
+            </div>
+
+            <!-- RIGHT: Settings & Output -->
+            <div class="lg:col-span-4 md:col-span-5 space-y-6">
+                <!-- Settings Panel -->
+                <div class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm p-4 md:p-6 rounded-2xl shadow-sm border border-slate-200/60 dark:border-slate-800/60 sticky top-24 animate-slide-up"
+                    style="animation-delay: 0.1s;">
+                    <h3 class="font-bold text-base md:text-lg mb-4 md:mb-6 flex items-center gap-2">
+                        <i data-lucide="sliders-horizontal" class="w-4 h-4 md:w-5 md:h-5 text-indigo-500"></i> Settings
+                    </h3>
+                    <div class="space-y-5 md:space-y-6">
+                        <div class="group">
+                            <div class="flex justify-between text-xs md:text-sm mb-2">
+                                <span class="text-slate-500 dark:text-slate-400 font-medium">Compression Level</span>
+                                <span id="quality-val"
+                                    class="font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-2 py-0.5 rounded">Medium</span>
+                            </div>
+                            <input type="range" id="quality-slider" min="0" max="100" value="50" class="w-full mb-1">
+                            <div class="flex justify-between text-[10px] text-slate-400 px-1">
+                                <span>Low (Fast)</span>
+                                <span>High (Slow)</span>
+                            </div>
+                        </div>
+
+                        <div class="relative">
+                            <label class="text-xs font-bold text-slate-400 uppercase mb-2 block">Resolution</label>
+                            <div class="relative">
+                                <i data-lucide="monitor"
+                                    class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"></i>
+                                <select id="resize-select"
+                                    class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 pl-10 py-2 md:py-3 text-xs md:text-sm font-medium focus:ring-2 focus:ring-indigo-500/50 outline-none appearance-none cursor-pointer transition-all">
+                                    <option value="original">Same as Original</option>
+                                    <option value="1080">1080p (FHD)</option>
+                                    <option value="720">720p (HD)</option>
+                                    <option value="480">480p (SD)</option>
+                                    <option value="360">360p (Mobile)</option>
+                                </select>
+                                <i data-lucide="chevron-down"
+                                    class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none"></i>
+                            </div>
+                        </div>
+
+                        <div class="relative">
+                            <label class="text-xs font-bold text-slate-400 uppercase mb-2 block">Frame Rate</label>
+                            <div class="relative">
+                                <i data-lucide="activity"
+                                    class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"></i>
+                                <select id="fps-select"
+                                    class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 pl-10 py-2 md:py-3 text-xs md:text-sm font-medium focus:ring-2 focus:ring-indigo-500/50 outline-none appearance-none cursor-pointer transition-all">
+                                    <option value="original">Same as Original</option>
+                                    <option value="60">60 FPS</option>
+                                    <option value="30">30 FPS</option>
+                                    <option value="24">24 FPS</option>
+                                </select>
+                                <i data-lucide="chevron-down"
+                                    class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="h-px bg-slate-200 dark:bg-slate-800 my-5 md:my-6"></div>
+
+                    <div
+                        class="bg-indigo-50 dark:bg-indigo-900/10 p-3 rounded-xl border border-indigo-100 dark:border-indigo-900/30 mb-4">
+                        <p class="text-[10px] text-indigo-800 dark:text-indigo-300 flex gap-2">
+                            <i data-lucide="info" class="w-4 h-4 shrink-0"></i>
+                            <span>Simulated processing for demonstration purposes.</span>
+                        </p>
+                    </div>
+
+                    <div class="space-y-3">
+                        <button id="btn-convert" disabled
+                            class="group relative w-full py-3 md:py-4 rounded-xl font-bold text-sm md:text-lg flex items-center justify-center gap-2 transition-all bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed overflow-hidden">
+                            <span class="relative z-10 flex items-center gap-2">Compress Videos</span>
+                        </button>
+                        <button id="btn-download-all"
+                            class="hide w-full py-3 md:py-4 rounded-xl font-bold text-sm md:text-lg flex items-center justify-center gap-2 transition-all bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-500/20 hover:-translate-y-1 active:translate-y-0 active:scale-95">
+                            <i data-lucide="archive" class="w-4 h-4 md:w-5 md:h-5 animate-bounce"></i> Download ZIP
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lightbox Modal (For Video Preview) -->
+    <div id="lightbox-modal"
+        class="fixed inset-0 z-[60] hide flex items-center justify-center bg-black/95 backdrop-blur-xl animate-scale-in">
+        <button onclick="closeLightbox()"
+            class="absolute top-4 right-4 p-3 bg-white/10 hover:bg-white/20 rounded-full text-white transition-all z-20">
+            <i data-lucide="x" class="w-6 h-6"></i>
+        </button>
+        <div class="w-full h-full flex items-center justify-center p-4 md:p-10">
+            <video id="lightbox-video" controls class="max-w-full max-h-full shadow-2xl rounded-sm"></video>
+            <div
+                class="absolute bottom-6 left-1/2 -translate-x-1/2 bg-black/50 px-4 py-2 rounded-full text-white/80 text-xs font-mono backdrop-blur-md border border-white/10">
+                <span id="lightbox-caption">filename.mp4</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirm-modal"
+        class="fixed inset-0 z-[70] hide flex items-center justify-center bg-slate-950/60 backdrop-blur-sm animate-scale-in">
+        <div
+            class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-2xl max-w-sm w-full mx-4 border border-slate-200 dark:border-slate-800">
+            <h3 class="font-bold text-lg mb-2 text-slate-800 dark:text-slate-100">Clear All Videos?</h3>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mb-6">This action cannot be undone. All queued videos
+                will be removed.</p>
+            <div class="flex gap-3 justify-end">
+                <button onclick="closeConfirm()"
+                    class="px-4 py-2 rounded-xl font-bold text-sm text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">Cancel</button>
+                <button onclick="confirmClear()"
+                    class="px-4 py-2 rounded-xl font-bold text-sm bg-red-500 hover:bg-red-600 text-white shadow-lg shadow-red-500/30 transition-all">Yes,
+                    Clear All</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast"
+        class="fixed top-6 left-1/2 -translate-x-1/2 bg-slate-900/90 dark:bg-white/90 backdrop-blur-md text-white dark:text-slate-900 px-6 py-3 rounded-full shadow-2xl -translate-y-32 opacity-0 transition-all duration-500 z-[100] flex items-center gap-3 border border-white/10">
+        <div class="bg-green-500 rounded-full p-1"><i data-lucide="check" class="w-3.5 h-3.5 text-white"></i></div>
+        <span id="toast-msg" class="font-bold text-sm">Action Complete</span>
+    </div>
+
+    <script>
+        // --- CONSTANTS ---
+        const AVAILABLE_FORMATS = [
+            { value: 'video/mp4', label: 'MP4' },
+            { value: 'video/webm', label: 'WEBM' },
+            { value: 'video/quicktime', label: 'MOV' },
+            { value: 'video/x-matroska', label: 'MKV' },
+            { value: 'image/gif', label: 'GIF' } // Video to GIF feature
+        ];
+
+        const state = {
+            files: [],
+            globalFormat: 'video/mp4',
+            compression: 50, // 0-100 where 100 is high compression (low quality)
+            resolution: 'original',
+            fps: 'original',
+            isProcessing: false,
+            debounceTimer: null,
+            activePreviewId: null
+        };
+
+        const $ = (id) => document.getElementById(id);
+        const formatBytes = (bytes, decimals = 1) => {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const dm = decimals < 0 ? 0 : decimals;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+        };
+
+        const dom = {
+            dropzone: $('dropzone'), fileInput: $('file-input'), fileList: $('file-list-items'),
+            container: $('file-list-container'), batchToolbar: $('batch-toolbar'),
+            convertBtn: $('btn-convert'), downloadBtn: $('btn-download-all'),
+            formatOpts: $('format-options-container'), countLabel: $('count-text'),
+            qualitySlider: $('quality-slider'), qualityVal: $('quality-val'),
+            resizeSelect: $('resize-select'), fpsSelect: $('fps-select'),
+            lightbox: $('lightbox-modal'), lightboxVideo: $('lightbox-video'), lightboxCap: $('lightbox-caption'),
+            confirmModal: $('confirm-modal')
+        };
+
+        function init() {
+            renderFormatButtons();
+            setupEvents();
+            lucide.createIcons();
+            if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            }
+        }
+
+        function setupEvents() {
+            $('theme-toggle').onclick = () => {
+                document.documentElement.classList.toggle('dark');
+                localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+            };
+
+            // Main "Select files to start" button handler
+            $('btn-main-upload').onclick = (e) => {
+                e.stopPropagation(); // Prevent bubbling to dropzone background
+                dom.fileInput.click();
+            };
+
+            // Standard Upload link handler
+            $('btn-browse-sim').onclick = (e) => {
+                e.stopPropagation();
+                dom.fileInput.click();
+            };
+
+            $('btn-add-more').onclick = () => dom.fileInput.click();
+            dom.fileInput.onchange = (e) => handleFiles(e.target.files);
+
+            dom.dropzone.ondragover = (e) => { e.preventDefault(); dom.dropzone.classList.add('border-indigo-500', 'bg-indigo-50', 'dark:bg-indigo-900/20'); };
+            dom.dropzone.ondragleave = (e) => { e.preventDefault(); dom.dropzone.classList.remove('border-indigo-500', 'bg-indigo-50', 'dark:bg-indigo-900/20'); };
+            dom.dropzone.ondrop = (e) => {
+                e.preventDefault();
+                dom.dropzone.classList.remove('border-indigo-500', 'bg-indigo-50', 'dark:bg-indigo-900/20');
+                handleFiles(e.dataTransfer.files);
+            };
+
+            dom.qualitySlider.oninput = (e) => {
+                state.compression = parseInt(e.target.value);
+                const val = state.compression;
+                let label = "Medium";
+                if (val < 25) label = "Low (Large File)";
+                else if (val > 75) label = "Extreme (Small File)";
+                else if (val > 50) label = "High";
+
+                dom.qualityVal.innerText = label;
+                triggerSizeEstimation();
+            };
+
+            dom.resizeSelect.onchange = (e) => { state.resolution = e.target.value; triggerSizeEstimation(); };
+            dom.fpsSelect.onchange = (e) => { state.fps = e.target.value; triggerSizeEstimation(); };
+
+            $('btn-clear-all').onclick = requestClear;
+            dom.convertBtn.onclick = processQueue;
+            dom.downloadBtn.onclick = downloadZip;
+        }
+
+        // --- CORE LOGIC ---
+        async function handleFiles(files) {
+            const validFiles = Array.from(files).filter(f => f.type.startsWith('video/'));
+            if (validFiles.length === 0) {
+                if (files.length > 0) showToast('Please select video files only');
+                return;
+            }
+
+            for (let f of validFiles) {
+                const id = crypto.randomUUID();
+                const now = new Date();
+                const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                const url = URL.createObjectURL(f);
+
+                // Placeholder until thumbnail is generated
+                const fileObj = {
+                    id: id, file: f,
+                    preview: null,
+                    url: url,
+                    name: f.name, timestamp: timeString,
+                    originalSize: f.size, estimatedSize: null, targetFormat: state.globalFormat, status: 'generating_preview',
+                    finalSize: 0,
+                    progress: 0
+                };
+
+                state.files.push(fileObj);
+                renderList();
+
+                // Generate Thumbnail Asynchronously
+                try {
+                    const thumb = await generateVideoThumbnail(f);
+                    const fileIdx = state.files.findIndex(x => x.id === id);
+                    if (fileIdx > -1) {
+                        state.files[fileIdx].preview = thumb;
+                        state.files[fileIdx].status = 'pending';
+                        renderList();
+                        triggerSizeEstimation();
+                    }
+                } catch (e) {
+                    console.error("Thumbnail error", e);
+                }
+            }
+
+            showToast(`${validFiles.length} videos added`);
+            // RESET INPUT
+            dom.fileInput.value = '';
+        }
+
+        // Helper to grab a frame from the video
+        function generateVideoThumbnail(file) {
+            return new Promise((resolve) => {
+                const video = document.createElement('video');
+                video.setAttribute('src', URL.createObjectURL(file));
+                video.muted = true;
+                video.playsInline = true;
+                video.crossOrigin = "anonymous";
+
+                // Seek to 1 second or 10%
+                video.addEventListener('loadedmetadata', () => {
+                    video.currentTime = Math.min(1.0, video.duration / 2);
+                });
+
+                video.addEventListener('seeked', () => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = 320;
+                    canvas.height = 180; // 16:9 Aspect Ratio roughly
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    resolve(canvas.toDataURL('image/jpeg', 0.7));
+                });
+
+                video.addEventListener('error', () => {
+                    resolve(''); // Empty if fail
+                });
+            });
+        }
+
+        function triggerSizeEstimation() {
+            clearTimeout(state.debounceTimer);
+            state.debounceTimer = setTimeout(updateEstimatedSizes, 300);
+        }
+
+        function updateEstimatedSizes() {
+            state.files.forEach(file => {
+                if (file.status === 'pending') {
+                    // Simulated Estimation Logic
+                    // Base reduction based on compression slider (0-100)
+                    // 0 compression = 100% size, 100 compression = 10% size
+                    let factor = 1 - (state.compression * 0.008);
+
+                    // Resolution factor
+                    if (state.resolution !== 'original') {
+                        const targetH = parseInt(state.resolution);
+                        // Rough estimate assuming 1080p source
+                        if (targetH === 720) factor *= 0.6;
+                        if (targetH === 480) factor *= 0.4;
+                        if (targetH === 360) factor *= 0.25;
+                    }
+
+                    // Format overhead
+                    if (file.targetFormat === 'image/gif') factor *= 2.5; // GIFs are huge
+
+                    file.estimatedSize = Math.max(1024, Math.floor(file.originalSize * factor));
+
+                    const el = $(`size-est-${file.id}`);
+                    if (el) {
+                        el.innerHTML = `<span class="text-indigo-600 dark:text-indigo-400 font-bold">~${formatBytes(file.estimatedSize)}</span>`;
+                        if (file.estimatedSize < file.originalSize) {
+                            const saving = Math.round((1 - (file.estimatedSize / file.originalSize)) * 100);
+                            el.innerHTML += ` <span class="text-[9px] text-emerald-500 ml-1">-${saving}%</span>`;
+                        } else {
+                            el.innerHTML += ` <span class="text-[9px] text-amber-500 ml-1">▲</span>`;
+                        }
+                    }
+                }
+            });
+        }
+
+        async function processQueue() {
+            if (state.isProcessing) return;
+            if (state.files.every(f => f.status === 'done')) state.files.forEach(f => { f.status = 'pending'; f.progress = 0; });
+
+            state.isProcessing = true;
+            renderList();
+
+            // SIMULATED PROCESSING LOOP
+            // Real FFmpeg.wasm requires SharedArrayBuffer headers which may not be present in preview
+            for (let file of state.files) {
+                if (file.status === 'pending') {
+                    file.status = 'converting';
+                    renderList();
+
+                    // Simulate progress
+                    for (let i = 0; i <= 100; i += Math.random() * 10) {
+                        file.progress = Math.min(100, i);
+                        updateProgressUI(file.id, file.progress);
+                        await new Promise(r => setTimeout(r, 200)); // Simulate work
+                    }
+
+                    file.progress = 100;
+                    file.status = 'done';
+                    // We just use the original file for the download in simulation mode
+                    file.dataUrl = file.url; // In real app, this would be the blob from ffmpeg
+
+                    let ext = '.mp4';
+                    if (file.targetFormat === 'video/webm') ext = '.webm';
+                    if (file.targetFormat === 'video/quicktime') ext = '.mov';
+                    if (file.targetFormat === 'video/x-matroska') ext = '.mkv';
+                    if (file.targetFormat === 'image/gif') ext = '.gif';
+
+                    // Use file.name for base if user renamed it, ensuring we don't duplicate extensions
+                    const baseName = file.name.includes('.') ? file.name.substring(0, file.name.lastIndexOf('.')) : file.name;
+                    file.finalName = `${baseName}_compressed${ext}`;
+                    file.finalSize = file.estimatedSize; // Use the estimate as the "final" size for simulation
+                    renderList();
+                }
+            }
+
+            state.isProcessing = false;
+            renderList();
+            showToast('Batch processing complete!');
+        }
+
+        function updateProgressUI(id, percent) {
+            const bar = $(`progress-bar-${id}`);
+            const text = $(`progress-text-${id}`);
+            if (bar) bar.style.width = `${percent}%`;
+            if (text) text.innerText = `${Math.floor(percent)}%`;
+        }
+
+        // --- CONFIRMATION & CLEAR LOGIC ---
+        window.requestClear = () => {
+            if (state.files.length > 0) dom.confirmModal.classList.remove('hide');
+        };
+
+        window.confirmClear = () => {
+            state.files.forEach(f => {
+                if (f.url) URL.revokeObjectURL(f.url);
+            });
+            state.files = [];
+            renderList();
+            dom.fileInput.value = '';
+            dom.confirmModal.classList.add('hide');
+            showToast('All videos cleared');
+        };
+
+        window.closeConfirm = () => {
+            dom.confirmModal.classList.add('hide');
+        };
+
+        // --- UI FUNCTIONS ---
+        function renderFormatButtons() {
+            dom.formatOpts.innerHTML = '';
+            AVAILABLE_FORMATS.forEach(opt => {
+                const btn = document.createElement('button');
+                const active = state.globalFormat === opt.value;
+                btn.className = `shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${active ? 'bg-indigo-600 text-white border-indigo-600 shadow-md' : 'bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-transparent hover:bg-slate-100 dark:hover:bg-slate-700'}`;
+                btn.innerText = opt.label;
+                btn.onclick = () => {
+                    state.globalFormat = opt.value;
+                    state.files.forEach(f => { if (f.status !== 'converting') f.targetFormat = opt.value; if (f.status === 'done') f.status = 'pending'; });
+                    renderFormatButtons(); renderList(); triggerSizeEstimation();
+                };
+                dom.formatOpts.appendChild(btn);
+            });
+        }
+
+        function renderList() {
+            const list = dom.fileList; list.innerHTML = '';
+            if (state.files.length === 0) {
+                dom.dropzone.classList.remove('hide'); dom.container.classList.add('hide');
+                $('btn-clear-all').classList.add('hide'); dom.batchToolbar.classList.add('hide'); dom.downloadBtn.classList.add('hide');
+                dom.convertBtn.disabled = true; dom.convertBtn.className = "w-full py-3 md:py-4 rounded-xl font-bold text-sm md:text-lg flex items-center justify-center gap-2 transition-all bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed";
+                dom.convertBtn.innerHTML = `<span class="relative z-10">Compress Videos</span>`; dom.countLabel.innerText = `0 Videos`;
+                return;
+            }
+            dom.dropzone.classList.add('hide'); dom.container.classList.remove('hide'); $('btn-clear-all').classList.remove('hide');
+            dom.batchToolbar.classList.remove('hide');
+            dom.countLabel.innerText = `${state.files.length} Videos`;
+
+            const hasPending = state.files.some(f => f.status === 'pending');
+            const hasDone = state.files.some(f => f.status === 'done');
+            const isGenerating = state.files.some(f => f.status === 'generating_preview');
+
+            if (state.isProcessing) {
+                dom.convertBtn.disabled = true; dom.convertBtn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 md:w-5 md:h-5 animate-spin"></i> Processing...`;
+                dom.convertBtn.className = "w-full py-3 md:py-4 rounded-xl font-bold text-sm md:text-lg flex items-center justify-center gap-2 transition-all bg-indigo-600 text-white cursor-wait opacity-80";
+            } else if (isGenerating) {
+                dom.convertBtn.disabled = true; dom.convertBtn.innerHTML = `Generating Previews...`;
+                dom.convertBtn.className = "w-full py-3 md:py-4 rounded-xl font-bold text-sm md:text-lg flex items-center justify-center gap-2 transition-all bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-wait";
+            } else {
+                dom.convertBtn.disabled = !hasPending && !hasDone;
+                dom.convertBtn.innerHTML = hasPending ? `Compress ${state.files.filter(f => f.status === 'pending').length} Videos` : 'Compress Again';
+                dom.convertBtn.className = "group relative w-full py-3 md:py-4 rounded-xl font-bold text-sm md:text-lg flex items-center justify-center gap-2 transition-all bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-500/30 active:scale-95";
+            }
+            if (hasDone && !state.isProcessing) dom.downloadBtn.classList.remove('hide'); else dom.downloadBtn.classList.add('hide');
+
+            state.files.forEach(file => {
+                const el = document.createElement('div');
+                el.className = `group relative bg-white dark:bg-slate-900 p-2 md:p-3 rounded-2xl border ${file.status === 'done' ? 'border-emerald-500/50 dark:border-emerald-500/30' : 'border-slate-200 dark:border-slate-800'} shadow-sm hover:shadow-md transition-all animate-slide-up overflow-hidden`;
+
+                const opts = AVAILABLE_FORMATS.map(fmt => `<option value="${fmt.value}" ${file.targetFormat === fmt.value ? 'selected' : ''}>${fmt.label}</option>`).join('');
+                const thumbnailSrc = file.preview || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOTQxMDhDIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHJlY3Qgd2lkdGg9IjE4IiBoZWlnaHQ9IjE4IiB4PSIzIiB5PSIzIiByeD0iMiIgcnk9IjIiLz48Y2lyY2xlIGN4PSI5IiBjeT0iMTIiIHI9IjEiLz48Y2lyY2xlIGN4PSIxNSIgY3k9IjEyIiByPSIxIi8+PHBhdGggZD0iTTIgMTJ1MjAiLz48cGF0aCBkPSJNMjIgMTJINCIvPjxwYXRoIGQ9Ik0xMiAydjIwIi8+PHBhdGggZD0iTTEyIDJ2MjAiLz48L3N2Zz4=';
+
+                // Status Layer
+                let statusHtml = '';
+                if (file.status === 'done') statusHtml = '<div class="absolute inset-0 bg-emerald-500/80 flex items-center justify-center animate-scale-in z-20"><i data-lucide="check" class="w-5 h-5 md:w-6 md:h-6 text-white"></i></div>';
+                else if (file.status === 'converting') {
+                    statusHtml = `
+                    <div class="absolute inset-0 bg-black/60 flex flex-col items-center justify-center z-20 backdrop-blur-[1px]">
+                        <div class="w-12 h-12 relative flex items-center justify-center">
+                            <svg class="animate-spin h-8 w-8 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                        </div>
+                        <span id="progress-text-${file.id}" class="text-white text-xs font-bold mt-1">${Math.floor(file.progress)}%</span>
+                    </div>`;
+                }
+
+                el.innerHTML = `
+                    <div class="flex items-center gap-3 md:gap-4">
+                        <div class="relative w-16 h-12 xs:w-20 xs:h-14 bg-black rounded-lg overflow-hidden shrink-0 border border-slate-200 dark:border-slate-700 cursor-pointer" onclick="openLightbox('${file.id}')">
+                            <img src="${thumbnailSrc}" class="w-full h-full object-cover opacity-80">
+                            ${statusHtml}
+                            <div class="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100 z-10"><i data-lucide="play-circle" class="w-6 h-6 text-white drop-shadow-md"></i></div>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <!-- UPDATED: Editable Filename -->
+                            <div class="flex justify-between items-start gap-2">
+                                <div class="flex-1 min-w-0 relative group/edit">
+                                    <input type="text" value="${file.name}" 
+                                        onchange="renameFile('${file.id}', this.value)" 
+                                        onclick="event.stopPropagation()"
+                                        class="font-bold text-xs md:text-sm text-slate-800 dark:text-slate-100 bg-transparent border-b border-transparent hover:border-slate-300 dark:hover:border-slate-600 focus:border-indigo-500 focus:ring-0 outline-none w-full truncate transition-colors p-0 pb-0.5" 
+                                        title="Click to rename">
+                                    <i data-lucide="pencil" class="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 opacity-0 group-hover/edit:opacity-100 transition-opacity pointer-events-none"></i>
+                                </div>
+                                <button onclick="removeFile('${file.id}')" class="text-slate-400 hover:text-red-500 transition-colors"><i data-lucide="x" class="w-3.5 h-3.5 md:w-4 md:h-4"></i></button>
+                            </div>
+
+                            <div class="flex items-center gap-2 mt-1 text-[9px] md:text-[10px] xs:text-xs font-mono text-slate-500 dark:text-slate-400">
+                                <span class="bg-slate-100 dark:bg-slate-800 px-1 rounded text-[9px] font-sans text-slate-400 hidden xs:inline">Video</span><span class="w-px h-3 bg-slate-300 dark:bg-slate-700 hidden xs:inline"></span><span>${formatBytes(file.originalSize)}</span><i data-lucide="arrow-right" class="w-3 h-3"></i>
+                                <span id="size-est-${file.id}" class="transition-colors">${file.status === 'done' ? `<span class="text-emerald-600 font-bold">${formatBytes(file.finalSize)}</span>` : (file.estimatedSize ? `~${formatBytes(file.estimatedSize)}` : 'Est...')}</span>
+                            </div>
+                            <div class="flex items-center gap-2 md:gap-3 mt-2">
+                                <div class="relative"><select onchange="changeFileFormat('${file.id}', this.value)" class="bg-slate-100 dark:bg-slate-800 border border-transparent hover:border-indigo-300 dark:hover:border-indigo-700 rounded-lg py-1 pl-2 pr-4 md:pr-6 text-[10px] md:text-xs font-bold text-indigo-600 dark:text-indigo-400 outline-none appearance-none cursor-pointer transition-all" ${file.status === 'converting' ? 'disabled' : ''}>${opts}</select><i data-lucide="chevron-down" class="absolute right-1 md:right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 text-indigo-400 pointer-events-none"></i></div>
+                                ${file.status === 'done' ? `<button onclick="downloadOne('${file.id}')" class="p-1 md:p-1.5 rounded-lg text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-all ml-auto" title="Download"><i data-lucide="download" class="w-3.5 h-3.5 md:w-4 md:h-4"></i></button>` : ''}
+                            </div>
+                            <!-- Progress Bar Background -->
+                            ${file.status === 'converting' ? `<div class="absolute bottom-0 left-0 h-0.5 bg-indigo-500/20 w-full"><div id="progress-bar-${file.id}" class="h-full bg-indigo-500 transition-all duration-200" style="width: 0%"></div></div>` : ''}
+                        </div>
+                    </div>`;
+                list.appendChild(el);
+            });
+            lucide.createIcons();
+        }
+
+        window.changeFileFormat = (id, val) => { const f = state.files.find(x => x.id === id); if (f) { f.targetFormat = val; if (f.status === 'done') f.status = 'pending'; f.estimatedSize = null; renderList(); triggerSizeEstimation(); } };
+        window.removeFile = (id) => { state.files = state.files.filter(x => x.id !== id); renderList(); };
+        window.clearAll = () => { requestClear(); };
+        window.openLightbox = (id) => {
+            const file = state.files.find(x => x.id === id);
+            if (file) {
+                dom.lightboxVideo.src = file.url;
+                dom.lightboxCap.innerText = `${file.name} - ${formatBytes(file.originalSize)}`;
+                dom.lightbox.classList.remove('hide');
+                dom.lightboxVideo.play();
+            }
+        };
+        window.closeLightbox = () => {
+            dom.lightbox.classList.add('hide');
+            dom.lightboxVideo.pause();
+            dom.lightboxVideo.src = "";
+        };
+
+        // --- RENAMING LOGIC ---
+        window.renameFile = (id, newName) => {
+            const f = state.files.find(x => x.id === id);
+            if (f && newName.trim() !== "") {
+                f.name = newName.trim();
+
+                // If the file is already done, we should update the final output name too
+                if (f.status === 'done') {
+                    // Determine extension based on target format, not the original filename
+                    let targetExt = '.mp4';
+                    if (f.targetFormat === 'video/webm') targetExt = '.webm';
+                    if (f.targetFormat === 'video/quicktime') targetExt = '.mov';
+                    if (f.targetFormat === 'video/x-matroska') targetExt = '.mkv';
+                    if (f.targetFormat === 'image/gif') targetExt = '.gif';
+
+                    // Check if user input already has that extension to avoid double extension
+                    // (Simple check, assumes lowercase)
+                    if (f.name.toLowerCase().endsWith(targetExt)) {
+                        f.finalName = f.name;
+                    } else {
+                        // Remove old extension if present
+                        const base = f.name.includes('.') ? f.name.substring(0, f.name.lastIndexOf('.')) : f.name;
+                        f.finalName = `${base}_compressed${targetExt}`;
+                    }
+                }
+            } else {
+                renderList(); // Revert UI if empty
+            }
+        };
+
+        window.downloadOne = (id) => {
+            const f = state.files.find(x => x.id === id);
+            // In a real WASM implementation, f.dataUrl would be a blob URL from FFmpeg
+            // Here we just download the original file with the new name for demo purposes
+            if (f && f.dataUrl) saveAs(f.dataUrl, f.finalName);
+        };
+
+        async function downloadZip() {
+            const zip = new JSZip();
+            let count = 0;
+
+            // Note: In simulation, getting blob data from file.url (original file)
+            // Real app would use the processed data
+            const promises = state.files.map(async f => {
+                if (f.status === 'done' && f.dataUrl) {
+                    const response = await fetch(f.dataUrl);
+                    const blob = await response.blob();
+                    zip.file(f.finalName, blob);
+                    count++;
+                }
+            });
+
+            await Promise.all(promises);
+
+            if (count > 0) {
+                const content = await zip.generateAsync({ type: "blob" });
+                saveAs(content, "compressed_videos.zip");
+            }
+        }
+
+        function showToast(msg) { const t = $('toast'); $('toast-msg').innerText = msg; t.classList.remove('-translate-y-32', 'opacity-0'); setTimeout(() => t.classList.add('-translate-y-32', 'opacity-0'), 2500); }
+
+        init();
+    </script>
+</body>
+
+</html>

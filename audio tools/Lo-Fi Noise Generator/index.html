@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lo-Fi Focus</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom Range Slider Styling */
+        input[type=range] {
+            -webkit-appearance: none;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #818cf8;
+            /* indigo-400 */
+            margin-top: -6px;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(129, 140, 248, 0.5);
+        }
+
+        input[type=range]::-moz-range-thumb {
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #818cf8;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 0 10px rgba(129, 140, 248, 0.5);
+        }
+
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        /* Animations */
+        @keyframes pulse-ring {
+            0% {
+                transform: scale(0.8);
+                opacity: 0.5;
+            }
+
+            100% {
+                transform: scale(1.3);
+                opacity: 0;
+            }
+        }
+
+        .animate-ring {
+            animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(51, 65, 85, 0.5);
+        }
+    </style>
+</head>
+
+<body
+    class="bg-slate-900 text-white font-sans h-screen w-screen overflow-hidden flex flex-col items-center justify-center relative">
+
+    <!-- Background Canvas -->
+    <canvas id="visualizer" class="absolute inset-0 w-full h-full z-0 pointer-events-none"></canvas>
+
+    <!-- Main Interface -->
+    <div class="relative z-10 w-full max-w-lg glass-panel rounded-3xl p-8 shadow-2xl m-4">
+
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-8">
+            <div>
+                <h1 class="text-2xl font-semibold text-indigo-100 tracking-tight">Lo-Fi Engine v2</h1>
+                <p class="text-indigo-400/60 text-xs font-mono mt-1">FM SYNTHESIS • TAPE SATURATION</p>
+            </div>
+            <div
+                class="h-10 w-10 bg-indigo-500/20 rounded-full flex items-center justify-center ring-1 ring-indigo-400/30">
+                <!-- Waves Icon -->
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                    stroke="#a5b4fc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1" />
+                    <path
+                        d="M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1" />
+                    <path
+                        d="M2 18c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1" />
+                </svg>
+            </div>
+        </div>
+
+        <!-- Play Button -->
+        <div class="flex justify-center mb-10">
+            <button id="playBtn"
+                class="group relative w-24 h-24 rounded-full flex items-center justify-center transition-all duration-500 bg-slate-700 hover:bg-slate-600 shadow-xl">
+                <!-- Play Icon -->
+                <svg id="iconPlay" class="ml-1" xmlns="http://www.w3.org/2000/svg" width="36" height="36"
+                    viewBox="0 0 24 24" fill="white" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                </svg>
+                <!-- Pause Icon (Hidden by default) -->
+                <svg id="iconPause" class="hidden" xmlns="http://www.w3.org/2000/svg" width="36" height="36"
+                    viewBox="0 0 24 24" fill="white" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <rect x="6" y="4" width="4" height="16"></rect>
+                    <rect x="14" y="4" width="4" height="16"></rect>
+                </svg>
+
+                <!-- Ring Animation (Hidden by default) -->
+                <div id="playRing" class="absolute inset-0 rounded-full border border-white/20 hidden"></div>
+            </button>
+        </div>
+
+        <!-- Mixers -->
+        <div class="space-y-5" id="mixerControls">
+            <!-- Channels will be injected here via JS to keep code DRY, or manually written below -->
+
+            <!-- Rain -->
+            <div class="flex items-center space-x-4">
+                <div class="w-8 h-8 rounded-lg bg-slate-700/50 flex items-center justify-center text-slate-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242" />
+                        <path d="M16 14v6" />
+                        <path d="M8 14v6" />
+                        <path d="M12 16v6" />
+                    </svg>
+                </div>
+                <div class="flex-1 relative">
+                    <div class="flex justify-between mb-1.5">
+                        <span class="text-xs font-medium text-slate-300">Rain</span>
+                        <span id="val-rain" class="text-xs text-slate-500 font-mono">40%</span>
+                    </div>
+                    <div
+                        class="h-2 bg-slate-900/50 rounded-full overflow-hidden absolute w-full top-6 pointer-events-none">
+                        <div id="bar-rain" class="h-full bg-indigo-500/80 rounded-full transition-all duration-100"
+                            style="width: 40%"></div>
+                    </div>
+                    <input type="range" id="input-rain" min="0" max="1" step="0.01" value="0.4"
+                        class="relative z-10 w-full h-2 opacity-0 cursor-pointer"
+                        style="height: 20px; transform: translateY(4px);">
+                </div>
+            </div>
+
+            <!-- Vinyl -->
+            <div class="flex items-center space-x-4">
+                <div class="w-8 h-8 rounded-lg bg-slate-700/50 flex items-center justify-center text-slate-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10" />
+                        <circle cx="12" cy="12" r="3" />
+                        <path d="M12 12 8 8" />
+                    </svg>
+                </div>
+                <div class="flex-1 relative">
+                    <div class="flex justify-between mb-1.5">
+                        <span class="text-xs font-medium text-slate-300">Vinyl Crackle</span>
+                        <span id="val-vinyl" class="text-xs text-slate-500 font-mono">25%</span>
+                    </div>
+                    <div
+                        class="h-2 bg-slate-900/50 rounded-full overflow-hidden absolute w-full top-6 pointer-events-none">
+                        <div id="bar-vinyl" class="h-full bg-indigo-500/80 rounded-full transition-all duration-100"
+                            style="width: 25%"></div>
+                    </div>
+                    <input type="range" id="input-vinyl" min="0" max="1" step="0.01" value="0.25"
+                        class="relative z-10 w-full h-2 opacity-0 cursor-pointer"
+                        style="height: 20px; transform: translateY(4px);">
+                </div>
+            </div>
+
+            <!-- Atmosphere -->
+            <div class="flex items-center space-x-4">
+                <div class="w-8 h-8 rounded-lg bg-slate-700/50 flex items-center justify-center text-slate-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2" />
+                        <path d="M9.6 4.6A2 2 0 1 1 11 8H2" />
+                        <path d="M12.6 19.4A2 2 0 1 0 14 16H2" />
+                    </svg>
+                </div>
+                <div class="flex-1 relative">
+                    <div class="flex justify-between mb-1.5">
+                        <span class="text-xs font-medium text-slate-300">Atmosphere</span>
+                        <span id="val-atmosphere" class="text-xs text-slate-500 font-mono">30%</span>
+                    </div>
+                    <div
+                        class="h-2 bg-slate-900/50 rounded-full overflow-hidden absolute w-full top-6 pointer-events-none">
+                        <div id="bar-atmosphere"
+                            class="h-full bg-indigo-500/80 rounded-full transition-all duration-100" style="width: 30%">
+                        </div>
+                    </div>
+                    <input type="range" id="input-atmosphere" min="0" max="1" step="0.01" value="0.3"
+                        class="relative z-10 w-full h-2 opacity-0 cursor-pointer"
+                        style="height: 20px; transform: translateY(4px);">
+                </div>
+            </div>
+
+            <!-- Keys -->
+            <div class="flex items-center space-x-4">
+                <div class="w-8 h-8 rounded-lg bg-slate-700/50 flex items-center justify-center text-slate-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                    </svg>
+                </div>
+                <div class="flex-1 relative">
+                    <div class="flex justify-between mb-1.5">
+                        <span class="text-xs font-medium text-slate-300">Keys (FM)</span>
+                        <span id="val-keys" class="text-xs text-slate-500 font-mono">50%</span>
+                    </div>
+                    <div
+                        class="h-2 bg-slate-900/50 rounded-full overflow-hidden absolute w-full top-6 pointer-events-none">
+                        <div id="bar-keys" class="h-full bg-indigo-500/80 rounded-full transition-all duration-100"
+                            style="width: 50%"></div>
+                    </div>
+                    <input type="range" id="input-keys" min="0" max="1" step="0.01" value="0.5"
+                        class="relative z-10 w-full h-2 opacity-0 cursor-pointer"
+                        style="height: 20px; transform: translateY(4px);">
+                </div>
+            </div>
+
+            <!-- Beats -->
+            <div class="flex items-center space-x-4">
+                <div class="w-8 h-8 rounded-lg bg-slate-700/50 flex items-center justify-center text-slate-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 18V5l12-2v13" />
+                        <circle cx="6" cy="18" r="3" />
+                        <circle cx="18" cy="16" r="3" />
+                    </svg>
+                </div>
+                <div class="flex-1 relative">
+                    <div class="flex justify-between mb-1.5">
+                        <span class="text-xs font-medium text-slate-300">Beats</span>
+                        <span id="val-beats" class="text-xs text-slate-500 font-mono">60%</span>
+                    </div>
+                    <div
+                        class="h-2 bg-slate-900/50 rounded-full overflow-hidden absolute w-full top-6 pointer-events-none">
+                        <div id="bar-beats" class="h-full bg-indigo-500/80 rounded-full transition-all duration-100"
+                            style="width: 60%"></div>
+                    </div>
+                    <input type="range" id="input-beats" min="0" max="1" step="0.01" value="0.6"
+                        class="relative z-10 w-full h-2 opacity-0 cursor-pointer"
+                        style="height: 20px; transform: translateY(4px);">
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Footer / Status -->
+        <div class="mt-8 flex justify-between items-center pt-6 border-t border-slate-700/50">
+            <div class="flex space-x-2 items-center">
+                <div id="statusDot" class="w-2 h-2 rounded-full bg-slate-600 transition-colors duration-300"></div>
+                <span id="statusText"
+                    class="text-[10px] uppercase tracking-wider text-slate-500 font-bold">Standby</span>
+            </div>
+            <div class="text-[10px] text-slate-600 font-mono">
+                44.1kHz / 32-bit Float
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * GLOBAL STATE
+         */
+        const state = {
+            isPlaying: false,
+            volumes: {
+                rain: 0.4,
+                vinyl: 0.25,
+                beats: 0.6,
+                atmosphere: 0.3,
+                keys: 0.5
+            }
+        };
+
+        let audioCtx = null;
+        const nodes = {};
+        const buffers = {};
+        let lookaheadTimer = null;
+        let nextNoteTime = 0;
+        let beatIndex = 0;
+
+        /**
+         * AUDIO UTILITIES
+         */
+        const createImpulseResponse = (ctx, duration, decay) => {
+            const rate = ctx.sampleRate;
+            const length = rate * duration;
+            const impulse = ctx.createBuffer(2, length, rate);
+            const left = impulse.getChannelData(0);
+            const right = impulse.getChannelData(1);
+            for (let i = 0; i < length; i++) {
+                const n = i / length;
+                const vol = Math.pow(1 - n, decay);
+                left[i] = (Math.random() * 2 - 1) * vol;
+                right[i] = (Math.random() * 2 - 1) * vol;
+            }
+            return impulse;
+        };
+
+        const makeDistortionCurve = (amount) => {
+            const k = typeof amount === 'number' ? amount : 50;
+            const n_samples = 44100;
+            const curve = new Float32Array(n_samples);
+            const deg = Math.PI / 180;
+            for (let i = 0; i < n_samples; ++i) {
+                const x = (i * 2) / n_samples - 1;
+                curve[i] = ((3 + k) * x * 20 * deg) / (Math.PI + k * Math.abs(x));
+            }
+            return curve;
+        };
+
+        const createPinkNoise = (ctx) => {
+            const bufferSize = 2 * ctx.sampleRate;
+            const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+            const output = buffer.getChannelData(0);
+            let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
+            for (let i = 0; i < bufferSize; i++) {
+                const white = Math.random() * 2 - 1;
+                b0 = 0.99886 * b0 + white * 0.0555179;
+                b1 = 0.99332 * b1 + white * 0.0750759;
+                b2 = 0.96900 * b2 + white * 0.1538520;
+                b3 = 0.86650 * b3 + white * 0.3104856;
+                b4 = 0.55000 * b4 + white * 0.5329522;
+                b5 = -0.7616 * b5 - white * 0.0168980;
+                output[i] = b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362;
+                output[i] *= 0.11;
+                b6 = white * 0.115926;
+            }
+            return buffer;
+        };
+
+        // --- SYNTHESIS INSTRUMENTS ---
+
+        const playAdvancedKick = (ctx, time, vol, dest) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(dest);
+            osc.frequency.setValueAtTime(150, time);
+            osc.frequency.exponentialRampToValueAtTime(45, time + 0.15);
+            gain.gain.setValueAtTime(vol, time);
+            gain.gain.exponentialRampToValueAtTime(0.001, time + 0.5);
+            osc.start(time);
+            osc.stop(time + 0.5);
+
+            const clickOsc = ctx.createOscillator();
+            const clickGain = ctx.createGain();
+            clickOsc.type = 'square';
+            clickOsc.frequency.value = 800;
+            clickOsc.connect(clickGain);
+            clickGain.connect(dest);
+            clickGain.gain.setValueAtTime(vol * 0.1, time);
+            clickGain.gain.exponentialRampToValueAtTime(0.001, time + 0.02);
+            clickOsc.start(time);
+            clickOsc.stop(time + 0.02);
+        };
+
+        const playAdvancedSnare = (ctx, time, vol, noiseBuffer, dest, reverbDest) => {
+            const tone = ctx.createOscillator();
+            tone.type = 'triangle';
+            const toneGain = ctx.createGain();
+            tone.connect(toneGain);
+            toneGain.connect(dest);
+            tone.frequency.setValueAtTime(200, time);
+            tone.frequency.linearRampToValueAtTime(100, time + 0.1);
+            toneGain.gain.setValueAtTime(vol * 0.5, time);
+            toneGain.gain.exponentialRampToValueAtTime(0.001, time + 0.15);
+            tone.start(time);
+            tone.stop(time + 0.2);
+
+            const noiseSrc = ctx.createBufferSource();
+            noiseSrc.buffer = noiseBuffer;
+            const noiseFilter = ctx.createBiquadFilter();
+            noiseFilter.type = 'highpass';
+            noiseFilter.frequency.value = 1000;
+            const noiseGain = ctx.createGain();
+            noiseSrc.connect(noiseFilter);
+            noiseFilter.connect(noiseGain);
+            noiseGain.connect(dest);
+            if (reverbDest) noiseGain.connect(reverbDest);
+            noiseGain.gain.setValueAtTime(vol * 0.8, time);
+            noiseGain.gain.exponentialRampToValueAtTime(0.001, time + 0.25);
+            noiseSrc.start(time);
+            noiseSrc.stop(time + 0.3);
+        };
+
+        const playRhodesChord = (ctx, time, vol, freqs, dest, reverbDest) => {
+            const masterGain = ctx.createGain();
+            const tremolo = ctx.createOscillator();
+            tremolo.frequency.value = 4;
+            const tremoloGain = ctx.createGain();
+            tremoloGain.gain.value = 0.2;
+
+            tremolo.connect(tremoloGain);
+            tremoloGain.connect(masterGain.gain);
+
+            masterGain.connect(dest);
+            if (reverbDest) masterGain.connect(reverbDest);
+
+            masterGain.gain.setValueAtTime(0, time);
+            masterGain.gain.linearRampToValueAtTime(vol * 0.3, time + 0.05);
+            masterGain.gain.exponentialRampToValueAtTime(vol * 0.1, time + 1.5);
+            masterGain.gain.linearRampToValueAtTime(0, time + 3.0);
+
+            freqs.forEach(f => {
+                const carrier = ctx.createOscillator();
+                const modulator = ctx.createOscillator();
+                const modGain = ctx.createGain();
+
+                carrier.type = 'sine';
+                carrier.frequency.value = f;
+                modulator.type = 'sine';
+                modulator.frequency.value = f * 14;
+                modGain.gain.value = f * 0.5;
+
+                modulator.connect(modGain);
+                modGain.connect(carrier.frequency);
+                carrier.connect(masterGain);
+
+                carrier.start(time);
+                carrier.stop(time + 3.5);
+                modulator.start(time);
+                modulator.stop(time + 3.5);
+
+                const lfo = ctx.createOscillator();
+                lfo.frequency.value = 0.5;
+                const lfoGain = ctx.createGain();
+                lfoGain.gain.value = 5;
+                lfo.connect(lfoGain);
+                lfoGain.connect(carrier.detune);
+                lfo.start(time);
+                lfo.stop(time + 3.5);
+            });
+            tremolo.start(time);
+            tremolo.stop(time + 3.5);
+        };
+
+        /**
+         * INITIALIZATION
+         */
+        const initAudio = () => {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            audioCtx = new AudioContext();
+
+            // Buffers
+            buffers.pink = createPinkNoise(audioCtx);
+            const wBuf = audioCtx.createBuffer(1, audioCtx.sampleRate, audioCtx.sampleRate);
+            const wData = wBuf.getChannelData(0);
+            for (let i = 0; i < audioCtx.sampleRate; i++) wData[i] = Math.random() * 2 - 1;
+            buffers.white = wBuf;
+
+            // Master Chain
+            const masterGain = audioCtx.createGain();
+            masterGain.gain.value = 0.9;
+            const saturator = audioCtx.createWaveShaper();
+            saturator.curve = makeDistortionCurve(20);
+            saturator.oversample = '4x';
+            const limiter = audioCtx.createDynamicsCompressor();
+            limiter.threshold.setValueAtTime(-10, audioCtx.currentTime);
+            limiter.ratio.setValueAtTime(20, audioCtx.currentTime);
+
+            masterGain.connect(saturator);
+            saturator.connect(limiter);
+            limiter.connect(audioCtx.destination);
+            nodes.master = masterGain;
+
+            // Reverb
+            const reverbConvolver = audioCtx.createConvolver();
+            reverbConvolver.buffer = createImpulseResponse(audioCtx, 2.0, 3.0);
+            const reverbGain = audioCtx.createGain();
+            reverbGain.gain.value = 0.3;
+            reverbConvolver.connect(reverbGain);
+            reverbGain.connect(masterGain);
+            nodes.reverb = reverbConvolver;
+
+            // --- LAYERS ---
+
+            // Rain
+            const rainG = audioCtx.createGain();
+            const rainSrc = audioCtx.createBufferSource();
+            rainSrc.buffer = buffers.pink;
+            rainSrc.loop = true;
+            const rainF = audioCtx.createBiquadFilter();
+            rainF.type = 'lowpass';
+            rainF.frequency.value = 600;
+            rainSrc.connect(rainF);
+            rainF.connect(rainG);
+            rainG.connect(masterGain);
+            rainSrc.start();
+            nodes.rain = rainG;
+
+            // Vinyl
+            const vinylG = audioCtx.createGain();
+            const cBuf = audioCtx.createBuffer(1, audioCtx.sampleRate * 4, audioCtx.sampleRate);
+            const cD = cBuf.getChannelData(0);
+            for (let i = 0; i < cBuf.length; i++) cD[i] = (Math.random() > 0.9992) ? Math.random() * 0.3 : 0;
+            const vinylSrc = audioCtx.createBufferSource();
+            vinylSrc.buffer = cBuf;
+            vinylSrc.loop = true;
+            const rumbleSrc = audioCtx.createBufferSource();
+            rumbleSrc.buffer = buffers.pink;
+            rumbleSrc.loop = true;
+            const rumbleF = audioCtx.createBiquadFilter();
+            rumbleF.type = 'lowpass';
+            rumbleF.frequency.value = 60;
+            const rumbleG = audioCtx.createGain();
+            rumbleG.gain.value = 2.0;
+            rumbleSrc.connect(rumbleF).connect(rumbleG).connect(vinylG);
+            vinylSrc.connect(vinylG);
+            vinylG.connect(masterGain);
+            vinylSrc.start();
+            rumbleSrc.start();
+            nodes.vinyl = vinylG;
+
+            // Atmosphere
+            const atmG = audioCtx.createGain();
+            const atmSrc = audioCtx.createBufferSource();
+            atmSrc.buffer = buffers.pink;
+            atmSrc.loop = true;
+            const atmF = audioCtx.createBiquadFilter();
+            atmF.type = 'bandpass';
+            atmF.frequency.value = 400;
+            atmF.Q.value = 0.8;
+            const windLFO = audioCtx.createOscillator();
+            windLFO.frequency.value = 0.07;
+            const windLFOG = audioCtx.createGain();
+            windLFOG.gain.value = 300;
+            windLFO.connect(windLFOG).connect(atmF.frequency);
+            windLFO.start();
+            atmSrc.connect(atmF).connect(atmG).connect(masterGain);
+            atmSrc.start();
+            nodes.atmosphere = atmG;
+
+            // Instrument Buses
+            const beatsG = audioCtx.createGain();
+            beatsG.connect(masterGain);
+            nodes.beats = beatsG;
+
+            const keysG = audioCtx.createGain();
+            keysG.connect(masterGain);
+            nodes.keys = keysG;
+
+            // Zero out volumes initially
+            rainG.gain.value = 0;
+            vinylG.gain.value = 0;
+            atmG.gain.value = 0;
+            beatsG.gain.value = 0;
+            keysG.gain.value = 0;
+        };
+
+        /**
+         * SCHEDULER
+         */
+        const CHORDS_LOFI = [
+            [261.63, 311.13, 392.00, 466.16], // Cm9
+            [233.08, 293.66, 349.23, 415.30], // BbMaj7#11
+            [207.65, 261.63, 311.13, 392.00], // AbMaj7
+            [196.00, 246.94, 293.66, 349.23], // G7
+            [174.61, 220.00, 261.63, 311.13], // Fmin7
+        ];
+
+        const PATTERNS = {
+            kick: [1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0],
+            snare: [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1],
+        };
+
+        const scheduleBeat = (time) => {
+            const humanize = (amount) => (Math.random() * amount) - (amount / 2);
+            const step = beatIndex % 16;
+            const bar = Math.floor(beatIndex / 16);
+
+            // Kick
+            if (PATTERNS.kick[step]) {
+                playAdvancedKick(audioCtx, time + humanize(0.01), state.volumes.beats, nodes.beats);
+            } else if (step === 10 && Math.random() > 0.7) {
+                playAdvancedKick(audioCtx, time + humanize(0.02), state.volumes.beats * 0.5, nodes.beats);
+            }
+
+            // Snare
+            if (PATTERNS.snare[step]) {
+                const vol = (step === 15) ? state.volumes.beats * 0.4 : state.volumes.beats;
+                playAdvancedSnare(audioCtx, time + humanize(0.015), vol, buffers.white, nodes.beats, nodes.reverb);
+            }
+
+            // Hats
+            if (step % 2 === 0 || Math.random() > 0.6) {
+                const hhSrc = audioCtx.createBufferSource();
+                hhSrc.buffer = buffers.white;
+                const hhF = audioCtx.createBiquadFilter();
+                hhF.type = 'highpass';
+                hhF.frequency.value = 6000 - (Math.random() * 2000);
+                const hhG = audioCtx.createGain();
+                hhG.gain.value = state.volumes.beats * (0.1 + Math.random() * 0.1);
+
+                hhSrc.connect(hhF).connect(hhG).connect(nodes.beats);
+                const hTime = time + humanize(0.02);
+                hhSrc.start(hTime);
+                hhSrc.stop(hTime + 0.05);
+            }
+
+            // Keys
+            if (step === 0) {
+                const progression = [0, 0, 2, 3, 1, 4, 0, 3];
+                const chordIdx = progression[bar % progression.length];
+                playRhodesChord(audioCtx, time + humanize(0.03), state.volumes.keys, CHORDS_LOFI[chordIdx], nodes.keys, nodes.reverb);
+            }
+
+            beatIndex++;
+            nextNoteTime = time + 0.3; // 16th noteish duration
+        };
+
+        const scheduler = () => {
+            if (!audioCtx) return;
+            while (nextNoteTime < audioCtx.currentTime + 0.1) {
+                scheduleBeat(nextNoteTime);
+            }
+            lookaheadTimer = setTimeout(scheduler, 25);
+        };
+
+        /**
+         * UI INTERACTIONS
+         */
+        const playBtn = document.getElementById('playBtn');
+        const playIcon = document.getElementById('iconPlay');
+        const pauseIcon = document.getElementById('iconPause');
+        const playRing = document.getElementById('playRing');
+        const statusDot = document.getElementById('statusDot');
+        const statusText = document.getElementById('statusText');
+
+        const togglePlay = () => {
+            if (!audioCtx) initAudio();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+
+            if (!state.isPlaying) {
+                state.isPlaying = true;
+
+                // UI Updates
+                playBtn.classList.remove('bg-slate-700', 'hover:bg-slate-600');
+                playBtn.classList.add('bg-gradient-to-tr', 'from-rose-500', 'to-orange-400', 'shadow-[0_0_40px_-10px_rgba(244,63,94,0.5)]');
+                playIcon.classList.add('hidden');
+                pauseIcon.classList.remove('hidden');
+                playRing.classList.remove('hidden');
+                playRing.classList.add('animate-ring');
+                statusDot.classList.replace('bg-slate-600', 'bg-green-400');
+                statusDot.classList.add('animate-pulse');
+                statusText.innerText = 'Processing Live Audio';
+
+                // Audio updates
+                Object.keys(state.volumes).forEach(key => {
+                    if (nodes[key]) nodes[key].gain.setTargetAtTime(state.volumes[key], audioCtx.currentTime, 1);
+                });
+
+                nextNoteTime = audioCtx.currentTime + 0.1;
+                scheduler();
+
+            } else {
+                state.isPlaying = false;
+
+                // UI Updates
+                playBtn.classList.add('bg-slate-700', 'hover:bg-slate-600');
+                playBtn.classList.remove('bg-gradient-to-tr', 'from-rose-500', 'to-orange-400', 'shadow-[0_0_40px_-10px_rgba(244,63,94,0.5)]');
+                playIcon.classList.remove('hidden');
+                pauseIcon.classList.add('hidden');
+                playRing.classList.add('hidden');
+                playRing.classList.remove('animate-ring');
+                statusDot.classList.replace('bg-green-400', 'bg-slate-600');
+                statusDot.classList.remove('animate-pulse');
+                statusText.innerText = 'Standby';
+
+                // Audio updates
+                Object.keys(nodes).forEach(key => {
+                    if (nodes[key] && nodes[key].gain) {
+                        nodes[key].gain.setTargetAtTime(0, audioCtx.currentTime, 0.2);
+                    }
+                });
+                clearTimeout(lookaheadTimer);
+            }
+        };
+
+        playBtn.addEventListener('click', togglePlay);
+
+        // Sliders Logic
+        const sliderKeys = ['rain', 'vinyl', 'atmosphere', 'keys', 'beats'];
+        sliderKeys.forEach(key => {
+            const input = document.getElementById(`input-${key}`);
+            const bar = document.getElementById(`bar-${key}`);
+            const valDisplay = document.getElementById(`val-${key}`);
+
+            input.addEventListener('input', (e) => {
+                const val = parseFloat(e.target.value);
+                state.volumes[key] = val;
+
+                // UI Update
+                bar.style.width = `${val * 100}%`;
+                valDisplay.innerText = `${Math.round(val * 100)}%`;
+
+                // Audio Update
+                if (state.isPlaying && nodes[key]) {
+                    nodes[key].gain.setTargetAtTime(val, audioCtx.currentTime, 0.1);
+                }
+            });
+        });
+
+        /**
+         * VISUALIZER (Canvas)
+         */
+        const canvas = document.getElementById('visualizer');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+
+        const initParticles = () => {
+            particles = Array.from({ length: 60 }, () => ({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                r: Math.random() * 2,
+                speed: Math.random() * 0.5 + 0.1
+            }));
+        };
+
+        const resize = () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            initParticles();
+        };
+        window.addEventListener('resize', resize);
+        resize();
+
+        const draw = () => {
+            ctx.fillStyle = 'rgba(15, 23, 42, 0.2)'; // slate-900 with trail
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Pulse background effect
+            if (state.isPlaying) {
+                const time = Date.now() * 0.001;
+                const grad = ctx.createRadialGradient(canvas.width / 2, canvas.height / 2, 0, canvas.width / 2, canvas.height / 2, canvas.width);
+                grad.addColorStop(0, `rgba(99, 102, 241, 0.05)`);
+                grad.addColorStop(1, 'transparent');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+
+            ctx.fillStyle = state.isPlaying ? '#a5b4fc' : '#475569';
+            particles.forEach(p => {
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                ctx.fill();
+                if (state.isPlaying) {
+                    p.y += p.speed;
+                    if (p.y > canvas.height) p.y = 0;
+                }
+            });
+            requestAnimationFrame(draw);
+        };
+        draw();
+
+    </script>
+</body>
+
+</html>

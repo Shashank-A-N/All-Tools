@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shadow Video - Video to GIF</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;500;600;700&display=swap"
+        rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <!-- GIF.js library from CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js"></script>
+
+    <link rel="stylesheet" href="../../styles.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Rajdhani', 'sans-serif'],
+                        orbitron: ['Orbitron', 'sans-serif']
+                    },
+                    colors: {
+                        cyber: {
+                            primary: '#22d3ee', // Cyan
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body
+    class="min-h-screen flex flex-col font-sans overflow-x-hidden bg-slate-900 text-white selection:bg-cyan-500 selection:text-black">
+
+    <!-- 3D Background -->
+    <div id="bg-3d-container"></div>
+
+    <!-- Navigation -->
+    <nav
+        class="sticky top-0 z-50 glass-effect border-b border-white/5 px-4 md:px-6 py-3 flex items-center justify-between backdrop-blur-md">
+        <a href="../index.html" class="flex items-center gap-3 text-slate-300 hover:text-white transition-colors group">
+            <div
+                class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center border border-white/10 group-hover:border-cyan-500/50 transition-all">
+                <i class="fas fa-chevron-left text-xs group-hover:-translate-x-0.5 transition-transform"></i>
+            </div>
+            <span class="font-orbitron font-bold tracking-wider hidden md:block">BACK</span>
+        </a>
+
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded bg-cyan-500/20 flex items-center justify-center text-cyan-400">
+                <i class="fas fa-file-video"></i>
+            </div>
+            <h1 class="text-lg md:text-xl font-orbitron font-bold tracking-widest text-white">SHADOW<span
+                    class="text-cyan-400">GIF</span></h1>
+        </div>
+
+        <div class="w-8"></div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="flex-grow container mx-auto px-4 py-8 relative z-10 flex flex-col items-center gap-6">
+
+        <!-- Upload Area -->
+        <div id="uploadArea"
+            class="w-full max-w-2xl p-12 glass rounded-3xl border-2 border-dashed border-white/10 hover:border-cyan-500/50 transition-all flex flex-col items-center justify-center cursor-pointer group"
+            onclick="document.getElementById('fileInput').click()"
+            ondragover="event.preventDefault(); this.classList.add('border-cyan-500')"
+            ondragleave="this.classList.remove('border-cyan-500')">
+
+            <input type="file" id="fileInput" accept="video/*" class="hidden" onchange="handleFile(this.files[0])">
+
+            <div
+                class="w-20 h-20 rounded-2xl bg-cyan-500/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                <i class="fas fa-cloud-upload-alt text-4xl text-cyan-400"></i>
+            </div>
+
+            <h3 class="text-2xl font-orbitron font-bold text-white mb-2">Upload Video</h3>
+            <p class="text-slate-400 text-sm">Drag & drop or click to browse</p>
+            <p class="text-slate-500 text-xs mt-4">MP4, WEBM, MOV supported</p>
+        </div>
+
+        <!-- Editor Area (Hidden initially) -->
+        <div id="editorArea" class="w-full max-w-5xl hidden flex-col gap-6 animate-fade-in-up">
+
+            <!-- Video Preview -->
+            <div class="w-full bg-black/50 rounded-2xl border border-white/10 overflow-hidden relative">
+                <video id="videoPreview" controls class="w-full max-h-[60vh] mx-auto"></video>
+            </div>
+
+            <!-- Controls Panel -->
+            <div class="glass p-6 rounded-2xl border border-white/5 flex flex-wrap gap-6 items-end">
+
+                <div class="flex-1 min-w-[150px]">
+                    <label
+                        class="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-2">Resolution</label>
+                    <select id="scale"
+                        class="w-full bg-slate-950/50 border border-white/10 rounded-lg px-4 py-3 text-sm text-white focus:outline-none focus:border-cyan-400/50">
+                        <option value="1">Original Size</option>
+                        <option value="0.75">75% Scale</option>
+                        <option value="0.5" selected>50% Scale (Faster)</option>
+                        <option value="0.25">25% Scale</option>
+                    </select>
+                </div>
+
+                <div class="flex-1 min-w-[150px]">
+                    <label class="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-2">Frame
+                        Rate</label>
+                    <select id="fps"
+                        class="w-full bg-slate-950/50 border border-white/10 rounded-lg px-4 py-3 text-sm text-white focus:outline-none focus:border-cyan-400/50">
+                        <option value="10" selected>10 FPS (Standard)</option>
+                        <option value="15">15 FPS (Smoother)</option>
+                        <option value="24">24 FPS (Cinematic)</option>
+                        <option value="5">5 FPS (Low Size)</option>
+                    </select>
+                </div>
+
+                <button onclick="convertToGif()"
+                    class="w-full md:w-auto h-[46px] px-8 bg-cyan-600 hover:bg-cyan-500 text-black font-orbitron font-bold rounded-lg shadow-lg shadow-cyan-500/20 transition-all">
+                    CONVERT TO GIF
+                </button>
+            </div>
+
+            <!-- Progress Bar -->
+            <div id="progressContainer" class="hidden w-full bg-slate-800 rounded-full h-2 overflow-hidden">
+                <div id="progressBar" class="bg-cyan-400 h-full w-0 transition-all duration-300"></div>
+            </div>
+
+            <!-- Result -->
+            <div id="resultArea"
+                class="hidden flex flex-col items-center gap-4 p-6 glass rounded-2xl border border-cyan-500/30 bg-cyan-900/10">
+                <h3 class="text-xl font-orbitron text-cyan-400">Conversion Complete!</h3>
+                <img id="gifOutput" class="max-w-full rounded-lg border border-white/20 shadow-2xl">
+                <a id="downloadLink"
+                    class="px-8 py-3 bg-white text-black font-bold rounded-full hover:scale-105 transition-transform">Download
+                    GIF</a>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Shared Script -->
+    <script type="module" src="../../shared/bg-particles.js"></script>
+
+    <script>
+        const uploadArea = document.getElementById('uploadArea');
+        const editorArea = document.getElementById('editorArea');
+        const video = document.getElementById('videoPreview');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressBar = document.getElementById('progressBar');
+        const resultArea = document.getElementById('resultArea');
+        const gifOutput = document.getElementById('gifOutput');
+        const downloadLink = document.getElementById('downloadLink');
+
+        function handleFile(file) {
+            if (!file) return;
+            const url = URL.createObjectURL(file);
+            video.src = url;
+            uploadArea.classList.add('hidden');
+            editorArea.classList.remove('hidden');
+            editorArea.classList.add('flex');
+        }
+
+        async function convertToGif() {
+            // Rough implementation using basic canvas capture strategy since gif.js workers might struggle with cross-origin in some local envs.
+            // However, let's try assuming gif.js is loaded successfully.
+            // Note: gif.js needs 'gif.worker.js'. Since we are using CDN, we need to point to a blob for worker.
+
+            progressContainer.classList.remove('hidden');
+            resultArea.classList.add('hidden');
+            progressBar.style.width = '0%';
+
+            const scale = parseFloat(document.getElementById('scale').value);
+            const fps = parseInt(document.getElementById('fps').value);
+            const width = video.videoWidth * scale;
+            const height = video.videoHeight * scale;
+
+            // Load worker from Blob to avoid cross-origin worker issues with CDN
+            const workerBlob = await fetch('https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js').then(r => r.blob());
+            const workerUrl = URL.createObjectURL(workerBlob);
+
+            const gif = new GIF({
+                workers: 2,
+                quality: 10,
+                width: width,
+                height: height,
+                workerScript: workerUrl
+            });
+
+            gif.on('progress', function (p) {
+                progressBar.style.width = Math.round(p * 100) + '%';
+            });
+
+            gif.on('finished', function (blob) {
+                progressBar.style.width = '100%';
+                setTimeout(() => progressContainer.classList.add('hidden'), 500);
+
+                const url = URL.createObjectURL(blob);
+                gifOutput.src = url;
+                downloadLink.href = url;
+                downloadLink.download = 'converted.gif';
+                resultArea.classList.remove('hidden');
+            });
+
+            // Capture frames
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+            canvas.width = width;
+            canvas.height = height;
+
+            // Temporarily mute and play video to capture
+            const currentTime = video.currentTime; // store current status
+            const wasPaused = video.paused;
+
+            video.pause();
+            video.currentTime = 0;
+
+            const duration = video.duration;
+            const interval = 1 / fps;
+            let currentTimePointer = 0;
+
+            // Capture loop logic - using seek instead of play for accuracy
+            const captureFrame = async () => {
+                if (currentTimePointer > duration) {
+                    gif.render();
+                    // Restore state
+                    video.currentTime = currentTime;
+                    if (!wasPaused) video.play();
+                    return;
+                }
+
+                // Update progress of capturing (not rendering yet)
+                const percent = (currentTimePointer / duration) * 50; // First 50% is capturing
+                progressBar.style.width = percent + '%';
+
+                video.currentTime = currentTimePointer;
+
+                // Wait for seek to complete
+                await new Promise(r => {
+                    const seekHandler = () => {
+                        video.removeEventListener('seeked', seekHandler);
+                        r();
+                    };
+                    video.addEventListener('seeked', seekHandler);
+                });
+
+                ctx.drawImage(video, 0, 0, width, height);
+                gif.addFrame(ctx, { copy: true, delay: interval * 1000 });
+
+                currentTimePointer += interval;
+                captureFrame();
+            };
+
+            captureFrame();
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shadow Audio - Advanced Sound Suite</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;500;700&display=swap"
+        rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link rel="stylesheet" href="../styles.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        cyber: {
+                            primary: '#00ff41',
+                            secondary: '#008f11',
+                            dark: '#0d0208',
+                            light: '#e0e0e0',
+                            accent: '#ff003c',
+                            muted: '#4a4a4a',
+                            glass: 'rgba(255, 255, 255, 0.05)',
+                        }
+                    },
+                    fontFamily: {
+                        mono: ['Courier New', 'monospace'],
+                        sans: ['Rajdhani', 'sans-serif'],
+                        orbitron: ['Orbitron', 'sans-serif']
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body
+    class="min-h-screen flex flex-col font-sans overflow-x-hidden selection:bg-purple-500 selection:text-white bg-slate-900 text-white">
+
+    <!-- 3D Background Container -->
+    <div id="bg-3d-container"></div>
+
+    <!-- Navigation -->
+    <nav
+        class="sticky top-0 z-50 glass-effect border-b border-white/5 px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4 md:gap-0 backdrop-blur-md">
+        <div class="flex items-center gap-3">
+            <!-- Rebranded Logo -->
+            <div
+                class="relative w-10 h-10 flex items-center justify-center bg-purple-600/20 rounded-lg border border-purple-500/30">
+                <i class="fas fa-wave-square text-purple-400 text-xl"></i>
+            </div>
+            <h1 class="text-2xl font-orbitron font-bold tracking-widest text-white">SHADOW<span
+                    class="text-purple-500">AUDIO</span></h1>
+        </div>
+
+        <div class="flex flex-wrap justify-center gap-4 md:gap-6 w-full md:w-auto">
+            <a href="../index.html" class="nav-link text-slate-300 hover:text-white transition-colors">
+                <i class="fas fa-home"></i> Home
+            </a>
+            <div class="hidden md:block h-6 w-px bg-white/10 mx-2"></div>
+            <a href="../text tools/index.html"
+                class="nav-link text-slate-400 hover:text-purple-400 transition-colors">Text</a>
+            <a href="../video tools/index.html"
+                class="nav-link text-slate-400 hover:text-purple-400 transition-colors">Video</a>
+            <a href="../image tools/index.html"
+                class="nav-link text-slate-400 hover:text-purple-400 transition-colors">Image</a>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="relative pt-20 pb-12 overflow-hidden text-center z-10">
+        <div class="hero-glow"></div>
+        <div class="container mx-auto px-4 relative z-10">
+            <h1 class="text-5xl md:text-7xl font-extrabold tracking-tight text-white mb-6 font-orbitron">
+                Sonic <span class="hero-text-gradient">Manipulation</span>
+            </h1>
+            <p class="text-xl text-slate-400 mb-10 max-w-2xl mx-auto leading-relaxed">
+                Advanced tone generation, recording, and processing. <span class="text-purple-400 font-bold">100%
+                    Client-Side.</span>
+            </p>
+        </div>
+    </section>
+
+    <!-- Tools Grid -->
+    <main class="flex-grow container mx-auto px-4 relative z-10 pb-20">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+            <!-- GENERATORS -->
+            <a href="./text-to-speech/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 group-hover:scale-110 transition-transform duration-300 shrink-0">
+                    <i class="fas fa-comment-dots text-2xl"></i>
+                </div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-emerald-400 transition-colors">Text to
+                        Speech</h4>
+                    <p class="text-sm text-slate-400">Synthesize speech from text.</p>
+                </div>
+            </a>
+            <a href="./binaural-beats/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-cyan-500/10 flex items-center justify-center text-cyan-400 group-hover:scale-110 transition-transform duration-300 shrink-0">
+                    <i class="fas fa-brain text-2xl"></i>
+                </div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-cyan-400 transition-colors">Binaural
+                        Beats</h4>
+                    <p class="text-sm text-slate-400">Generate brainwave entrainment tones.</p>
+                </div>
+            </a>
+            <a href="./dtmf-generator/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-gray-500/10 flex items-center justify-center text-gray-400 group-hover:scale-110 transition-transform duration-300 shrink-0">
+                    <i class="fas fa-phone text-2xl"></i>
+                </div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-gray-400 transition-colors">DTMF Tones
+                    </h4>
+                    <p class="text-sm text-slate-400">Generate keypad dial tones.</p>
+                </div>
+            </a>
+            <a href="./chord-generator/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-yellow-500/10 flex items-center justify-center text-yellow-400 group-hover:scale-110 transition-transform duration-300 shrink-0">
+                    <i class="fas fa-music text-2xl"></i>
+                </div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-yellow-400 transition-colors">Chord
+                        Gen</h4>
+                    <p class="text-sm text-slate-400">Create musical chord progressions.</p>
+                </div>
+            </a>
+            <a href="./rhythm-pattern-generator/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-400 group-hover:scale-110 transition-transform duration-300 shrink-0">
+                    <i class="fas fa-drum text-2xl"></i>
+                </div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-orange-400 transition-colors">Rhythm
+                        Gen</h4>
+                    <p class="text-sm text-slate-400">Design drum patterns and beats.</p>
+                </div>
+            </a>
+
+            <!-- EFFECTS -->
+            <a href="./pitch-shifter/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 group-hover:scale-110 transition-transform duration-300 shrink-0">
+                    <i class="fas fa-arrow-up text-2xl"></i>
+                </div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-indigo-400 transition-colors">Pitch
+                        Shifter</h4>
+                    <p class="text-sm text-slate-400">Change pitch without speed.</p>
+                </div>
+            </a>
+            <a href="./speed-changer/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400 group-hover:scale-110 transition-transform duration-300 shrink-0">
+                    <i class="fas fa-tachometer-alt text-2xl"></i>
+                </div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-blue-400 transition-colors">Speed
+                        Changer</h4>
+                    <p class="text-sm text-slate-400">Adjust playback speed.</p>
+                </div>
+            </a>
+            <a href="./volume-booster/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-red-500/10 flex items-center justify-center text-red-400 group-hover:scale-110 transition-transform duration-300 shrink-0">
+                    <i class="fas fa-volume-up text-2xl"></i>
+                </div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-red-400 transition-colors">Volume
+                        Booster</h4>
+                    <p class="text-sm text-slate-400">Amplify audio levels safely.</p>
+                </div>
+            </a>
+            <a href="./audio-normalizer/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-green-500/10 flex items-center justify-center text-green-400 group-hover:scale-110 transition-transform duration-300 shrink-0">
+                    <i class="fas fa-compress-arrows-alt text-2xl"></i>
+                </div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-green-400 transition-colors">
+                        Normalizer</h4>
+                    <p class="text-sm text-slate-400">Optimize audio peaks to 0dB.</p>
+                </div>
+            </a>
+            <a href="./audio-reverb/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-teal-500/10 flex items-center justify-center text-teal-400 group-hover:scale-110 transition-transform duration-300 shrink-0">
+                    <i class="fas fa-dungeon text-2xl"></i>
+                </div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-teal-400 transition-colors">Reverb
+                        Studio</h4>
+                    <p class="text-sm text-slate-400">Add spatial ambience.</p>
+                </div>
+            </a>
+            <a href="./audio-equalizer/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-pink-500/10 flex items-center justify-center text-pink-400 group-hover:scale-110 transition-transform duration-300 shrink-0">
+                    <i class="fas fa-sliders-h text-2xl"></i>
+                </div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-pink-400 transition-colors">10-Band EQ
+                    </h4>
+                    <p class="text-sm text-slate-400">Fine-tune frequency bands.</p>
+                </div>
+            </a>
+            <a href="./bass-booster/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-400 group-hover:scale-110 transition-transform duration-300 shrink-0">
+                    <i class="fas fa-drum-steelpan text-2xl"></i>
+                </div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-purple-400 transition-colors">Bass
+                        Booster</h4>
+                    <p class="text-sm text-slate-400">Enhance low-end frequencies.</p>
+                </div>
+            </a>
+            <a href="./treble-booster/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-cyan-500/10 flex items-center justify-center text-cyan-400 group-hover:scale-110 transition-transform duration-300 shrink-0">
+                    <i class="fas fa-glass-cheers text-2xl"></i>
+                </div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-cyan-400 transition-colors">Treble
+                        Booster</h4>
+                    <p class="text-sm text-slate-400">Enhance high-end clarity.</p>
+                </div>
+            </a>
+            <a href="./audio-distortion/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-400 group-hover:scale-110 transition-transform duration-300 shrink-0">
+                    <i class="fas fa-bolt text-2xl"></i>
+                </div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-orange-400 transition-colors">
+                        Distortion FX</h4>
+                    <p class="text-sm text-slate-400">Add grit and saturation.</p>
+                </div>
+            </a>
+            <a href="./audio-chorus/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 group-hover:scale-110 transition-transform duration-300 shrink-0">
+                    <i class="fas fa-layer-group text-2xl"></i>
+                </div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-indigo-400 transition-colors">Chorus
+                        Effect</h4>
+                    <p class="text-sm text-slate-400">Rich, widening modulation.</p>
+                </div>
+            </a>
+            <a href="./audio-flanger/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400 group-hover:scale-110 transition-transform duration-300 shrink-0">
+                    <i class="fas fa-wind text-2xl"></i>
+                </div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-blue-400 transition-colors">Flanger
+                        Effect</h4>
+                    <p class="text-sm text-slate-400">Sweeping jet-plane sounds.</p>
+                </div>
+            </a>
+            <a href="./audio-phaser/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-400 group-hover:scale-110 transition-transform duration-300 shrink-0">
+                    <i class="fas fa-ghost text-2xl"></i>
+                </div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-purple-400 transition-colors">Phaser
+                        Effect</h4>
+                    <p class="text-sm text-slate-400">Swirling phase shifts.</p>
+                </div>
+            </a>
+            <a href="./audio-panner/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-green-500/10 flex items-center justify-center text-green-400 group-hover:scale-110 transition-transform duration-300 shrink-0">
+                    <i class="fas fa-headphones text-2xl"></i>
+                </div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-green-400 transition-colors">Stereo
+                        Panner</h4>
+                    <p class="text-sm text-slate-400">Balance L/R channels.</p>
+                </div>
+            </a>
+            <a href="./fade-in-out/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-yellow-500/10 flex items-center justify-center text-yellow-400 group-hover:scale-110 transition-transform duration-300 shrink-0">
+                    <i class="fas fa-sort-amount-up-alt text-2xl"></i>
+                </div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-yellow-400 transition-colors">Fade FX
+                    </h4>
+                    <p class="text-sm text-slate-400">Smooth fade ins/outs.</p>
+                </div>
+            </a>
+            <a href="./remove-silence/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-gray-500/10 flex items-center justify-center text-gray-400 group-hover:scale-110 transition-transform duration-300 shrink-0">
+                    <i class="fas fa-cut text-2xl"></i>
+                </div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-gray-400 transition-colors">Silence
+                        Remover</h4>
+                    <p class="text-sm text-slate-400">Auto-trim silent sections.</p>
+                </div>
+            </a>
+
+            <!-- UTILITIES -->
+            <a href="./mono-to-stereo/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-teal-500/10 flex items-center justify-center text-teal-400 group-hover:scale-110 transition-transform duration-300 shrink-0">
+                    <i class="fas fa-expand-arrows-alt text-2xl"></i>
+                </div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-teal-400 transition-colors">Mono to
+                        Stereo</h4>
+                    <p class="text-sm text-slate-400">Convert mono to dual-channel.</p>
+                </div>
+            </a>
+            <a href="./stereo-to-mono/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-400 group-hover:scale-110 transition-transform duration-300 shrink-0">
+                    <i class="fas fa-compress-alt text-2xl"></i>
+                </div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-orange-400 transition-colors">Stereo
+                        to Mono</h4>
+                    <p class="text-sm text-slate-400">Downmix to single channel.</p>
+                </div>
+            </a>
+            <a href="./audio-reverse/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-pink-500/10 flex items-center justify-center text-pink-400 group-hover:scale-110 transition-transform duration-300 shrink-0">
+                    <i class="fas fa-history text-2xl"></i>
+                </div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-pink-400 transition-colors">Reverse
+                        Audio</h4>
+                    <p class="text-sm text-slate-400">Play tracks backwards.</p>
+                </div>
+            </a>
+            <a href="./audio-splitter/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-cyan-500/10 flex items-center justify-center text-cyan-400 group-hover:scale-110 transition-transform duration-300 shrink-0">
+                    <i class="fas fa-columns text-2xl"></i>
+                </div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-cyan-400 transition-colors">Splitter
+                    </h4>
+                    <p class="text-sm text-slate-400">Segment long files.</p>
+                </div>
+            </a>
+            <a href="./audio-joiner/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400 group-hover:scale-110 transition-transform duration-300 shrink-0">
+                    <i class="fas fa-link text-2xl"></i>
+                </div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-blue-400 transition-colors">Joiner
+                    </h4>
+                    <p class="text-sm text-slate-400">Merge multiple tracks.</p>
+                </div>
+            </a>
+            <a href="./audio-trimmer/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-400 group-hover:scale-110 transition-transform duration-300 shrink-0">
+                    <i class="fas fa-cut text-2xl"></i>
+                </div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-purple-400 transition-colors">Trimmer
+                    </h4>
+                    <p class="text-sm text-slate-400">Cut and save segments.</p>
+                </div>
+            </a>
+
+            <!-- ANALYSIS -->
+            <a href="./spectrogram-viewer/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-red-500/10 flex items-center justify-center text-red-400 group-hover:scale-110 transition-transform duration-300 shrink-0">
+                    <i class="fas fa-wave-square text-2xl"></i>
+                </div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-red-400 transition-colors">Spectrogram
+                    </h4>
+                    <p class="text-sm text-slate-400">Visualize frequency/time.</p>
+                </div>
+            </a>
+            <a href="./oscilloscope-viewer/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-green-500/10 flex items-center justify-center text-green-400 group-hover:scale-110 transition-transform duration-300 shrink-0">
+                    <i class="fas fa-heart-rate text-2xl"></i>
+                </div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-green-400 transition-colors">
+                        Oscilloscope</h4>
+                    <p class="text-sm text-slate-400">View waveform shape.</p>
+                </div>
+            </a>
+            <a href="./decibel-meter/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-yellow-500/10 flex items-center justify-center text-yellow-400 group-hover:scale-110 transition-transform duration-300 shrink-0">
+                    <i class="fas fa-microphone-lines text-2xl"></i>
+                </div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-yellow-400 transition-colors">Decibel
+                        Meter</h4>
+                    <p class="text-sm text-slate-400">Measure noise levels.</p>
+                </div>
+            </a>
+            <a href="./bpm-finder/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 group-hover:scale-110 transition-transform duration-300 shrink-0">
+                    <i class="fas fa-heartbeat text-2xl"></i>
+                </div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-indigo-400 transition-colors">BPM
+                        Finder</h4>
+                    <p class="text-sm text-slate-400">Detect tempo.</p>
+                </div>
+            </a>
+            <a href="./key-detector/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-pink-500/10 flex items-center justify-center text-pink-400 group-hover:scale-110 transition-transform duration-300 shrink-0">
+                    <i class="fas fa-key text-2xl"></i>
+                </div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-pink-400 transition-colors">Key
+                        Detector</h4>
+                    <p class="text-sm text-slate-400">Find musical key.</p>
+                </div>
+            </a>
+            <a href="./stereo-phase-meter/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-gray-500/10 flex items-center justify-center text-gray-400 group-hover:scale-110 transition-transform duration-300 shrink-0">
+                    <i class="fas fa-circle-notch text-2xl"></i>
+                </div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-gray-400 transition-colors">Goniometer
+                    </h4>
+                    <p class="text-sm text-slate-400">Check stereo phase.</p>
+                </div>
+            </a>
+
+            <!-- MIX & EDIT -->
+            <a href="./audio-mixer/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400 group-hover:scale-110 transition-transform duration-300 shrink-0">
+                    <i class="fas fa-sliders-h text-2xl"></i>
+                </div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-blue-400 transition-colors">Audio
+                        Mixer</h4>
+                    <p class="text-sm text-slate-400">4-Channel Mixer.</p>
+                </div>
+            </a>
+            <a href="./voice-changer/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-400 group-hover:scale-110 transition-transform duration-300 shrink-0">
+                    <i class="fas fa-mask text-2xl"></i>
+                </div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-purple-400 transition-colors">Voice
+                        Changer</h4>
+                    <p class="text-sm text-slate-400">Apply vocal effects.</p>
+                </div>
+            </a>
+
+        </div>
+    </main>
+
+    <!-- Shared Background Script -->
+    <script type="module" src="../shared/bg-particles.js"></script>
+</body>
+
+</html>

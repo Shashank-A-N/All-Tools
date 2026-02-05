@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shadow Video - Resizer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;500;600;700&display=swap"
+        rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link rel="stylesheet" href="../../styles.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Rajdhani', 'sans-serif'],
+                        orbitron: ['Orbitron', 'sans-serif']
+                    },
+                    colors: {
+                        cyber: {
+                            primary: '#3b82f6', // Blue
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body
+    class="min-h-screen flex flex-col font-sans overflow-x-hidden bg-slate-900 text-white selection:bg-blue-500 selection:text-white">
+
+    <!-- 3D Background -->
+    <div id="bg-3d-container"></div>
+
+    <!-- Navigation -->
+    <nav
+        class="sticky top-0 z-50 glass-effect border-b border-white/5 px-4 md:px-6 py-3 flex items-center justify-between backdrop-blur-md">
+        <a href="../index.html" class="flex items-center gap-3 text-slate-300 hover:text-white transition-colors group">
+            <div
+                class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center border border-white/10 group-hover:border-blue-500/50 transition-all">
+                <i class="fas fa-chevron-left text-xs group-hover:-translate-x-0.5 transition-transform"></i>
+            </div>
+            <span class="font-orbitron font-bold tracking-wider hidden md:block">BACK</span>
+        </a>
+
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded bg-blue-500/20 flex items-center justify-center text-blue-500">
+                <i class="fas fa-expand-arrows-alt"></i>
+            </div>
+            <h1 class="text-lg md:text-xl font-orbitron font-bold tracking-widest text-white">SHADOW<span
+                    class="text-blue-500">RESIZE</span></h1>
+        </div>
+
+        <div class="w-8"></div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="flex-grow container mx-auto px-4 py-8 relative z-10 flex flex-col items-center gap-6">
+
+        <!-- Upload -->
+        <div id="uploadArea"
+            class="w-full max-w-2xl p-12 glass rounded-3xl border-2 border-dashed border-white/10 hover:border-blue-500/50 transition-all flex flex-col items-center justify-center cursor-pointer group"
+            onclick="document.getElementById('fileInput').click()"
+            ondragover="event.preventDefault(); this.classList.add('border-blue-500')"
+            ondragleave="this.classList.remove('border-blue-500')">
+            <input type="file" id="fileInput" accept="video/*" class="hidden" onchange="handleFile(this.files[0])">
+            <div
+                class="w-20 h-20 rounded-2xl bg-blue-500/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                <i class="fas fa-compress-alt text-4xl text-blue-400"></i>
+            </div>
+            <h3 class="text-2xl font-orbitron font-bold text-white mb-2">Upload Video</h3>
+            <p class="text-slate-400 text-sm">Drag & drop or click to browse</p>
+        </div>
+
+        <!-- Editor -->
+        <div id="editorArea" class="w-full max-w-4xl hidden flex-col gap-6 animate-fade-in-up">
+
+            <video id="videoPreview" controls
+                class="w-full max-h-[40vh] bg-black/50 rounded-lg border border-white/10 mx-auto mb-4"></video>
+
+            <div class="glass p-6 rounded-2xl border border-white/5 flex flex-col items-center gap-6">
+
+                <div class="grid grid-cols-2 gap-6 w-full max-w-lg">
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold text-slate-400 uppercase tracking-widest">Width (px)</label>
+                        <input type="number" id="width"
+                            class="w-full bg-slate-950/50 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-blue-500 transition-colors">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold text-slate-400 uppercase tracking-widest">Height (px)</label>
+                        <input type="number" id="height"
+                            class="w-full bg-slate-950/50 border border-white/10 rounded-lg px-4 py-3 text-white focus:border-blue-500 transition-colors">
+                    </div>
+                </div>
+
+                <div class="flex gap-2">
+                    <button onclick="preset(1920, 1080)"
+                        class="px-3 py-1 bg-white/5 hover:bg-white/10 rounded text-xs">1080p</button>
+                    <button onclick="preset(1280, 720)"
+                        class="px-3 py-1 bg-white/5 hover:bg-white/10 rounded text-xs">720p</button>
+                    <button onclick="preset(854, 480)"
+                        class="px-3 py-1 bg-white/5 hover:bg-white/10 rounded text-xs">480p</button>
+                    <button onclick="preset(480, 720)"
+                        class="px-3 py-1 bg-white/5 hover:bg-white/10 rounded text-xs">Social (9:16)</button>
+                </div>
+
+                <button onclick="resizeVideo()" id="resizeBtn"
+                    class="px-10 py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold font-orbitron tracking-wider rounded-xl shadow-lg shadow-blue-900/40 transition-transform hover:-translate-y-1">
+                    RESIZE & DOWNLOAD
+                </button>
+            </div>
+
+        </div>
+
+    </main>
+
+    <script type="module" src="../../shared/bg-particles.js"></script>
+    <script>
+        const uploadArea = document.getElementById('uploadArea');
+        const editorArea = document.getElementById('editorArea');
+        const video = document.getElementById('videoPreview');
+        const widthInput = document.getElementById('width');
+        const heightInput = document.getElementById('height');
+        const resizeBtn = document.getElementById('resizeBtn');
+
+        function handleFile(file) {
+            if (!file) return;
+            const url = URL.createObjectURL(file);
+            video.src = url;
+            uploadArea.classList.add('hidden');
+            editorArea.classList.remove('hidden');
+            editorArea.classList.add('flex');
+
+            video.onloadedmetadata = () => {
+                widthInput.value = video.videoWidth;
+                heightInput.value = video.videoHeight;
+            };
+        }
+
+        function preset(w, h) {
+            widthInput.value = w;
+            heightInput.value = h;
+        }
+
+        async function resizeVideo() {
+            resizeBtn.disabled = true;
+            resizeBtn.textContent = "RESIZING...";
+
+            const w = parseInt(widthInput.value);
+            const h = parseInt(heightInput.value);
+
+            const canvas = document.createElement('canvas');
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext('2d');
+
+            const stream = canvas.captureStream(30);
+            const recorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp9' });
+            const chunks = [];
+
+            recorder.ondataavailable = e => chunks.push(e.data);
+            recorder.onstop = () => {
+                const blob = new Blob(chunks, { type: 'video/webm' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `resized_${w}x${h}.webm`;
+                a.click();
+                resizeBtn.disabled = false;
+                resizeBtn.textContent = "RESIZE & DOWNLOAD";
+            };
+
+            recorder.start();
+            video.currentTime = 0;
+            video.play();
+
+            const draw = () => {
+                if (video.paused || video.ended) {
+                    if (video.ended) recorder.stop();
+                    return;
+                }
+                ctx.drawImage(video, 0, 0, w, h);
+                requestAnimationFrame(draw);
+            };
+            draw();
+            video.onended = () => { };
+        }
+    </script>
+</body>
+
+</html>

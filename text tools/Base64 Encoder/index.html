@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shadow Text - Base64 Converter</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;500;600;700&display=swap"
+        rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link rel="stylesheet" href="../../styles.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        mono: ['Courier New', 'monospace'],
+                        sans: ['Rajdhani', 'sans-serif'],
+                        orbitron: ['Orbitron', 'sans-serif']
+                    },
+                    colors: {
+                        cyber: {
+                            accent: '#8b5cf6', // Violet-500
+                            hover: '#7c3aed', // Violet-600
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body
+    class="min-h-screen flex flex-col font-sans overflow-x-hidden bg-slate-900 text-white selection:bg-purple-500 selection:text-white">
+
+    <!-- 3D Background -->
+    <div id="bg-3d-container"></div>
+
+    <!-- Navigation -->
+    <nav
+        class="sticky top-0 z-50 glass-effect border-b border-white/5 px-4 md:px-6 py-3 flex items-center justify-between backdrop-blur-md">
+        <a href="../index.html" class="flex items-center gap-3 text-slate-300 hover:text-white transition-colors group">
+            <div
+                class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center border border-white/10 group-hover:border-purple-500/50 transition-all">
+                <i class="fas fa-chevron-left text-xs group-hover:-translate-x-0.5 transition-transform"></i>
+            </div>
+            <span class="font-orbitron font-bold tracking-wider hidden md:block">BACK</span>
+        </a>
+
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded bg-blue-500/20 flex items-center justify-center text-blue-400">
+                <i class="fas fa-code"></i>
+            </div>
+            <h1 class="text-lg md:text-xl font-orbitron font-bold tracking-widest text-white">SHADOW<span
+                    class="text-blue-500">BASE64</span></h1>
+        </div>
+
+        <div class="w-8"></div>
+    </nav>
+
+    <!-- Main Content -->
+    <main
+        class="flex-grow container mx-auto px-4 py-8 relative z-10 flex flex-col items-center justify-center h-[calc(100vh-80px)] min-h-[600px]">
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-6xl h-full">
+
+            <!-- Left Panel: Plain Text -->
+            <div class="group relative flex flex-col h-full">
+                <!-- Header -->
+                <div
+                    class="glass-header px-6 py-3 border-b border-white/5 bg-slate-900/40 rounded-t-2xl flex justify-between items-center">
+                    <span class="text-xs font-bold text-blue-400 tracking-widest uppercase"><i
+                            class="fas fa-align-left mr-2"></i>Plain Text</span>
+                    <button onclick="clearAll()"
+                        class="text-[10px] text-slate-500 hover:text-white transition-colors uppercase font-bold tracking-wider">Clear</button>
+                </div>
+
+                <!-- Editor -->
+                <div class="flex-grow glass border border-white/5 rounded-b-2xl shadow-xl overflow-hidden relative">
+                    <textarea id="plainText" oninput="encode()"
+                        class="w-full h-full bg-transparent p-6 text-sm md:text-base font-mono text-slate-300 placeholder-slate-600 focus:outline-none resize-none custom-scrollbar"
+                        placeholder="Type standard text here..."></textarea>
+
+                    <!-- Mobile Action -->
+                    <div class="absolute bottom-4 right-4 md:hidden">
+                        <i class="fas fa-arrow-down text-blue-500 animate-bounce"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel: Base64 -->
+            <div class="group relative flex flex-col h-full">
+                <!-- Header -->
+                <div
+                    class="glass-header px-6 py-3 border-b border-white/5 bg-slate-900/40 rounded-t-2xl flex justify-between items-center">
+                    <span class="text-xs font-bold text-purple-400 tracking-widest uppercase"><i
+                            class="fas fa-code mr-2"></i>Base64</span>
+                    <button onclick="copy('base64Text')"
+                        class="text-[10px] text-purple-400 hover:text-white transition-colors uppercase font-bold tracking-wider"><i
+                            class="fas fa-copy mr-1"></i>Copy</button>
+                </div>
+
+                <!-- Editor -->
+                <div class="flex-grow glass border border-white/5 rounded-b-2xl shadow-xl overflow-hidden relative">
+                    <textarea id="base64Text" oninput="decode()"
+                        class="w-full h-full bg-transparent p-6 text-sm md:text-base font-mono text-purple-300 placeholder-purple-900/50 focus:outline-none resize-none custom-scrollbar"
+                        placeholder="Base64 string will appear here..."></textarea>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Shared Script -->
+    <script type="module" src="../../shared/bg-particles.js"></script>
+
+    <script>
+        const plainEl = document.getElementById('plainText');
+        const base64El = document.getElementById('base64Text');
+
+        function encode() {
+            const input = plainEl.value;
+            try {
+                // Unicode compatible encoding
+                const b64 = btoa(unescape(encodeURIComponent(input)));
+                base64El.value = b64;
+                base64El.classList.remove('text-red-400');
+                base64El.classList.add('text-purple-300');
+            } catch (e) {
+                // Silent fail for incomplete formatting
+            }
+        }
+
+        function decode() {
+            const input = base64El.value;
+            if (!input) {
+                plainEl.value = '';
+                return;
+            }
+            try {
+                const text = decodeURIComponent(escape(atob(input)));
+                plainEl.value = text;
+                base64El.classList.remove('text-red-400');
+                base64El.classList.add('text-purple-300');
+            } catch (e) {
+                // Visual error indication
+                base64El.classList.add('text-red-400');
+                base64El.classList.remove('text-purple-300');
+            }
+        }
+
+        function clearAll() {
+            plainEl.value = '';
+            base64El.value = '';
+        }
+
+        function copy(id) {
+            const el = document.getElementById(id);
+            el.select();
+            document.execCommand('copy');
+
+            // Notification logic could go here
+            const btn = document.querySelector(`button[onclick="copy('${id}')"]`);
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-check mr-1"></i>COPIED';
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+            }, 1500);
+        }
+    </script>
+</body>
+
+</html>

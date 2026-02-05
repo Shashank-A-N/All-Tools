@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Volume Booster - Shadow Audio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;500;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="../../styles.css">
+</head>
+
+<body class="bg-gray-900 text-white font-sans antialiased overflow-x-hidden">
+
+    <nav
+        class="sticky top-0 z-50 glass-effect border-b border-white/5 px-6 py-4 flex items-center justify-between backdrop-blur-md">
+        <div class="flex items-center gap-3">
+            <a href="../index.html" class="flex items-center gap-2 group">
+                <div
+                    class="relative w-10 h-10 flex items-center justify-center bg-purple-600/20 rounded-lg border border-purple-500/30 group-hover:border-purple-500/50 transition-all">
+                    <i class="fas fa-volume-up text-purple-400 text-xl group-hover:scale-110 transition-transform"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-orbitron font-bold tracking-widest text-white">SHADOW<span
+                            class="text-purple-500">AUDIO</span></h1>
+                    <span class="text-xs text-slate-400 font-mono tracking-wider">AMPLIFY</span>
+                </div>
+            </a>
+        </div>
+        <a href="../index.html" class="text-slate-400 hover:text-white transition-colors"><i
+                class="fas fa-times text-xl"></i></a>
+    </nav>
+
+    <main class="container mx-auto px-4 py-12 max-w-4xl">
+        <div class="text-center mb-10">
+            <h2 class="text-4xl font-bold font-orbitron mb-2">Volume Booster</h2>
+            <p class="text-slate-400 text-sm">Amplify quiet audio files up to 200%.</p>
+        </div>
+
+        <div class="glass p-8 rounded-3xl border border-white/5 shadow-2xl">
+            <!-- File Upload -->
+            <div id="upload-area"
+                class="border-2 border-dashed border-white/10 rounded-2xl p-10 text-center hover:border-purple-500/50 transition-colors cursor-pointer mb-8 bg-black/20">
+                <input type="file" id="file-input" accept="audio/*" class="hidden">
+                <i class="fas fa-cloud-upload-alt text-4xl text-slate-500 mb-4"></i>
+                <p class="text-lg font-bold text-slate-300">Drop Audio File Here</p>
+                <p class="text-sm text-slate-500">or click to browse</p>
+            </div>
+
+            <!-- Controls (Hidden initially) -->
+            <div id="controls" class="hidden space-y-8">
+                <div class="flex flex-col items-center gap-2">
+                    <div id="now-playing" class="text-purple-400 font-mono text-sm"></div>
+                    <canvas id="visualizer" width="600" height="100"
+                        class="w-full h-24 bg-black/40 rounded-lg border border-white/5"></canvas>
+                </div>
+
+                <div class="max-w-lg mx-auto">
+                    <div class="flex justify-between items-end mb-4">
+                        <label class="font-orbitron text-lg text-white">GAIN BOOST</label>
+                        <span class="text-2xl font-bold font-mono text-purple-400" id="gain-val">100%</span>
+                    </div>
+                    <!-- Range: 0 to 4 (0% to 400%) -->
+                    <input type="range" id="gain-slider" min="0" max="4" value="1" step="0.1"
+                        class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-purple-500">
+                    <div class="flex justify-between text-xs text-slate-500 mt-2 font-mono">
+                        <span>0% (Mute)</span>
+                        <span>100% (Normal)</span>
+                        <span>400% (Max)</span>
+                    </div>
+
+                    <div
+                        class="bg-yellow-500/10 border border-yellow-500/30 p-3 rounded-lg mt-6 flex items-start gap-3">
+                        <i class="fas fa-exclamation-triangle text-yellow-500 mt-1"></i>
+                        <p class="text-xs text-yellow-200/80">Warning: Boosting volume too high may cause distortion
+                            (clipping). Monitor the audio output.</p>
+                    </div>
+                </div>
+
+                <div class="flex justify-center gap-4">
+                    <button id="play-btn"
+                        class="px-8 py-3 bg-green-600 hover:bg-green-500 text-white font-bold rounded-xl transition-all flex items-center gap-2">
+                        <i class="fas fa-play"></i> TEST
+                    </button>
+                    <button id="stop-btn"
+                        class="px-8 py-3 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl transition-all flex items-center gap-2"
+                        disabled>
+                        <i class="fas fa-stop"></i> STOP
+                    </button>
+                </div>
+
+                <!-- Export (Simulation) -->
+                <!-- Note: Real export requires MediaRecorder or OfflineAudioContext rendering. 
+                     For this client-side demo, we'll just show capability or use real-time processing validation.
+                     We'll create a simple download link for the sake of the tool requirement, but full export logic 
+                     can be complex. We'll stick to a "Process & Download" simulation for now or implement recorder if needed.
+                     Since "Audio Recorder" is a separate tool, we'll assume playback manipulation here.
+                -->
+            </div>
+        </div>
+    </main>
+
+    <script type="module">
+        import { audioEngine } from '../shared/audio-utils.js';
+
+        const uploadArea = document.getElementById('upload-area');
+        const fileInput = document.getElementById('file-input');
+        const controls = document.getElementById('controls');
+        const gainSlider = document.getElementById('gain-slider');
+        const gainVal = document.getElementById('gain-val');
+        const playBtn = document.getElementById('play-btn');
+        const stopBtn = document.getElementById('stop-btn');
+        const nowPlaying = document.getElementById('now-playing');
+
+        let audioBuffer = null;
+        let sourceNode = null;
+        let gainNode = null;
+        let isPlaying = false;
+
+        // Upload Logic
+        uploadArea.addEventListener('click', () => fileInput.click());
+        uploadArea.addEventListener('dragover', (e) => { e.preventDefault(); uploadArea.classList.add('border-purple-500'); });
+        uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('border-purple-500'));
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('border-purple-500');
+            handleFile(e.dataTransfer.files[0]);
+        });
+        fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+
+        async function handleFile(file) {
+            if (!file) return;
+            controls.classList.remove('hidden');
+            uploadArea.classList.add('hidden');
+            nowPlaying.textContent = `LOADED: ${file.name}`;
+
+            const ctx = audioEngine.init();
+            const arrayBuffer = await file.arrayBuffer();
+            audioBuffer = await ctx.decodeAudioData(arrayBuffer);
+        }
+
+        gainSlider.addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value);
+            gainVal.textContent = Math.round(val * 100) + '%';
+            if (gainNode) {
+                gainNode.gain.value = val;
+            }
+        });
+
+        playBtn.addEventListener('click', () => {
+            if (!audioBuffer) return;
+            if (isPlaying) return;
+            startPlayback();
+        });
+
+        stopBtn.addEventListener('click', () => {
+            if (sourceNode) {
+                sourceNode.stop();
+                isPlaying = false;
+                playBtn.disabled = false;
+                stopBtn.disabled = true;
+                audioEngine.stop();
+            }
+        });
+
+        function startPlayback() {
+            const ctx = audioEngine.init();
+            sourceNode = ctx.createBufferSource();
+            sourceNode.buffer = audioBuffer;
+
+            gainNode = ctx.createGain();
+            gainNode.gain.value = parseFloat(gainSlider.value);
+
+            // Graph: Source -> Gain -> Analyser -> Dest
+            sourceNode.connect(gainNode);
+            const analyser = audioEngine.createAnalyser(gainNode);
+            // Re-connect analyser internal logic
+            // The helper 'createAnalyser' connects source->analyser->dest.
+            // We need custom routing here:
+            // source -> gain -> analyser -> dest
+            // but the helper does: source.connect(analyser); analyser.connect(dest);
+            // So we passed gainNode as the source to the helper :)
+
+            sourceNode.onended = () => {
+                isPlaying = false;
+                playBtn.disabled = false;
+                stopBtn.disabled = true;
+            };
+
+            sourceNode.start(0);
+            isPlaying = true;
+            playBtn.disabled = true;
+            stopBtn.disabled = false;
+
+            audioEngine.drawVisualizer('visualizer', 'frequency', '#a855f7');
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shadow Video - Webcam Recorder</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;500;600;700&display=swap"
+        rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link rel="stylesheet" href="../../styles.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Rajdhani', 'sans-serif'],
+                        orbitron: ['Orbitron', 'sans-serif']
+                    },
+                    colors: {
+                        cyber: {
+                            primary: '#c084fc', // Purple for Webcam (differentiator)
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body
+    class="min-h-screen flex flex-col font-sans overflow-x-hidden bg-slate-900 text-white selection:bg-purple-500 selection:text-white">
+
+    <!-- 3D Background -->
+    <div id="bg-3d-container"></div>
+
+    <!-- Navigation -->
+    <nav
+        class="sticky top-0 z-50 glass-effect border-b border-white/5 px-4 md:px-6 py-3 flex items-center justify-between backdrop-blur-md">
+        <a href="../index.html" class="flex items-center gap-3 text-slate-300 hover:text-white transition-colors group">
+            <div
+                class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center border border-white/10 group-hover:border-purple-500/50 transition-all">
+                <i class="fas fa-chevron-left text-xs group-hover:-translate-x-0.5 transition-transform"></i>
+            </div>
+            <span class="font-orbitron font-bold tracking-wider hidden md:block">BACK</span>
+        </a>
+
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded bg-purple-500/20 flex items-center justify-center text-purple-400">
+                <i class="fas fa-camera"></i>
+            </div>
+            <h1 class="text-lg md:text-xl font-orbitron font-bold tracking-widest text-white">SHADOW<span
+                    class="text-purple-500">CAM</span></h1>
+        </div>
+
+        <div class="w-8"></div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="flex-grow container mx-auto px-4 py-8 relative z-10 flex flex-col items-center gap-6">
+
+        <!-- Preview Area -->
+        <div
+            class="w-full max-w-4xl aspect-video bg-black/50 rounded-2xl border border-white/10 shadow-2xl overflow-hidden relative group">
+            <video id="preview" autoplay muted class="w-full h-full object-cover transform scale-x-[-1]"></video>
+            <!-- Mirrored like a mirror -->
+
+            <!-- Overlay Message -->
+            <div id="statusOverlay"
+                class="absolute inset-0 flex flex-col items-center justify-center bg-slate-900/80 backdrop-blur-sm transition-opacity duration-300">
+                <i class="fas fa-camera text-6xl text-slate-600 mb-4"></i>
+                <h3 class="text-xl font-orbitron text-slate-400">Camera Privacy</h3>
+                <p class="text-slate-500 text-sm mt-2">Click "Activate Camera" to enable input</p>
+                <button onclick="initCamera()"
+                    class="mt-6 px-6 py-2 bg-purple-600 hover:bg-purple-500 rounded-full text-white font-bold tracking-wider transition-colors shadow-lg">Activate
+                    Camera</button>
+            </div>
+
+            <!-- Recording Indicator -->
+            <div id="recIndicator"
+                class="absolute top-4 right-4 flex items-center gap-2 bg-red-500/90 text-white px-3 py-1 rounded-full text-xs font-bold tracking-wider opacity-0 transition-opacity z-20">
+                <div class="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                REC <span id="timer">00:00</span>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="flex justify-center gap-4 w-full max-w-md">
+            <button id="startBtn" onclick="startRecording()" disabled
+                class="flex-1 py-4 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl font-bold tracking-wider shadow-lg shadow-red-900/20 transition-all transform hover:-translate-y-1 flex items-center justify-center gap-2">
+                <i class="fas fa-circle"></i> RECORD
+            </button>
+
+            <button id="stopBtn" onclick="stopRecording()" disabled
+                class="flex-1 py-4 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl font-bold tracking-wider shadow-lg transition-all flex items-center justify-center gap-2">
+                <i class="fas fa-square"></i> STOP
+            </button>
+        </div>
+
+        <!-- Recorded List -->
+        <div id="downloads" class="w-full max-w-4xl hidden">
+            <div class="glass-header px-4 py-2 border-b border-white/5 bg-slate-900/40 rounded-t-xl">
+                <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Capture Gallery</span>
+            </div>
+            <div id="recordingsList" class="p-4 glass rounded-b-xl border border-white/5 flex flex-col gap-2">
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Shared Script -->
+    <script type="module" src="../../shared/bg-particles.js"></script>
+
+    <script>
+        let mediaRecorder;
+        let recordedChunks = [];
+        let startTime;
+        let timerInterval;
+        let stream;
+
+        const preview = document.getElementById('preview');
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const statusOverlay = document.getElementById('statusOverlay');
+        const recIndicator = document.getElementById('recIndicator');
+        const timerEl = document.getElementById('timer');
+        const downloads = document.getElementById('downloads');
+        const recordingsList = document.getElementById('recordingsList');
+
+        async function initCamera() {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({
+                    video: true,
+                    audio: true
+                });
+
+                preview.srcObject = stream;
+                statusOverlay.style.opacity = '0';
+                statusOverlay.style.pointerEvents = 'none';
+
+                startBtn.disabled = false;
+            } catch (err) {
+                alert("Camera access denied or unavailable.");
+                console.error(err);
+            }
+        }
+
+        async function startRecording() {
+            if (!stream) return;
+
+            try {
+                mediaRecorder = new MediaRecorder(stream);
+
+                mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) {
+                        recordedChunks.push(event.data);
+                    }
+                };
+
+                mediaRecorder.onstop = () => {
+                    finalizeRecording();
+                    stopTimer();
+                };
+
+                mediaRecorder.start();
+                startBtn.disabled = true;
+                startBtn.classList.add('opacity-50');
+                stopBtn.disabled = false;
+
+                recIndicator.style.opacity = '1';
+                startTimer();
+
+            } catch (err) {
+                console.error("Error: " + err);
+            }
+        }
+
+        function stopRecording() {
+            mediaRecorder.stop();
+            startBtn.disabled = false;
+            startBtn.classList.remove('opacity-50');
+            stopBtn.disabled = true;
+        }
+
+        function finalizeRecording() {
+            const blob = new Blob(recordedChunks, {
+                type: "video/webm"
+            });
+            const url = URL.createObjectURL(blob);
+
+            downloads.classList.remove('hidden');
+
+            const item = document.createElement('div');
+            item.className = 'flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/5 hover:bg-white/10 transition-colors';
+
+            const name = `Cam_Recording_${new Date().toLocaleTimeString().replace(/:/g, '-')}.webm`;
+
+            item.innerHTML = `
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-purple-500/20 rounded flex items-center justify-center text-purple-400">
+                        <i class="fas fa-user-circle"></i>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-sm font-bold text-slate-200">${name}</span>
+                        <span class="text-xs text-slate-500">${(blob.size / 1024 / 1024).toFixed(2)} MB</span>
+                    </div>
+                </div>
+                <div class="flex gap-2">
+                    <a href="${url}" download="${name}" class="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold rounded uppercase tracking-wider transition-colors">Download</a>
+                    <button onclick="this.closest('div').remove()" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold rounded uppercase transition-colors"><i class="fas fa-times"></i></button>
+                </div>
+            `;
+
+            recordingsList.prepend(item);
+            recordedChunks = [];
+
+            recIndicator.style.opacity = '0';
+        }
+
+        function startTimer() {
+            startTime = Date.now();
+            timerInterval = setInterval(() => {
+                const diff = Date.now() - startTime;
+                const secs = Math.floor((diff / 1000) % 60);
+                const mins = Math.floor((diff / (1000 * 60)) % 60);
+                timerEl.textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            }, 1000);
+        }
+
+        function stopTimer() {
+            clearInterval(timerInterval);
+            timerEl.textContent = "00:00";
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Changer - Shadow Audio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;500;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="../../styles.css">
+</head>
+
+<body class="bg-gray-900 text-white font-sans antialiased overflow-x-hidden">
+
+    <nav
+        class="sticky top-0 z-50 glass-effect border-b border-white/5 px-6 py-4 flex items-center justify-between backdrop-blur-md">
+        <div class="flex items-center gap-3">
+            <a href="../index.html" class="flex items-center gap-2 group">
+                <div
+                    class="relative w-10 h-10 flex items-center justify-center bg-purple-600/20 rounded-lg border border-purple-500/30 group-hover:border-purple-500/50 transition-all">
+                    <i class="fas fa-mask text-purple-400 text-xl group-hover:scale-110 transition-transform"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-orbitron font-bold tracking-widest text-white">SHADOW<span
+                            class="text-purple-500">AUDIO</span></h1>
+                    <span class="text-xs text-slate-400 font-mono tracking-wider">VOICE FX</span>
+                </div>
+            </a>
+        </div>
+        <a href="../index.html" class="text-slate-400 hover:text-white transition-colors"><i
+                class="fas fa-times text-xl"></i></a>
+    </nav>
+
+    <main class="container mx-auto px-4 py-12 max-w-4xl">
+        <div class="text-center mb-10">
+            <h2 class="text-4xl font-bold font-orbitron mb-2">Voice Changer</h2>
+            <p class="text-slate-400 text-sm">Transform your voice into different characters.</p>
+        </div>
+
+        <div class="glass p-8 rounded-3xl border border-white/5 shadow-2xl">
+            <!-- File Upload -->
+            <div id="upload-area"
+                class="border-2 border-dashed border-white/10 rounded-2xl p-10 text-center hover:border-purple-500/50 transition-colors cursor-pointer mb-8 bg-black/20">
+                <input type="file" id="file-input" accept="audio/*" class="hidden">
+                <i class="fas fa-cloud-upload-alt text-4xl text-slate-500 mb-4"></i>
+                <p class="text-lg font-bold text-slate-300">Drop Audio File Here</p>
+                <p class="text-sm text-slate-500">or click to browse</p>
+            </div>
+
+            <div id="controls" class="hidden">
+                <!-- Presets Grid -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                    <button
+                        class="preset-btn p-4 bg-black/40 border border-white/10 rounded-xl hover:bg-purple-600/20 hover:border-purple-500 flex flex-col items-center gap-2 transition-all group"
+                        data-preset="chipmunk">
+                        <i class="fas fa-paw text-2xl text-slate-400 group-hover:text-purple-400"></i>
+                        <span class="text-sm font-bold text-slate-300">Chipmunk</span>
+                    </button>
+                    <button
+                        class="preset-btn p-4 bg-black/40 border border-white/10 rounded-xl hover:bg-purple-600/20 hover:border-purple-500 flex flex-col items-center gap-2 transition-all group"
+                        data-preset="robot">
+                        <i class="fas fa-robot text-2xl text-slate-400 group-hover:text-purple-400"></i>
+                        <span class="text-sm font-bold text-slate-300">Robot</span>
+                    </button>
+                    <button
+                        class="preset-btn p-4 bg-black/40 border border-white/10 rounded-xl hover:bg-purple-600/20 hover:border-purple-500 flex flex-col items-center gap-2 transition-all group"
+                        data-preset="demon">
+                        <i class="fas fa-dragon text-2xl text-slate-400 group-hover:text-purple-400"></i>
+                        <span class="text-sm font-bold text-slate-300">Demon</span>
+                    </button>
+                    <button
+                        class="preset-btn p-4 bg-black/40 border border-white/10 rounded-xl hover:bg-purple-600/20 hover:border-purple-500 flex flex-col items-center gap-2 transition-all group"
+                        data-preset="cave">
+                        <i class="fas fa-dungeon text-2xl text-slate-400 group-hover:text-purple-400"></i>
+                        <span class="text-sm font-bold text-slate-300">Cave</span>
+                    </button>
+                </div>
+
+                <div class="flex justify-center gap-4">
+                    <button id="play-btn"
+                        class="px-8 py-3 bg-green-600 hover:bg-green-500 text-white font-bold rounded-xl transition-all flex items-center gap-2">
+                        <i class="fas fa-play"></i> PLAY EFFECT
+                    </button>
+                    <button id="stop-btn"
+                        class="px-8 py-3 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl transition-all flex items-center gap-2"
+                        disabled>
+                        <i class="fas fa-stop"></i> STOP
+                    </button>
+                </div>
+
+                <div id="status" class="text-center text-purple-400 font-mono text-sm mt-4">Select a preset</div>
+                <canvas id="visualizer" width="600" height="100"
+                    class="w-full h-24 bg-black/40 rounded-lg border border-white/5 mt-6"></canvas>
+            </div>
+        </div>
+    </main>
+
+    <script type="module">
+        import { audioEngine } from '../shared/audio-utils.js';
+
+        const uploadArea = document.getElementById('upload-area');
+        const fileInput = document.getElementById('file-input');
+        const controls = document.getElementById('controls');
+        const status = document.getElementById('status');
+        const playBtn = document.getElementById('play-btn');
+        const stopBtn = document.getElementById('stop-btn');
+
+        let audioBuffer = null;
+        let sourceNode = null;
+        let currentPreset = 'chipmunk';
+
+        uploadArea.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+
+        document.querySelectorAll('.preset-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('bg-purple-600/20', 'border-purple-500'));
+                btn.classList.add('bg-purple-600/20', 'border-purple-500');
+                currentPreset = btn.dataset.preset;
+                status.textContent = `Selected: ${currentPreset.charAt(0).toUpperCase() + currentPreset.slice(1)}`;
+            });
+        });
+
+        async function handleFile(file) {
+            if (!file) return;
+            controls.classList.remove('hidden');
+            uploadArea.classList.add('hidden');
+
+            const ctx = audioEngine.init();
+            const arrayBuffer = await file.arrayBuffer();
+            audioBuffer = await ctx.decodeAudioData(arrayBuffer);
+        }
+
+        playBtn.addEventListener('click', () => {
+            if (!audioBuffer) return;
+            if (sourceNode) sourceNode.stop();
+            startPlayback();
+        });
+
+        stopBtn.addEventListener('click', () => {
+            if (sourceNode) {
+                sourceNode.stop();
+                playBtn.disabled = false;
+                stopBtn.disabled = true;
+            }
+        });
+
+        function startPlayback() {
+            const ctx = audioEngine.init();
+            sourceNode = ctx.createBufferSource();
+            sourceNode.buffer = audioBuffer;
+
+            // Build FX Chain based on preset
+            let outputNode = sourceNode;
+
+            if (currentPreset === 'chipmunk') {
+                sourceNode.playbackRate.value = 1.5;
+                // Pitch shift up often speeds up, unless using time-stretching (complex). 
+                // Simple version: just speed up.
+            } else if (currentPreset === 'demon') {
+                sourceNode.playbackRate.value = 0.7;
+                // Add distortion
+                const dist = ctx.createWaveShaper();
+                dist.curve = makeDistortionCurve(400);
+                sourceNode.connect(dist);
+                outputNode = dist;
+            } else if (currentPreset === 'robot') {
+                // Ring Mod simulation (Oscillator modulation)
+                const osc = ctx.createOscillator();
+                osc.frequency.value = 50;
+                osc.type = 'sawtooth';
+                osc.start(0);
+
+                const gain = ctx.createGain();
+                gain.gain.value = 0; // Amplitude modulation
+
+                // This is hard to do properly as ring mod without AudioWorklet.
+                // Simple "Robot" often just fast delay or bitcrush.
+                // Let's do a fast delay (Comb filter)
+                const delay = ctx.createDelay();
+                delay.delayTime.value = 0.01;
+
+                const feedback = ctx.createGain();
+                feedback.gain.value = 0.9;
+
+                sourceNode.connect(delay);
+                delay.connect(feedback);
+                feedback.connect(delay);
+
+                delay.connect(ctx.destination);
+                outputNode = delay; // Actually this is Mix
+                sourceNode.connect(ctx.destination); // Mix original
+            } else if (currentPreset === 'cave') {
+                // Reverb
+                const convolver = ctx.createConvolver();
+                // Simple decay noise impulse
+                const rate = ctx.sampleRate;
+                const len = rate * 3.0;
+                const impulse = ctx.createBuffer(2, len, rate);
+                for (let c = 0; c < 2; c++) {
+                    const data = impulse.getChannelData(c);
+                    for (let i = 0; i < len; i++) {
+                        data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3);
+                    }
+                }
+                convolver.buffer = impulse;
+                sourceNode.connect(convolver);
+                convolver.connect(ctx.destination);
+                sourceNode.connect(ctx.destination); // Dry
+                return; // Special routing
+            }
+
+            outputNode.connect(ctx.destination);
+
+            const analyser = audioEngine.createAnalyser(outputNode);
+
+            sourceNode.onended = () => {
+                playBtn.disabled = false;
+                stopBtn.disabled = true;
+            };
+
+            sourceNode.start(0);
+            playBtn.disabled = true;
+            stopBtn.disabled = false;
+
+            audioEngine.drawVisualizer('visualizer', 'frequency', '#a855f7');
+        }
+
+        function makeDistortionCurve(amount) {
+            const k = typeof amount === 'number' ? amount : 50,
+                n_samples = 44100,
+                curve = new Float32Array(n_samples),
+                deg = Math.PI / 180;
+            let x;
+            for (let i = 0; i < n_samples; ++i) {
+                x = i * 2 / n_samples - 1;
+                curve[i] = (3 + k) * x * 20 * deg / (Math.PI + k * Math.abs(x));
+            }
+            return curve;
+        }
+    </script>
+</body>
+
+</html>

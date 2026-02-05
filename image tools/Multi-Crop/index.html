@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Crop Tool Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- JSZip for Zip generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+    <style>
+        /* Custom scrollbar for sidebar */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* Selection Box styles */
+        #selection-box {
+            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Resize Handles */
+        .handle {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background-color: #2563eb;
+            /* blue-600 */
+            border: 2px solid white;
+            border-radius: 50%;
+            z-index: 20;
+            pointer-events: auto;
+            /* Ensure they catch clicks */
+        }
+
+        /* Checkerboard pattern */
+        .bg-checkerboard {
+            background-color: #f1f5f9;
+            background-image:
+                linear-gradient(45deg, #e2e8f0 25%, transparent 25%),
+                linear-gradient(-45deg, #e2e8f0 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, #e2e8f0 75%),
+                linear-gradient(-45deg, transparent 75%, #e2e8f0 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.2s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-slate-100 h-screen flex flex-col overflow-hidden select-none">
+
+    <!-- Header -->
+    <header class="bg-white border-b px-6 py-3 flex items-center justify-between shadow-sm z-20 shrink-0">
+        <div class="flex items-center gap-2">
+            <i data-lucide="scissors" class="w-6 h-6 text-blue-600"></i>
+            <h1 class="font-bold text-slate-800 text-lg">Multi-Clipper Pro</h1>
+        </div>
+        <button id="reset-btn"
+            class="hidden text-sm text-slate-500 hover:text-red-600 font-medium px-3 py-1 rounded hover:bg-red-50 transition-colors">
+            Reset Image
+        </button>
+    </header>
+
+    <!-- Upload View -->
+    <div id="upload-view" class="flex-1 flex flex-col items-center justify-center p-6 transition-opacity duration-300">
+        <div class="max-w-xl w-full text-center space-y-8">
+            <div class="space-y-2">
+                <h1 class="text-4xl font-extrabold text-slate-800 tracking-tight">Multi-Clipper</h1>
+                <p class="text-slate-500">Extract, Name, and Batch Download parts of your image.</p>
+            </div>
+
+            <div
+                class="relative border-4 border-dashed border-slate-300 rounded-3xl bg-white p-12 transition-all hover:border-blue-400 hover:shadow-xl group cursor-pointer">
+                <input type="file" id="file-input" accept="image/*"
+                    class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+                <div class="flex flex-col items-center gap-4 pointer-events-none">
+                    <div class="bg-blue-50 p-6 rounded-full group-hover:bg-blue-100 transition-colors">
+                        <i data-lucide="upload" class="w-12 h-12 text-blue-500"></i>
+                    </div>
+                    <div>
+                        <p class="text-xl font-medium text-slate-700">Click to upload or drag image here</p>
+                        <p class="text-sm text-slate-400 mt-2">or press Ctrl+V to paste from clipboard</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Editor View (Hidden by default) -->
+    <div id="editor-view" class="hidden flex-1 flex overflow-hidden h-full">
+
+        <!-- Canvas Area -->
+        <div class="flex-1 bg-slate-200/50 p-6 overflow-auto flex items-center justify-center relative"
+            id="canvas-area">
+            <div class="relative shadow-2xl rounded-sm overflow-hidden bg-white max-w-full max-h-full inline-block">
+
+                <!-- Image Container -->
+                <div id="img-container" class="relative group select-none touch-none">
+                    <img id="main-image" src="" alt="Upload"
+                        class="max-h-[80vh] block max-w-full object-contain pointer-events-none" draggable="false">
+
+                    <!-- Selection Box with Handles -->
+                    <div id="selection-box" class="hidden absolute border-2 border-white z-10 pointer-events-none">
+                        <!-- Grid Lines -->
+                        <div class="absolute inset-0 opacity-30 pointer-events-none">
+                            <div class="absolute left-1/3 top-0 bottom-0 w-px bg-white"></div>
+                            <div class="absolute right-1/3 top-0 bottom-0 w-px bg-white"></div>
+                            <div class="absolute top-1/3 left-0 right-0 h-px bg-white"></div>
+                            <div class="absolute bottom-1/3 left-0 right-0 h-px bg-white"></div>
+                        </div>
+
+                        <!-- Resize Handles (8 dots) -->
+                        <div class="handle top-0 left-0 -translate-x-1/2 -translate-y-1/2 cursor-nwse-resize"
+                            data-handle="nw"></div>
+                        <div class="handle top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 cursor-ns-resize"
+                            data-handle="n"></div>
+                        <div class="handle top-0 right-0 translate-x-1/2 -translate-y-1/2 cursor-nesw-resize"
+                            data-handle="ne"></div>
+                        <div class="handle top-1/2 right-0 translate-x-1/2 -translate-y-1/2 cursor-ew-resize"
+                            data-handle="e"></div>
+                        <div class="handle bottom-0 right-0 translate-x-1/2 translate-y-1/2 cursor-nwse-resize"
+                            data-handle="se"></div>
+                        <div class="handle bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 cursor-ns-resize"
+                            data-handle="s"></div>
+                        <div class="handle bottom-0 left-0 -translate-x-1/2 translate-y-1/2 cursor-nesw-resize"
+                            data-handle="sw"></div>
+                        <div class="handle top-1/2 left-0 -translate-x-1/2 -translate-y-1/2 cursor-ew-resize"
+                            data-handle="w"></div>
+                    </div>
+                </div>
+
+                <!-- Floating Actions -->
+                <div id="selection-actions"
+                    class="hidden absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-20 fade-in">
+                    <button id="cancel-selection-btn"
+                        class="bg-white text-slate-700 hover:bg-slate-100 shadow-lg px-4 py-2 rounded-full font-medium flex items-center gap-2 border">
+                        <i data-lucide="x" class="w-4 h-4"></i> Cancel
+                    </button>
+                    <button id="crop-btn"
+                        class="bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-900/20 px-6 py-2 rounded-full font-medium flex items-center gap-2">
+                        <i data-lucide="scissors" class="w-4 h-4"></i> Crop
+                    </button>
+                </div>
+
+                <!-- Helper Tip -->
+                <div id="helper-tip"
+                    class="absolute top-4 left-4 bg-black/60 text-white px-3 py-1.5 rounded-full text-xs backdrop-blur-sm pointer-events-none flex items-center gap-2 transition-opacity duration-200">
+                    <i data-lucide="mouse-pointer-2" class="w-3 h-3"></i> Click and drag to select area
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="w-80 bg-white border-l shadow-xl flex flex-col z-10 shrink-0">
+            <!-- Sidebar Header -->
+            <div class="p-4 border-b bg-slate-50 space-y-3">
+                <div class="flex items-center justify-between">
+                    <h2 class="font-semibold text-slate-800 flex items-center gap-2">
+                        <i data-lucide="image" class="w-4 h-4 text-slate-500"></i>
+                        Crops
+                        <span id="crop-count"
+                            class="bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded-full">0</span>
+                    </h2>
+                    <label class="flex items-center gap-2 text-xs text-slate-600 cursor-pointer select-none">
+                        <input type="checkbox" id="select-all-check"
+                            class="rounded border-slate-300 text-blue-600 focus:ring-blue-500">
+                        Select All
+                    </label>
+                </div>
+
+                <button id="download-zip-btn" disabled
+                    class="w-full bg-slate-800 hover:bg-slate-900 disabled:bg-slate-300 disabled:cursor-not-allowed text-white py-2 rounded-md text-sm font-medium flex items-center justify-center gap-2 transition-colors">
+                    <i data-lucide="archive" class="w-4 h-4"></i> Download ZIP
+                </button>
+            </div>
+
+            <!-- List -->
+            <div id="crops-list" class="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
+                <!-- Empty State -->
+                <div id="empty-state"
+                    class="h-full flex flex-col items-center justify-center text-slate-400 text-center space-y-3">
+                    <i data-lucide="scissors" class="w-12 h-12 opacity-20"></i>
+                    <p class="text-sm">No crops yet.<br />Select an area and click Crop.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- State Management ---
+        const state = {
+            imageSrc: null,
+            // Interaction States
+            isDragging: false,
+            isResizing: false,
+            resizeHandle: null, // 'nw', 'se', etc.
+            startCoords: { x: 0, y: 0 }, // For drawing new box
+
+            // Selection geometry (relative to image container)
+            selection: null, // { x, y, width, height }
+
+            // Data
+            crops: [], // { id, data, name, selected }
+            nextCropId: 1
+        };
+
+        // --- DOM Elements ---
+        const els = {
+            uploadView: document.getElementById('upload-view'),
+            editorView: document.getElementById('editor-view'),
+            fileInput: document.getElementById('file-input'),
+            mainImage: document.getElementById('main-image'),
+            imgContainer: document.getElementById('img-container'),
+            selectionBox: document.getElementById('selection-box'),
+            selectionActions: document.getElementById('selection-actions'),
+            helperTip: document.getElementById('helper-tip'),
+            cropsList: document.getElementById('crops-list'),
+            emptyState: document.getElementById('empty-state'),
+            cropCount: document.getElementById('crop-count'),
+            resetBtn: document.getElementById('reset-btn'),
+            cropBtn: document.getElementById('crop-btn'),
+            cancelSelectionBtn: document.getElementById('cancel-selection-btn'),
+            selectAllCheck: document.getElementById('select-all-check'),
+            downloadZipBtn: document.getElementById('download-zip-btn'),
+        };
+
+        // Initialize Icons
+        lucide.createIcons();
+
+        // --- Event Listeners ---
+
+        // File Upload
+        els.fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+        window.addEventListener('paste', (e) => {
+            const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+            for (const item of items) {
+                if (item.kind === 'file' && item.type.includes('image')) handleFile(item.getAsFile());
+            }
+        });
+
+        els.resetBtn.addEventListener('click', resetApp);
+
+        // Interaction Listeners (Mouse & Touch)
+        els.imgContainer.addEventListener('mousedown', handlePointerDown);
+        els.imgContainer.addEventListener('touchstart', (e) => handlePointerDown(e.touches[0]), { passive: false });
+
+        window.addEventListener('mousemove', handlePointerMove);
+        window.addEventListener('touchmove', (e) => handlePointerMove(e.touches[0]), { passive: false });
+
+        window.addEventListener('mouseup', handlePointerUp);
+        window.addEventListener('touchend', handlePointerUp);
+
+        // Buttons
+        els.cropBtn.addEventListener('click', performCrop);
+        els.cancelSelectionBtn.addEventListener('click', clearSelection);
+        els.selectAllCheck.addEventListener('change', toggleSelectAll);
+        els.downloadZipBtn.addEventListener('click', downloadZip);
+
+        // --- Logic: File Handling ---
+
+        function handleFile(file) {
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                state.imageSrc = e.target.result;
+                state.crops = [];
+                state.selection = null;
+                state.nextCropId = 1;
+                render();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function resetApp() {
+            state.imageSrc = null;
+            state.crops = [];
+            state.selection = null;
+            render();
+            els.fileInput.value = '';
+        }
+
+        // --- Logic: Drawing & Resizing ---
+
+        function getLocalCoords(e) {
+            const rect = els.imgContainer.getBoundingClientRect();
+            // e could be MouseEvent or Touch object
+            const clientX = e.clientX;
+            const clientY = e.clientY;
+            return {
+                x: clientX - rect.left,
+                y: clientY - rect.top
+            };
+        }
+
+        function handlePointerDown(e) {
+            if (!state.imageSrc) return;
+            if (e.target.closest('button')) return; // Ignore button clicks
+
+            // Check if clicking on a handle
+            if (e.target.classList.contains('handle')) {
+                state.isResizing = true;
+                state.resizeHandle = e.target.dataset.handle;
+                // prevent text selection
+                e.preventDefault ? e.preventDefault() : null;
+                return;
+            }
+
+            // Otherwise, start drawing new box
+            const coords = getLocalCoords(e);
+            state.isDragging = true;
+            state.startCoords = coords;
+            state.selection = { x: coords.x, y: coords.y, width: 0, height: 0 };
+
+            updateSelectionView();
+        }
+
+        function handlePointerMove(e) {
+            // Handle Resizing
+            if (state.isResizing && state.selection) {
+                const coords = getLocalCoords(e);
+                const s = { ...state.selection }; // Current selection
+
+                // We calculate the new bounding box based on which handle is dragged
+                // Coordinates relative to container
+                const currentRight = s.x + s.width;
+                const currentBottom = s.y + s.height;
+
+                // Simple logic: update edges based on handle
+                // This logic allows flipping if dragging past opposite edge
+                let newX = s.x;
+                let newY = s.y;
+                let newW = s.width;
+                let newH = s.height;
+
+                if (state.resizeHandle.includes('w')) {
+                    // Left edge moving
+                    const delta = coords.x - s.x;
+                    newX = coords.x;
+                    newW = s.width - delta;
+                }
+                if (state.resizeHandle.includes('e')) {
+                    // Right edge moving
+                    newW = coords.x - s.x;
+                }
+                if (state.resizeHandle.includes('n')) {
+                    // Top edge moving
+                    const delta = coords.y - s.y;
+                    newY = coords.y;
+                    newH = s.height - delta;
+                }
+                if (state.resizeHandle.includes('s')) {
+                    // Bottom edge moving
+                    newH = coords.y - s.y;
+                }
+
+                // Normalizing if width/height negative (user dragged past opposite side)
+                if (newW < 0) {
+                    newX = newX + newW;
+                    newW = Math.abs(newW);
+                    // Swap handle logic if desired, but simple recalc is often enough
+                    // For now, simpler to just clamp min width or allow flip effect visually
+                }
+                if (newH < 0) {
+                    newY = newY + newH;
+                    newH = Math.abs(newH);
+                }
+
+                // Boundary constraints
+                const containerW = els.imgContainer.clientWidth;
+                const containerH = els.imgContainer.clientHeight;
+
+                state.selection = {
+                    x: Math.max(0, Math.min(newX, containerW)),
+                    y: Math.max(0, Math.min(newY, containerH)),
+                    width: Math.min(newW, containerW - Math.max(0, newX)),
+                    height: Math.min(newH, containerH - Math.max(0, newY))
+                };
+
+                updateSelectionView();
+                return;
+            }
+
+            // Handle Drawing New Box
+            if (state.isDragging) {
+                const current = getLocalCoords(e);
+
+                const rawX = Math.min(current.x, state.startCoords.x);
+                const rawY = Math.min(current.y, state.startCoords.y);
+                const rawW = Math.abs(current.x - state.startCoords.x);
+                const rawH = Math.abs(current.y - state.startCoords.y);
+
+                const containerW = els.imgContainer.clientWidth;
+                const containerH = els.imgContainer.clientHeight;
+
+                state.selection = {
+                    x: Math.max(0, rawX),
+                    y: Math.max(0, rawY),
+                    width: Math.min(rawW, containerW - rawX),
+                    height: Math.min(rawH, containerH - rawY)
+                };
+
+                updateSelectionView();
+            }
+        }
+
+        function handlePointerUp() {
+            state.isDragging = false;
+            state.isResizing = false;
+            state.resizeHandle = null;
+            updateSelectionView(); // Refresh UI state
+        }
+
+        function clearSelection() {
+            state.selection = null;
+            updateSelectionView();
+        }
+
+        // --- Logic: Cropping ---
+
+        function performCrop() {
+            if (!state.selection || state.selection.width < 1 || state.selection.height < 1) return;
+
+            const naturalWidth = els.mainImage.naturalWidth;
+            const naturalHeight = els.mainImage.naturalHeight;
+            const displayedWidth = els.mainImage.clientWidth;
+            const displayedHeight = els.mainImage.clientHeight;
+
+            const scaleX = naturalWidth / displayedWidth;
+            const scaleY = naturalHeight / displayedHeight;
+
+            const canvas = document.createElement('canvas');
+            canvas.width = state.selection.width * scaleX;
+            canvas.height = state.selection.height * scaleY;
+
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(
+                els.mainImage,
+                state.selection.x * scaleX,
+                state.selection.y * scaleY,
+                state.selection.width * scaleX,
+                state.selection.height * scaleY,
+                0,
+                0,
+                canvas.width,
+                canvas.height
+            );
+
+            const cropDataUrl = canvas.toDataURL('image/png');
+
+            const newCrop = {
+                id: Date.now(),
+                data: cropDataUrl,
+                name: `Crop ${state.nextCropId}`,
+                selected: true // Auto-select new crops for convenience
+            };
+
+            state.crops.unshift(newCrop);
+            state.nextCropId++;
+
+            renderSidebar();
+            // We keep the selection active so user can tweak it if needed
+        }
+
+        // --- Logic: Sidebar & Download ---
+
+        function toggleSelectAll(e) {
+            const isChecked = e.target.checked;
+            state.crops.forEach(c => c.selected = isChecked);
+            renderSidebar(); // Re-render to show checked states
+        }
+
+        function downloadZip() {
+            const selectedCrops = state.crops.filter(c => c.selected);
+            if (selectedCrops.length === 0) return;
+
+            const zip = new JSZip();
+            const folder = zip.folder("crops");
+
+            selectedCrops.forEach(crop => {
+                // Remove header "data:image/png;base64,"
+                const base64Data = crop.data.split(',')[1];
+                // Ensure unique filenames in zip if user named them same
+                let filename = crop.name.trim() || `crop-${crop.id}`;
+                if (!filename.toLowerCase().endsWith('.png')) filename += '.png';
+
+                folder.file(filename, base64Data, { base64: true });
+            });
+
+            zip.generateAsync({ type: "blob" })
+                .then(function (content) {
+                    // Create temp link to download
+                    const link = document.createElement("a");
+                    link.href = URL.createObjectURL(content);
+                    link.download = "crops.zip";
+                    link.click();
+                });
+        }
+
+        // --- Rendering ---
+
+        function render() {
+            if (state.imageSrc) {
+                els.uploadView.classList.add('hidden');
+                els.editorView.classList.remove('hidden');
+                els.resetBtn.classList.remove('hidden');
+                els.mainImage.src = state.imageSrc;
+                clearSelection();
+                renderSidebar();
+            } else {
+                els.uploadView.classList.remove('hidden');
+                els.editorView.classList.add('hidden');
+                els.resetBtn.classList.add('hidden');
+                els.mainImage.src = '';
+            }
+        }
+
+        function updateSelectionView() {
+            const sel = state.selection;
+
+            // Hide if no selection or very small (and not currently drawing)
+            if (!sel || (sel.width < 5 && sel.height < 5 && !state.isDragging && !state.isResizing)) {
+                els.selectionBox.classList.add('hidden');
+                els.selectionActions.classList.add('hidden');
+                els.helperTip.style.opacity = '1';
+                // Disable pointers on handles when hidden
+                els.selectionBox.style.pointerEvents = 'none';
+                return;
+            }
+
+            // Update Box Dimensions
+            els.selectionBox.classList.remove('hidden');
+            els.selectionBox.style.left = `${sel.x}px`;
+            els.selectionBox.style.top = `${sel.y}px`;
+            els.selectionBox.style.width = `${sel.width}px`;
+            els.selectionBox.style.height = `${sel.height}px`;
+
+            // Enable pointer events on handles div so children (handles) are clickable
+            // But we used pointer-events: none on the box itself in CSS, so handles need pointer-events: auto
+
+            // Show Actions if selection is big enough and interaction stopped
+            if (!state.isDragging && !state.isResizing && sel.width > 20 && sel.height > 20) {
+                els.selectionActions.classList.remove('hidden');
+                els.helperTip.style.opacity = '0';
+            } else {
+                els.selectionActions.classList.add('hidden');
+                els.helperTip.style.opacity = '0';
+            }
+        }
+
+        function renderSidebar() {
+            els.cropCount.textContent = state.crops.length;
+            els.cropsList.innerHTML = '';
+
+            // Update "Download ZIP" button state
+            const selectedCount = state.crops.filter(c => c.selected).length;
+            els.downloadZipBtn.disabled = selectedCount === 0;
+            els.downloadZipBtn.innerHTML = selectedCount > 0
+                ? `<i data-lucide="archive" class="w-4 h-4"></i> Download ${selectedCount} Selected (ZIP)`
+                : `<i data-lucide="archive" class="w-4 h-4"></i> Select Items to ZIP`;
+
+            // Update Select All Checkbox
+            els.selectAllCheck.checked = state.crops.length > 0 && state.crops.every(c => c.selected);
+
+            if (state.crops.length === 0) {
+                els.emptyState.classList.remove('hidden');
+                return;
+            }
+            els.emptyState.classList.add('hidden');
+
+            state.crops.forEach(crop => {
+                const item = document.createElement('div');
+                item.className = `bg-white border rounded-lg p-3 shadow-sm group transition-all duration-200 ${crop.selected ? 'ring-2 ring-blue-500 border-blue-500' : 'hover:shadow-md'}`;
+
+                item.innerHTML = `
+                    <div class="flex items-start gap-3">
+                        <div class="pt-1">
+                            <input type="checkbox" class="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer" 
+                                ${crop.selected ? 'checked' : ''} 
+                                onchange="toggleCropSelection(${crop.id}, this.checked)">
+                        </div>
+                        
+                        <div class="flex-1 min-w-0">
+                            <div class="h-24 bg-checkerboard rounded mb-2 flex items-center justify-center overflow-hidden border border-slate-100 relative">
+                                <img src="${crop.data}" class="max-w-full max-h-full object-contain">
+                            </div>
+                            
+                            <div class="space-y-2">
+                                <input type="text" 
+                                    value="${crop.name}" 
+                                    class="w-full text-sm border-slate-200 rounded px-2 py-1 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-slate-700 font-medium"
+                                    placeholder="Enter name"
+                                    onchange="renameCrop(${crop.id}, this.value)">
+                                
+                                <div class="flex gap-2">
+                                    <button onclick="downloadSingleCrop(${crop.id})" class="flex-1 bg-slate-50 hover:bg-slate-100 text-slate-600 py-1.5 rounded text-xs font-medium flex items-center justify-center gap-1 transition-colors border">
+                                        <i data-lucide="download" class="w-3 h-3"></i> PNG
+                                    </button>
+                                    <button onclick="deleteCrop(${crop.id})" class="w-8 bg-red-50 hover:bg-red-100 text-red-500 rounded flex items-center justify-center transition-colors border border-red-100" title="Delete">
+                                        <i data-lucide="trash-2" class="w-3 h-3"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                els.cropsList.appendChild(item);
+            });
+
+            lucide.createIcons();
+        }
+
+        // --- Global Helpers for Inline Events ---
+
+        window.toggleCropSelection = (id, isSelected) => {
+            const crop = state.crops.find(c => c.id === id);
+            if (crop) {
+                crop.selected = isSelected;
+                renderSidebar();
+            }
+        }
+
+        window.renameCrop = (id, newName) => {
+            const crop = state.crops.find(c => c.id === id);
+            if (crop) {
+                crop.name = newName;
+                // No need to re-render entire list for text change, creates focus loss
+                // Just updating state is enough
+            }
+        }
+
+        window.deleteCrop = (id) => {
+            state.crops = state.crops.filter(c => c.id !== id);
+            renderSidebar();
+        }
+
+        window.downloadSingleCrop = (id) => {
+            const crop = state.crops.find(c => c.id === id);
+            if (crop) {
+                const link = document.createElement('a');
+                link.href = crop.data;
+                let filename = crop.name.trim() || `crop-${id}`;
+                if (!filename.toLowerCase().endsWith('.png')) filename += '.png';
+                link.download = filename;
+                link.click();
+            }
+        }
+
+    </script>
+</body>
+
+</html>

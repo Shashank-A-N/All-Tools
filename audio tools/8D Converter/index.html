@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>8D Converter - AudioForge</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        cyber: {
+                            bg: '#05050a',
+                            panel: 'rgba(21, 21, 30, 0.6)',
+                            primary: '#06b6d4',
+                            secondary: '#d946ef',
+                            text: '#e2e8f0',
+                            muted: '#64748b'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    boxShadow: {
+                        'neon': '0 0 10px rgba(6, 182, 212, 0.5)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background: radial-gradient(circle at 50% 0%, #1e1b4b 0%, #05050a 100%);
+            color: white;
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .orbit-anim {
+            animation: orbit 4s linear infinite;
+        }
+
+        @keyframes orbit {
+            0% {
+                transform: rotate(0deg) translateX(50px) rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg) translateX(50px) rotate(-360deg);
+            }
+        }
+    </style>
+</head>
+
+<body class="min-h-screen flex flex-col font-sans overflow-hidden">
+
+    <header class="h-16 glass z-50 flex items-center justify-between px-6 border-b border-white/5 shrink-0">
+        <div class="flex items-center gap-3">
+            <div
+                class="w-8 h-8 rounded bg-gradient-to-br from-cyber-primary to-cyber-secondary flex items-center justify-center">
+                <i class="fas fa-headphones text-white text-sm"></i>
+            </div>
+            <h1 class="text-xl font-bold tracking-tight">AudioForge <span
+                    class="text-cyber-primary font-light">8D</span></h1>
+        </div>
+        <a href="../index.html" class="text-xs text-cyber-muted hover:text-white transition-colors">
+            <i class="fas fa-arrow-left mr-1"></i> Back to Tools
+        </a>
+    </header>
+
+    <main class="flex-1 flex flex-col items-center justify-center p-6 relative">
+        <div class="glass w-full max-w-xl rounded-2xl p-8 flex flex-col gap-6 shadow-2xl items-center text-center">
+
+            <div class="w-32 h-32 rounded-full border border-white/10 flex items-center justify-center relative mb-4">
+                <i class="fas fa-user text-4xl text-cyber-muted"></i>
+                <div class="absolute w-8 h-8 bg-cyber-primary rounded-full blur-md opacity-50 orbit-anim"
+                    id="orbit-dot"></div>
+            </div>
+
+            <h2 class="text-2xl font-bold">8D Audio Converter</h2>
+            <p class="text-cyber-muted text-sm max-w-xs">Upload a song to apply spatial panning effects. Wear headphones
+                for best results.</p>
+
+            <input type="file" id="file-input" accept="audio/*"
+                class="w-full text-sm text-cyber-muted file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-cyber-primary file:text-black hover:file:bg-cyan-400">
+
+            <div class="w-full space-y-2 text-left">
+                <label class="text-xs uppercase text-cyber-muted">Pan Speed (seconds per rotation)</label>
+                <input type="range" min="2" max="20" value="8" id="speed-slider" class="w-full">
+                <div class="flex justify-between text-xs text-white/50">
+                    <span>Fast (2s)</span>
+                    <span>Slow (20s)</span>
+                </div>
+            </div>
+
+            <button id="play-btn"
+                class="w-full py-4 rounded-xl bg-cyber-primary text-black font-bold text-lg hover:bg-cyan-400 transition-all shadow-neon opacity-50 cursor-not-allowed"
+                disabled>
+                <i class="fas fa-play"></i> Play 8D
+            </button>
+
+            <!-- MediaRecorder download logic is tricky with WebAudio but we can record the stream -->
+        </div>
+    </main>
+
+    <script>
+        const fileInput = document.getElementById('file-input');
+        const playBtn = document.getElementById('play-btn');
+        const speedSlider = document.getElementById('speed-slider');
+        const orbitDot = document.getElementById('orbit-dot');
+
+        let audioCtx;
+        let source;
+        let panner;
+        let isPlaying = false;
+        let startTime = 0;
+        let panSpeed = 8;
+
+        speedSlider.addEventListener('input', (e) => {
+            panSpeed = parseInt(e.target.value);
+            orbitDot.style.animationDuration = `${panSpeed}s`;
+        });
+
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length) {
+                playBtn.disabled = false;
+                playBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+        });
+
+        playBtn.addEventListener('click', async () => {
+            if (isPlaying) {
+                stopAudio();
+                return;
+            }
+
+            const file = fileInput.files[0];
+            if (!file) return;
+
+            playBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
+
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+            const ab = await file.arrayBuffer();
+            const buffer = await audioCtx.decodeAudioData(ab);
+
+            source = audioCtx.createBufferSource();
+            source.buffer = buffer;
+            source.loop = true;
+
+            panner = audioCtx.createStereoPanner();
+
+            source.connect(panner);
+            panner.connect(audioCtx.destination);
+
+            source.start();
+            startTime = audioCtx.currentTime;
+            isPlaying = true;
+
+            requestAnimationFrame(animatePan);
+
+            playBtn.innerHTML = '<i class="fas fa-stop"></i> Stop';
+            playBtn.classList.replace('bg-cyber-primary', 'bg-red-500');
+        });
+
+        function animatePan() {
+            if (!isPlaying) return;
+
+            const elapsed = audioCtx.currentTime - startTime;
+            // Sine wave from -1 to 1 based on speed
+            // speed is seconds per full cycle (2*PI)
+            const angle = (elapsed / panSpeed) * 2 * Math.PI;
+            const x = Math.sin(angle);
+
+            if (panner) panner.pan.value = x;
+
+            requestAnimationFrame(animatePan);
+        }
+
+        function stopAudio() {
+            if (source) source.stop();
+            isPlaying = false;
+            playBtn.innerHTML = '<i class="fas fa-play"></i> Play 8D';
+            playBtn.classList.replace('bg-red-500', 'bg-cyber-primary');
+        }
+    </script>
+</body>
+
+</html>

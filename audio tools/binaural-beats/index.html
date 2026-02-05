@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Binaural Beat Generator - Shadow Audio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;500;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="../../styles.css">
+</head>
+
+<body class="bg-gray-900 text-white font-sans antialiased overflow-x-hidden">
+
+    <!-- Navbar -->
+    <nav
+        class="sticky top-0 z-50 glass-effect border-b border-white/5 px-6 py-4 flex items-center justify-between backdrop-blur-md">
+        <div class="flex items-center gap-3">
+            <a href="../index.html" class="flex items-center gap-2 group">
+                <div
+                    class="relative w-10 h-10 flex items-center justify-center bg-purple-600/20 rounded-lg border border-purple-500/30 group-hover:border-purple-500/50 transition-all">
+                    <i class="fas fa-brain text-purple-400 text-xl group-hover:scale-110 transition-transform"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-orbitron font-bold tracking-widest text-white">SHADOW<span
+                            class="text-purple-500">AUDIO</span></h1>
+                    <span class="text-xs text-slate-400 font-mono tracking-wider">BRAINWAVE</span>
+                </div>
+            </a>
+        </div>
+        <a href="../index.html" class="text-slate-400 hover:text-white transition-colors"><i
+                class="fas fa-times text-xl"></i></a>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-12 max-w-4xl">
+        <div class="text-center mb-10">
+            <h2
+                class="text-4xl md:text-5xl font-bold font-orbitron mb-4 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-600">
+                Binaural Beats</h2>
+            <p class="text-slate-400 max-w-2xl mx-auto">Generate pure sine waves with frequency offsets to stimulate
+                brainwave states (Alpha, Beta, Theta, Delta). <br><span
+                    class="text-purple-400 text-xs uppercase font-bold">Heaphones Required</span></p>
+        </div>
+
+        <div class="glass p-8 rounded-3xl border border-white/5 max-w-2xl mx-auto shadow-2xl shadow-purple-900/10">
+
+            <!-- Carrier Frequency -->
+            <div class="mb-8">
+                <div class="flex justify-between items-end mb-4">
+                    <label class="font-orbitron text-lg text-blue-400">Carrier Frequency (Base Tone)</label>
+                    <span class="text-2xl font-bold font-mono"><span id="carrier-val">220</span> <span
+                            class="text-sm text-slate-500">Hz</span></span>
+                </div>
+                <input type="range" id="carrier" min="100" max="900" value="220"
+                    class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500">
+                <div class="flex justify-between text-xs text-slate-500 mt-2 font-mono">
+                    <span>100 Hz</span>
+                    <span>900 Hz</span>
+                </div>
+            </div>
+
+            <!-- Beat Freq -->
+            <div class="mb-10">
+                <div class="flex justify-between items-end mb-4">
+                    <label class="font-orbitron text-lg text-purple-400">Binaural Beat (Difference)</label>
+                    <span class="text-2xl font-bold font-mono text-purple-400">+<span id="beat-val">10</span> <span
+                            class="text-sm text-slate-500">Hz</span></span>
+                </div>
+                <input type="range" id="beat" min="1" max="40" value="10" step="0.5"
+                    class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-purple-500">
+
+                <!-- Presets -->
+                <div class="grid grid-cols-4 gap-2 mt-6">
+                    <button onclick="setBeat(4, 'Delta')"
+                        class="preset-btn px-2 py-2 rounded bg-slate-800 hover:bg-slate-700 border border-white/5 text-xs text-slate-300 transition-colors">
+                        <span class="block font-bold text-white">Delta</span>
+                        1-4 Hz (Sleep)
+                    </button>
+                    <button onclick="setBeat(6, 'Theta')"
+                        class="preset-btn px-2 py-2 rounded bg-slate-800 hover:bg-slate-700 border border-white/5 text-xs text-slate-300 transition-colors">
+                        <span class="block font-bold text-white">Theta</span>
+                        4-8 Hz (Meditation)
+                    </button>
+                    <button onclick="setBeat(10, 'Alpha')"
+                        class="preset-btn px-2 py-2 rounded bg-slate-800 hover:bg-slate-700 border border-white/5 text-xs text-slate-300 transition-colors">
+                        <span class="block font-bold text-white">Alpha</span>
+                        8-13 Hz (Relax)
+                    </button>
+                    <button onclick="setBeat(20, 'Beta')"
+                        class="preset-btn px-2 py-2 rounded bg-slate-800 hover:bg-slate-700 border border-white/5 text-xs text-slate-300 transition-colors">
+                        <span class="block font-bold text-white">Beta</span>
+                        14+ Hz (Focus)
+                    </button>
+                </div>
+            </div>
+
+            <!-- Action -->
+            <div class="flex items-center justify-center gap-6">
+                <button id="play-btn"
+                    class="w-20 h-20 rounded-full bg-gradient-to-br from-purple-600 to-blue-600 hover:scale-105 transition-transform flex items-center justify-center shadow-[0_0_30px_rgba(147,51,234,0.4)]">
+                    <i class="fas fa-play text-2xl" id="play-icon"></i>
+                </button>
+                <div class="text-left">
+                    <div class="text-sm text-slate-400 font-mono tracking-wide">STATUS</div>
+                    <div id="status-text" class="text-xl font-bold text-white">READY</div>
+                </div>
+            </div>
+
+            <div class="mt-8 pt-6 border-t border-white/5 text-center">
+                <p class="text-xs text-slate-500">Left Ear: <span id="left-freq">220</span> Hz | Right Ear: <span
+                        id="right-freq">230</span> Hz</p>
+            </div>
+        </div>
+    </main>
+
+    <script type="module">
+        import { audioEngine } from '../shared/audio-utils.js';
+
+        let oscLeft, oscRight, gainNode;
+        let isPlaying = false;
+
+        const carrierSlider = document.getElementById('carrier');
+        const beatSlider = document.getElementById('beat');
+        const playBtn = document.getElementById('play-btn');
+        const playIcon = document.getElementById('play-icon');
+        const statusText = document.getElementById('status-text');
+
+        // Update UI
+        carrierSlider.addEventListener('input', updateFreqs);
+        beatSlider.addEventListener('input', updateFreqs);
+
+        window.setBeat = (val, name) => {
+            beatSlider.value = val;
+            updateFreqs();
+            statusText.textContent = `${name.toUpperCase()} MODE`;
+        };
+
+        function updateFreqs() {
+            const c = parseFloat(carrierSlider.value);
+            const b = parseFloat(beatSlider.value);
+
+            document.getElementById('carrier-val').textContent = c;
+            document.getElementById('beat-val').textContent = b;
+
+            document.getElementById('left-freq').textContent = c;
+            document.getElementById('right-freq').textContent = c + b;
+
+            if (isPlaying) {
+                oscLeft.frequency.setValueAtTime(c, audioEngine.context.currentTime);
+                oscRight.frequency.setValueAtTime(c + b, audioEngine.context.currentTime);
+            }
+        }
+
+        playBtn.addEventListener('click', () => {
+            if (!isPlaying) {
+                start();
+            } else {
+                stop();
+            }
+        });
+
+        function start() {
+            const ctx = audioEngine.init();
+            const c = parseFloat(carrierSlider.value);
+            const b = parseFloat(beatSlider.value);
+
+            // Channel Merger for stereo separation
+            const merger = ctx.createChannelMerger(2);
+
+            // Left Oscillator
+            oscLeft = ctx.createOscillator();
+            oscLeft.type = 'sine';
+            oscLeft.frequency.value = c;
+            oscLeft.connect(merger, 0, 0); // Connect to left channel
+
+            // Right Oscillator
+            oscRight = ctx.createOscillator();
+            oscRight.type = 'sine';
+            oscRight.frequency.value = c + b;
+            oscRight.connect(merger, 0, 1); // Connect to right channel
+
+            gainNode = ctx.createGain();
+            gainNode.gain.value = 0.5;
+
+            merger.connect(gainNode);
+            gainNode.connect(ctx.destination);
+
+            oscLeft.start();
+            oscRight.start();
+
+            isPlaying = true;
+            playIcon.className = 'fas fa-stop';
+            statusText.textContent = 'GENERATING...';
+            statusText.classList.add('text-green-400');
+            statusText.classList.remove('text-white');
+        }
+
+        function stop() {
+            if (oscLeft) {
+                oscLeft.stop();
+                oscRight.stop();
+            }
+            isPlaying = false;
+            playIcon.className = 'fas fa-play';
+            statusText.textContent = 'STOPPED';
+            statusText.classList.remove('text-green-400');
+            statusText.classList.add('text-white');
+        }
+    </script>
+</body>
+
+</html>

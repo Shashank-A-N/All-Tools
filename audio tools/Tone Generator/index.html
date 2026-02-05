@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tone Generator - AudioForge</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        cyber: {
+                            bg: '#05050a',
+                            panel: 'rgba(21, 21, 30, 0.6)',
+                            primary: '#06b6d4',
+                            secondary: '#d946ef',
+                            text: '#e2e8f0',
+                            muted: '#64748b'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    boxShadow: {
+                        'neon': '0 0 10px rgba(6, 182, 212, 0.5)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background: radial-gradient(circle at 50% 0%, #1e1b4b 0%, #05050a 100%);
+            color: white;
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #06b6d4;
+            margin-top: -6px;
+            box-shadow: 0 0 10px #06b6d4;
+            cursor: pointer;
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #334155;
+            border-radius: 2px;
+        }
+
+        .wave-btn.active {
+            background: rgba(217, 70, 239, 0.2);
+            border-color: #d946ef;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen flex flex-col font-sans overflow-hidden">
+
+    <header class="h-16 glass z-50 flex items-center justify-between px-6 border-b border-white/5 shrink-0">
+        <div class="flex items-center gap-3">
+            <div
+                class="w-8 h-8 rounded bg-gradient-to-br from-cyber-primary to-cyber-secondary flex items-center justify-center">
+                <i class="fas fa-wave-square text-white text-sm"></i>
+            </div>
+            <h1 class="text-xl font-bold tracking-tight">AudioForge <span class="text-cyber-primary font-light">Tone
+                    Gen</span></h1>
+        </div>
+        <a href="../index.html" class="text-xs text-cyber-muted hover:text-white transition-colors">
+            <i class="fas fa-arrow-left mr-1"></i> Back to Tools
+        </a>
+    </header>
+
+    <main class="flex-1 flex flex-col items-center justify-center p-6 relative">
+        <div class="glass w-full max-w-xl rounded-2xl p-8 flex flex-col gap-8 shadow-2xl">
+
+            <div class="flex justify-center gap-4">
+                <button
+                    class="wave-btn active p-3 rounded bg-white/5 border border-white/10 w-20 flex flex-col items-center gap-1 hover:bg-white/10 transition"
+                    onclick="setWave('sine')">
+                    <i class="fas fa-wave-square text-xl"></i>
+                    <span class="text-[10px] uppercase">Sine</span>
+                </button>
+                <button
+                    class="wave-btn p-3 rounded bg-white/5 border border-white/10 w-20 flex flex-col items-center gap-1 hover:bg-white/10 transition"
+                    onclick="setWave('square')">
+                    <i class="fas fa-border-all text-xl"></i>
+                    <span class="text-[10px] uppercase">Square</span>
+                </button>
+                <button
+                    class="wave-btn p-3 rounded bg-white/5 border border-white/10 w-20 flex flex-col items-center gap-1 hover:bg-white/10 transition"
+                    onclick="setWave('sawtooth')">
+                    <i class="fas fa-tooth text-xl"></i>
+                    <span class="text-[10px] uppercase">Saw</span>
+                </button>
+                <button
+                    class="wave-btn p-3 rounded bg-white/5 border border-white/10 w-20 flex flex-col items-center gap-1 hover:bg-white/10 transition"
+                    onclick="setWave('triangle')">
+                    <i class="fas fa-mountain text-xl"></i>
+                    <span class="text-[10px] uppercase">Tri</span>
+                </button>
+            </div>
+
+            <div class="bg-black/40 rounded-xl p-6 border border-white/10 text-center">
+                <div class="text-cyber-muted text-xs uppercase mb-2">Frequency (Hz)</div>
+                <input type="number" id="freq-input" value="440" min="20" max="20000"
+                    class="text-center bg-transparent border-none text-6xl font-mono text-cyan-400 font-bold focus:outline-none w-full"
+                    onchange="updateFreq(this.value)">
+
+                <input type="range" min="20" max="2000" value="440" id="freq-slider" class="mt-6 w-full"
+                    oninput="updateFreq(this.value)">
+
+                <div class="flex justify-between text-xs text-cyber-muted mt-1">
+                    <span>20Hz</span>
+                    <span>2kHz</span>
+                </div>
+            </div>
+
+            <button id="toggle-btn"
+                class="w-full py-4 rounded-xl bg-cyber-secondary text-white font-bold text-lg hover:bg-fuchsia-400 transition-all shadow-[0_0_15px_rgba(217,70,239,0.4)] flex items-center justify-center gap-2">
+                <i class="fas fa-play"></i> Play Tone
+            </button>
+
+        </div>
+    </main>
+
+    <script>
+        let audioCtx;
+        let osc;
+        let gainNode;
+        let isPlaying = false;
+        let waveform = 'sine';
+        let frequency = 440;
+
+        const freqInput = document.getElementById('freq-input');
+        const freqSlider = document.getElementById('freq-slider');
+        const toggleBtn = document.getElementById('toggle-btn');
+        const waveBtns = document.querySelectorAll('.wave-btn');
+
+        function setWave(type) {
+            waveform = type;
+            waveBtns.forEach(btn => btn.classList.remove('active'));
+            // simple index map
+            const idx = ['sine', 'square', 'sawtooth', 'triangle'].indexOf(type);
+            if (idx > -1) waveBtns[idx].classList.add('active');
+
+            if (osc) osc.type = waveform;
+        }
+
+        function updateFreq(val) {
+            frequency = parseInt(val);
+            freqInput.value = frequency;
+            freqSlider.value = frequency;
+            if (osc) osc.frequency.value = frequency;
+        }
+
+        toggleBtn.addEventListener('click', () => {
+            if (isPlaying) stopTone();
+            else startTone();
+        });
+
+        function initAudio() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+
+        function startTone() {
+            initAudio();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+
+            osc = audioCtx.createOscillator();
+            gainNode = audioCtx.createGain();
+
+            osc.type = waveform;
+            osc.frequency.value = frequency;
+
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+            gainNode.gain.linearRampToValueAtTime(0.5, audioCtx.currentTime + 0.1);
+
+            osc.start();
+            isPlaying = true;
+
+            toggleBtn.innerHTML = '<i class="fas fa-stop"></i> Stop Tone';
+            toggleBtn.classList.replace('bg-cyber-secondary', 'bg-red-500');
+            toggleBtn.classList.replace('hover:bg-fuchsia-400', 'hover:bg-red-600');
+        }
+
+        function stopTone() {
+            if (gainNode) {
+                gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.1);
+                setTimeout(() => {
+                    if (osc) osc.stop();
+                    osc = null;
+                }, 100);
+            }
+            isPlaying = false;
+
+            toggleBtn.innerHTML = '<i class="fas fa-play"></i> Play Tone';
+            toggleBtn.classList.replace('bg-red-500', 'bg-cyber-secondary');
+            toggleBtn.classList.replace('hover:bg-red-600', 'hover:bg-fuchsia-400');
+        }
+    </script>
+</body>
+
+</html>

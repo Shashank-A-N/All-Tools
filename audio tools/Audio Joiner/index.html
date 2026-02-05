@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Joiner - AudioForge</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        cyber: {
+                            bg: '#05050a',
+                            panel: 'rgba(21, 21, 30, 0.6)',
+                            primary: '#06b6d4',
+                            secondary: '#d946ef',
+                            text: '#e2e8f0',
+                            muted: '#64748b'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    boxShadow: {
+                        'neon': '0 0 10px rgba(6, 182, 212, 0.5)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background: radial-gradient(circle at 50% 0%, #1e1b4b 0%, #05050a 100%);
+            color: white;
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+    </style>
+</head>
+
+<body class="min-h-screen flex flex-col font-sans overflow-hidden">
+
+    <header class="h-16 glass z-50 flex items-center justify-between px-6 border-b border-white/5 shrink-0">
+        <div class="flex items-center gap-3">
+            <div
+                class="w-8 h-8 rounded bg-gradient-to-br from-cyber-primary to-cyber-secondary flex items-center justify-center">
+                <i class="fas fa-link text-white text-sm"></i>
+            </div>
+            <h1 class="text-xl font-bold tracking-tight">AudioForge <span
+                    class="text-cyber-primary font-light">Joiner</span></h1>
+        </div>
+        <a href="../index.html" class="text-xs text-cyber-muted hover:text-white transition-colors">
+            <i class="fas fa-arrow-left mr-1"></i> Back to Tools
+        </a>
+    </header>
+
+    <main class="flex-1 flex flex-col items-center justify-center p-6 relative">
+        <div class="glass w-full max-w-2xl rounded-2xl p-8 flex flex-col gap-6 shadow-2xl">
+
+            <div class="border-2 border-dashed border-white/10 rounded-xl p-8 text-center hover:border-cyber-primary/50 transition-colors cursor-pointer bg-black/20"
+                onclick="document.getElementById('file-input').click()">
+                <i class="fas fa-layer-group text-4xl text-cyber-muted mb-4"></i>
+                <h3 class="text-lg font-bold">Add Audio Files</h3>
+                <p class="text-xs text-cyber-muted">Select multiple files to merge</p>
+                <input type="file" id="file-input" multiple accept="audio/*" class="hidden">
+            </div>
+
+            <div id="file-list" class="space-y-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+                <!-- List items -->
+            </div>
+
+            <button id="process-btn"
+                class="w-full py-4 rounded-xl bg-cyber-primary text-black font-bold text-lg hover:bg-cyan-400 transition-all shadow-neon flex items-center justify-center gap-2 opacity-50 cursor-not-allowed"
+                disabled>
+                <i class="fas fa-hammer"></i> Merge Files
+            </button>
+
+            <a id="download-link"
+                class="hidden w-full py-4 rounded-xl bg-cyber-secondary text-white font-bold text-center hover:bg-fuchsia-400 transition-all">
+                Download Merged Audio
+            </a>
+
+        </div>
+    </main>
+
+    <script>
+        const fileInput = document.getElementById('file-input');
+        const fileList = document.getElementById('file-list');
+        const processBtn = document.getElementById('process-btn');
+        const downloadLink = document.getElementById('download-link');
+
+        let files = [];
+
+        fileInput.addEventListener('change', (e) => {
+            const newFiles = Array.from(e.target.files);
+            files = [...files, ...newFiles];
+            renderList();
+            updateBtn();
+        });
+
+        function renderList() {
+            fileList.innerHTML = '';
+            files.forEach((file, idx) => {
+                const el = document.createElement('div');
+                el.className = 'glass p-3 rounded flex items-center justify-between text-sm animate-fade-in';
+                el.innerHTML = `
+                    <div class="flex items-center gap-2 truncate">
+                        <span class="text-cyber-primary font-mono">${idx + 1}.</span>
+                        <span class="truncate">${file.name}</span>
+                    </div>
+                    <button class="text-red-400 hover:text-red-200" onclick="removeFile(${idx})">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+                fileList.appendChild(el);
+            });
+        }
+
+        function removeFile(idx) {
+            files.splice(idx, 1);
+            renderList();
+            updateBtn();
+        }
+
+        function updateBtn() {
+            if (files.length >= 2) {
+                processBtn.disabled = false;
+                processBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            } else {
+                processBtn.disabled = true;
+                processBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            }
+        }
+
+        processBtn.addEventListener('click', async () => {
+            processBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const buffers = [];
+
+            try {
+                // Decode all files
+                for (const file of files) {
+                    const ab = await file.arrayBuffer();
+                    const audioBuf = await audioCtx.decodeAudioData(ab);
+                    buffers.push(audioBuf);
+                }
+
+                // Calculate total length
+                const totalLength = buffers.reduce((acc, b) => acc + b.length, 0);
+
+                // Create output buffer
+                const outputBuf = audioCtx.createBuffer(
+                    buffers[0].numberOfChannels,
+                    totalLength,
+                    buffers[0].sampleRate
+                );
+
+                // Merge
+                let offset = 0;
+                for (const buf of buffers) {
+                    for (let ch = 0; ch < outputBuf.numberOfChannels; ch++) {
+                        outputBuf.getChannelData(ch).set(buf.getChannelData(ch), offset);
+                    }
+                    offset += buf.length;
+                }
+
+                // Encode to WAV
+                const wavBlob = bufferToWave(outputBuf, outputBuf.length);
+                const url = URL.createObjectURL(wavBlob);
+
+                downloadLink.href = url;
+                downloadLink.download = 'merged_audio.wav';
+                downloadLink.classList.remove('hidden');
+                processBtn.classList.add('hidden');
+
+            } catch (err) {
+                console.error(err);
+                alert("Error processing audio files. Ensure format compatibility.");
+                processBtn.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Error';
+            }
+        });
+
+        // Simple WAV Encoder
+        function bufferToWave(abuffer, len) {
+            let numOfChan = abuffer.numberOfChannels,
+                length = len * numOfChan * 2 + 44,
+                buffer = new ArrayBuffer(length),
+                view = new DataView(buffer),
+                channels = [], i, sample,
+                offset = 0,
+                pos = 0;
+
+            // write WAVE header
+            setUint32(0x46464952);                         // "RIFF"
+            setUint32(length - 8);                         // file length - 8
+            setUint32(0x45564157);                         // "WAVE"
+
+            setUint32(0x20746d66);                         // "fmt " chunk
+            setUint32(16);                                 // length = 16
+            setUint16(1);                                  // PCM (uncompressed)
+            setUint16(numOfChan);
+            setUint32(abuffer.sampleRate);
+            setUint32(abuffer.sampleRate * 2 * numOfChan); // avg. bytes/sec
+            setUint16(numOfChan * 2);                      // block-align
+            setUint16(16);                                 // 16-bit (hardcoded in this pixel)
+
+            setUint32(0x61746164);                         // "data" - chunk
+            setUint32(length - pos - 4);                   // chunk length
+
+            // write interleaved data
+            for (i = 0; i < abuffer.numberOfChannels; i++)
+                channels.push(abuffer.getChannelData(i));
+
+            while (pos < len) {
+                for (i = 0; i < numOfChan; i++) {             // interleave channels
+                    sample = Math.max(-1, Math.min(1, channels[i][pos])); // clamp
+                    sample = (0.5 + sample < 0 ? sample * 32768 : sample * 32767) | 0; // scale to 16-bit
+                    view.setInt16(44 + offset, sample, true);          // write 16-bit sample
+                    offset += 2;
+                }
+                pos++;
+            }
+
+            return new Blob([buffer], { type: "audio/wav" });
+
+            function setUint16(data) {
+                view.setUint16(pos, data, true);
+                pos += 2;
+            }
+
+            function setUint32(data) {
+                view.setUint32(pos, data, true);
+                pos += 4;
+            }
+        }
+    </script>
+</body>
+
+</html>

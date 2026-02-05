@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shadow Video - Cropper</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;500;600;700&display=swap"
+        rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Cropper.js -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+
+    <link rel="stylesheet" href="../../styles.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Rajdhani', 'sans-serif'],
+                        orbitron: ['Orbitron', 'sans-serif']
+                    },
+                    colors: {
+                        cyber: {
+                            primary: '#8b5cf6', // Violet
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Cropper Customization */
+        .cropper-line {
+            background-color: #8b5cf6;
+        }
+
+        .cropper-point {
+            background-color: #8b5cf6;
+        }
+
+        .cropper-bg {
+            background: #000;
+        }
+
+        .cropper-modal {
+            opacity: 0.8;
+            background-color: #0f172a;
+        }
+    </style>
+</head>
+
+<body
+    class="min-h-screen flex flex-col font-sans overflow-x-hidden bg-slate-900 text-white selection:bg-violet-500 selection:text-white">
+
+    <!-- 3D Background -->
+    <div id="bg-3d-container"></div>
+
+    <!-- Navigation -->
+    <nav
+        class="sticky top-0 z-50 glass-effect border-b border-white/5 px-4 md:px-6 py-3 flex items-center justify-between backdrop-blur-md">
+        <a href="../index.html" class="flex items-center gap-3 text-slate-300 hover:text-white transition-colors group">
+            <div
+                class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center border border-white/10 group-hover:border-violet-500/50 transition-all">
+                <i class="fas fa-chevron-left text-xs group-hover:-translate-x-0.5 transition-transform"></i>
+            </div>
+            <span class="font-orbitron font-bold tracking-wider hidden md:block">BACK</span>
+        </a>
+
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded bg-violet-500/20 flex items-center justify-center text-violet-500">
+                <i class="fas fa-crop-alt"></i>
+            </div>
+            <h1 class="text-lg md:text-xl font-orbitron font-bold tracking-widest text-white">SHADOW<span
+                    class="text-violet-500">CROP</span></h1>
+        </div>
+
+        <div class="w-8"></div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="flex-grow container mx-auto px-4 py-8 relative z-10 flex flex-col items-center gap-6">
+
+        <!-- Upload -->
+        <div id="uploadArea"
+            class="w-full max-w-2xl p-12 glass rounded-3xl border-2 border-dashed border-white/10 hover:border-violet-500/50 transition-all flex flex-col items-center justify-center cursor-pointer group"
+            onclick="document.getElementById('fileInput').click()"
+            ondragover="event.preventDefault(); this.classList.add('border-violet-500')"
+            ondragleave="this.classList.remove('border-violet-500')">
+            <input type="file" id="fileInput" accept="video/*" class="hidden" onchange="handleFile(this.files[0])">
+            <div
+                class="w-20 h-20 rounded-2xl bg-violet-500/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                <i class="fas fa-expand text-4xl text-violet-400"></i>
+            </div>
+            <h3 class="text-2xl font-orbitron font-bold text-white mb-2">Upload Video</h3>
+            <p class="text-slate-400 text-sm">Drag & drop or click to browse</p>
+        </div>
+
+        <!-- Editor -->
+        <div id="editorArea" class="w-full max-w-6xl hidden flex-col gap-6 animate-fade-in-up">
+
+            <div class="relative w-full h-[60vh] bg-black/50 rounded-2xl border border-white/10 overflow-hidden">
+                <!-- We wrap video in a container for CropperJS roughly, but CropperJS works on Images mostly, 
+                     however, we can fake it by putting a transparent image overlay or just using CSS boxes.
+                     Actually, standard CropperJS doesn't support Video directly.
+                     
+                     Better approach: Display video, put a resizable overlay on top.
+                -->
+                <div id="videoContainer" class="w-full h-full flex items-center justify-center relative">
+                    <video id="videoPreview" class="max-w-full max-h-full" controls></video>
+                    <!-- Overlay Div for cropping zone visualization (Simplified) -->
+                    <div id="cropOverlay"
+                        class="absolute border-2 border-violet-500 box-content shadow-[0_0_0_9999px_rgba(0,0,0,0.7)] pointer-events-none hidden">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Controls -->
+            <div class="glass p-6 rounded-2xl border border-white/5 flex flex-col items-center gap-4 text-center">
+                <p class="text-sm text-slate-400">
+                    <span class="text-violet-400 font-bold">Note:</span>
+                    Browser-based cropping is simulated. We will record the selected area.
+                </p>
+
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 w-full max-w-2xl">
+                    <button onclick="setRatio(16/9)"
+                        class="p-3 bg-slate-800 hover:bg-slate-700 rounded text-xs font-bold transition-colors">16:9</button>
+                    <button onclick="setRatio(4/3)"
+                        class="p-3 bg-slate-800 hover:bg-slate-700 rounded text-xs font-bold transition-colors">4:3</button>
+                    <button onclick="setRatio(1)"
+                        class="p-3 bg-slate-800 hover:bg-slate-700 rounded text-xs font-bold transition-colors">1:1</button>
+                    <button onclick="setRatio(9/16)"
+                        class="p-3 bg-slate-800 hover:bg-slate-700 rounded text-xs font-bold transition-colors">9:16</button>
+                </div>
+
+                <div class="flex gap-4">
+                    <div class="flex flex-col items-start gap-1">
+                        <label class="text-[10px] font-bold uppercase text-slate-500">X</label>
+                        <input type="number" id="x" value="0"
+                            class="w-20 bg-slate-900 border border-white/10 rounded px-2 py-1 text-sm">
+                    </div>
+                    <div class="flex flex-col items-start gap-1">
+                        <label class="text-[10px] font-bold uppercase text-slate-500">Y</label>
+                        <input type="number" id="y" value="0"
+                            class="w-20 bg-slate-900 border border-white/10 rounded px-2 py-1 text-sm">
+                    </div>
+                    <div class="flex flex-col items-start gap-1">
+                        <label class="text-[10px] font-bold uppercase text-slate-500">W</label>
+                        <input type="number" id="w" value="640"
+                            class="w-20 bg-slate-900 border border-white/10 rounded px-2 py-1 text-sm">
+                    </div>
+                    <div class="flex flex-col items-start gap-1">
+                        <label class="text-[10px] font-bold uppercase text-slate-500">H</label>
+                        <input type="number" id="h" value="360"
+                            class="w-20 bg-slate-900 border border-white/10 rounded px-2 py-1 text-sm">
+                    </div>
+                </div>
+
+                <button onclick="processCrop()" id="cropBtn"
+                    class="mt-4 px-10 py-4 bg-violet-600 hover:bg-violet-500 text-white font-bold font-orbitron tracking-wider rounded-xl shadow-lg shadow-violet-900/40 transition-transform hover:-translate-y-1">
+                    CROP & DOWNLOAD
+                </button>
+            </div>
+
+        </div>
+
+    </main>
+
+    <script type="module" src="../../shared/bg-particles.js"></script>
+    <script>
+        const uploadArea = document.getElementById('uploadArea');
+        const editorArea = document.getElementById('editorArea');
+        const video = document.getElementById('videoPreview');
+        const cropBtn = document.getElementById('cropBtn');
+        const inputs = {
+            x: document.getElementById('x'),
+            y: document.getElementById('y'),
+            w: document.getElementById('w'),
+            h: document.getElementById('h')
+        };
+
+        let canvas, ctx;
+
+        function handleFile(file) {
+            if (!file) return;
+            const url = URL.createObjectURL(file);
+            video.src = url;
+            uploadArea.classList.add('hidden');
+            editorArea.classList.remove('hidden');
+            editorArea.classList.add('flex');
+
+            video.onloadedmetadata = () => {
+                inputs.w.value = video.videoWidth;
+                inputs.h.value = video.videoHeight;
+            };
+        }
+
+        function setRatio(r) {
+            // Simplified logic: adjust W/H based on current, centered
+            const vidW = video.videoWidth || 640;
+            const vidH = video.videoHeight || 360;
+
+            let newW = vidW;
+            let newH = vidW / r;
+
+            if (newH > vidH) {
+                newH = vidH;
+                newW = vidH * r;
+            }
+
+            inputs.w.value = Math.floor(newW);
+            inputs.h.value = Math.floor(newH);
+            inputs.x.value = Math.floor((vidW - newW) / 2);
+            inputs.y.value = Math.floor((vidH - newH) / 2);
+        }
+
+        async function processCrop() {
+            cropBtn.disabled = true;
+            cropBtn.textContent = "CROPPING...";
+
+            const cropX = parseInt(inputs.x.value);
+            const cropY = parseInt(inputs.y.value);
+            const cropW = parseInt(inputs.w.value);
+            const cropH = parseInt(inputs.h.value);
+
+            canvas = document.createElement('canvas');
+            canvas.width = cropW;
+            canvas.height = cropH;
+            ctx = canvas.getContext('2d');
+
+            const stream = canvas.captureStream(30);
+            const recorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp9' });
+            const chunks = [];
+
+            recorder.ondataavailable = e => chunks.push(e.data);
+            recorder.onstop = () => {
+                const blob = new Blob(chunks, { type: 'video/webm' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'cropped_video.webm';
+                a.click();
+                cropBtn.disabled = false;
+                cropBtn.textContent = "CROP & DOWNLOAD";
+            };
+
+            recorder.start();
+            video.currentTime = 0;
+            video.play();
+
+            const draw = () => {
+                if (video.paused || video.ended) {
+                    if (video.ended) recorder.stop();
+                    return;
+                }
+                ctx.drawImage(video, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+                requestAnimationFrame(draw);
+            };
+            draw();
+            video.onended = () => { };
+        }
+    </script>
+</body>
+
+</html>

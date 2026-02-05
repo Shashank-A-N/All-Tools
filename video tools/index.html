@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shadow Video - Cinematic Suite</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;500;700&display=swap"
+        rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link rel="stylesheet" href="../styles.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        cyber: {
+                            primary: '#00ff41',
+                            secondary: '#008f11',
+                            dark: '#0d0208',
+                            light: '#e0e0e0',
+                            accent: '#ff003c',
+                            muted: '#4a4a4a',
+                            glass: 'rgba(255, 255, 255, 0.05)',
+                        }
+                    },
+                    fontFamily: {
+                        mono: ['Courier New', 'monospace'],
+                        sans: ['Rajdhani', 'sans-serif'],
+                        orbitron: ['Orbitron', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body
+    class="min-h-screen flex flex-col font-sans overflow-x-hidden selection:bg-purple-500 selection:text-white bg-slate-900 text-white">
+
+    <!-- 3D Background Container -->
+    <div id="bg-3d-container"></div>
+
+    <!-- Navigation -->
+    <nav
+        class="sticky top-0 z-50 glass-effect border-b border-white/5 px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4 md:gap-0 backdrop-blur-md">
+        <div class="flex items-center gap-3">
+            <div
+                class="relative w-10 h-10 flex items-center justify-center bg-purple-600/20 rounded-lg border border-purple-500/30">
+                <i class="fas fa-video text-purple-400 text-xl"></i>
+            </div>
+            <h1 class="text-2xl font-orbitron font-bold tracking-widest text-white">SHADOW<span
+                    class="text-purple-500">VIDEO</span></h1>
+        </div>
+
+        <div class="flex flex-wrap justify-center gap-4 md:gap-6 w-full md:w-auto">
+            <a href="../index.html" class="nav-link text-slate-300 hover:text-white transition-colors">
+                <i class="fas fa-home"></i> Home
+            </a>
+            <div class="hidden md:block h-6 w-px bg-white/10 mx-2"></div>
+            <a href="../audio tools/index.html"
+                class="nav-link text-slate-400 hover:text-purple-400 transition-colors">Audio</a>
+            <a href="../text tools/index.html"
+                class="nav-link text-slate-400 hover:text-purple-400 transition-colors">Text</a>
+            <a href="../image tools/index.html"
+                class="nav-link text-slate-400 hover:text-purple-400 transition-colors">Image</a>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="relative pt-20 pb-12 overflow-hidden text-center z-10">
+        <div class="hero-glow"></div>
+        <div class="container mx-auto px-4 relative z-10">
+            <h1 class="text-5xl md:text-7xl font-extrabold tracking-tight text-white mb-6 font-orbitron">
+                Visual <span class="hero-text-gradient">Synthesis</span>
+            </h1>
+            <p class="text-xl text-slate-400 mb-10 max-w-2xl mx-auto leading-relaxed">
+                Edit, convert, and master video content. <span class="text-purple-400 font-bold">Zero Uploads.</span>
+            </p>
+        </div>
+    </section>
+
+    <!-- Tools Grid -->
+    <main class="flex-grow container mx-auto px-4 relative z-10 pb-20">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+            <!-- Split -->
+            <a href="./split/split.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-red-500/10 flex items-center justify-center text-red-400 group-hover:scale-110 transition-transform duration-300 gap-4 shrink-0">
+                    <i class="fas fa-cut text-2xl"></i>
+                </div>
+                <div class="revolving-border">
+                    <svg class="w-full h-full">
+                        <rect class="dash-path" width="100%" height="100%" rx="16" ry="16" />
+                    </svg>
+                </div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-red-400 transition-colors">Split Video
+                    </h4>
+                    <p class="text-sm text-slate-400">Extract segments from video files.</p>
+                </div>
+            </a>
+
+            <!-- Merge -->
+            <a href="./merge/merge.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400 group-hover:scale-110 transition-transform duration-300 gap-4 shrink-0">
+                    <i class="fas fa-object-group text-2xl"></i>
+                </div>
+                <div class="revolving-border">
+                    <svg class="w-full h-full">
+                        <rect class="dash-path" width="100%" height="100%" rx="16" ry="16" />
+                    </svg>
+                </div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-blue-400 transition-colors">Merge
+                        Video</h4>
+                    <p class="text-sm text-slate-400">Combine videos into one file.</p>
+                </div>
+            </a>
+
+            <!-- Compress -->
+            <a href="./compressor/compress.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-green-500/10 flex items-center justify-center text-green-400 group-hover:scale-110 transition-transform duration-300 gap-4 shrink-0">
+                    <i class="fas fa-compress-arrows-alt text-2xl"></i>
+                </div>
+                <div class="revolving-border">
+                    <svg class="w-full h-full">
+                        <rect class="dash-path" width="100%" height="100%" rx="16" ry="16" />
+                    </svg>
+                </div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-green-400 transition-colors">Compress
+                        Video</h4>
+                    <p class="text-sm text-slate-400">Reduce file size efficiently.</p>
+                </div>
+            </a>
+
+            <!-- Convert -->
+            <a href="./converter/converter.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-400 group-hover:scale-110 transition-transform duration-300 gap-4 shrink-0">
+                    <i class="fas fa-exchange-alt text-2xl"></i>
+                </div>
+                <div class="revolving-border">
+                    <svg class="w-full h-full">
+                        <rect class="dash-path" width="100%" height="100%" rx="16" ry="16" />
+                    </svg>
+                </div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-orange-400 transition-colors">Convert
+                        Format</h4>
+                    <p class="text-sm text-slate-400">Change video format (MP4, MKV, etc).</p>
+                </div>
+            </a>
+
+            <!-- Rotate -->
+            <a href="./rotate/rotate.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-yellow-500/10 flex items-center justify-center text-yellow-400 group-hover:scale-110 transition-transform duration-300 gap-4 shrink-0">
+                    <i class="fas fa-undo text-2xl"></i>
+                </div>
+                <div class="revolving-border">
+                    <svg class="w-full h-full">
+                        <rect class="dash-path" width="100%" height="100%" rx="16" ry="16" />
+                    </svg>
+                </div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-yellow-400 transition-colors">Rotate
+                        Video</h4>
+                    <p class="text-sm text-slate-400">Flip or rotate video orientation.</p>
+                </div>
+            </a>
+
+            <!-- Audio Extractor -->
+            <a href="./audio-extractor/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-pink-500/10 flex items-center justify-center text-pink-400 group-hover:scale-110 transition-transform duration-300 gap-4 shrink-0">
+                    <i class="fas fa-music text-2xl"></i>
+                </div>
+                <div class="revolving-border">
+                    <svg class="w-full h-full">
+                        <rect class="dash-path" width="100%" height="100%" rx="16" ry="16" />
+                    </svg>
+                </div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-pink-400 transition-colors">Extract
+                        Audio</h4>
+                    <p class="text-sm text-slate-400">Pull MP3 from video files.</p>
+                </div>
+            </a>
+
+            <!-- Frame Grabber -->
+            <a href="./frame-grabber/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-cyan-500/10 flex items-center justify-center text-cyan-400 group-hover:scale-110 transition-transform duration-300 gap-4 shrink-0">
+                    <i class="fas fa-camera text-2xl"></i>
+                </div>
+                <div class="revolving-border">
+                    <svg class="w-full h-full">
+                        <rect class="dash-path" width="100%" height="100%" rx="16" ry="16" />
+                    </svg>
+                </div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-cyan-400 transition-colors">Frame
+                        Grabber</h4>
+                    <p class="text-sm text-slate-400">Extract high-quality images from video.</p>
+                </div>
+            </a>
+
+            <!-- Subtitles -->
+            <a href="./subtitles/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-lime-500/10 flex items-center justify-center text-lime-400 group-hover:scale-110 transition-transform duration-300 gap-4 shrink-0">
+                    <i class="fas fa-closed-captioning text-2xl"></i>
+                </div>
+                <div class="revolving-border">
+                    <svg class="w-full h-full">
+                        <rect class="dash-path" width="100%" height="100%" rx="16" ry="16" />
+                    </svg>
+                </div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-lime-400 transition-colors">Subtitles
+                    </h4>
+                    <p class="text-sm text-slate-400">Add or edit video subtitles.</p>
+                </div>
+            </a>
+
+            <!-- Blur -->
+            <a href="./bluring/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-gray-500/10 flex items-center justify-center text-gray-400 group-hover:scale-110 transition-transform duration-300 gap-4 shrink-0">
+                    <i class="fas fa-eye-slash text-2xl"></i>
+                </div>
+                <div class="revolving-border">
+                    <svg class="w-full h-full">
+                        <rect class="dash-path" width="100%" height="100%" rx="16" ry="16" />
+                    </svg>
+                </div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-gray-400 transition-colors">Blur Video
+                    </h4>
+                    <p class="text-sm text-slate-400">Blur sensitive areas in video.</p>
+                </div>
+            </a>
+
+            <!-- Video Speed -->
+            <a href="./Video Speed Controller/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 group-hover:scale-110 transition-transform duration-300 gap-4 shrink-0">
+                    <i class="fas fa-tachometer-alt text-2xl"></i>
+                </div>
+                <div class="revolving-border">
+                    <svg class="w-full h-full">
+                        <rect class="dash-path" width="100%" height="100%" rx="16" ry="16" />
+                    </svg>
+                </div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-indigo-400 transition-colors">Speed
+                        Control</h4>
+                    <p class="text-sm text-slate-400">Adjust playback speed.</p>
+                </div>
+            </a>
+
+            <!-- Video Vault -->
+            <a href="./VideoVault/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-fuchsia-500/10 flex items-center justify-center text-fuchsia-400 group-hover:scale-110 transition-transform duration-300 gap-4 shrink-0">
+                    <i class="fas fa-lock text-2xl"></i>
+                </div>
+                <div class="revolving-border">
+                    <svg class="w-full h-full">
+                        <rect class="dash-path" width="100%" height="100%" rx="16" ry="16" />
+                    </svg>
+                </div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-fuchsia-400 transition-colors">Video
+                        Vault</h4>
+                    <p class="text-sm text-slate-400">Secure video encryption.</p>
+                </div>
+            </a>
+
+            <!-- NEW TOOLS START HERE -->
+
+            <!-- Screen Recorder -->
+            <a href="./Screen Recorder/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-red-500/10 flex items-center justify-center text-red-500 group-hover:scale-110 transition-transform duration-300 gap-4 shrink-0">
+                    <i class="fas fa-desktop text-2xl"></i>
+                </div>
+                <div class="revolving-border"><svg class="w-full h-full">
+                        <rect class="dash-path" width="100%" height="100%" rx="16" ry="16" />
+                    </svg></div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-red-500 transition-colors">Screen
+                        Recorder</h4>
+                    <p class="text-sm text-slate-400">Record your desktop activity.</p>
+                </div>
+            </a>
+
+            <!-- Webcam Recorder -->
+            <a href="./Webcam Recorder/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-500 group-hover:scale-110 transition-transform duration-300 gap-4 shrink-0">
+                    <i class="fas fa-camera text-2xl"></i>
+                </div>
+                <div class="revolving-border"><svg class="w-full h-full">
+                        <rect class="dash-path" width="100%" height="100%" rx="16" ry="16" />
+                    </svg></div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-purple-500 transition-colors">Webcam
+                        Recorder</h4>
+                    <p class="text-sm text-slate-400">Capture video from camera.</p>
+                </div>
+            </a>
+
+            <!-- Video to GIF -->
+            <a href="./Video to GIF/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-cyan-500/10 flex items-center justify-center text-cyan-500 group-hover:scale-110 transition-transform duration-300 gap-4 shrink-0">
+                    <i class="fas fa-file-video text-2xl"></i>
+                </div>
+                <div class="revolving-border"><svg class="w-full h-full">
+                        <rect class="dash-path" width="100%" height="100%" rx="16" ry="16" />
+                    </svg></div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-cyan-500 transition-colors">Video to
+                        GIF</h4>
+                    <p class="text-sm text-slate-400">Convert clips to animated GIFs.</p>
+                </div>
+            </a>
+
+            <!-- GIF to Video -->
+            <a href="./GIF to Video/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-500 group-hover:scale-110 transition-transform duration-300 gap-4 shrink-0">
+                    <i class="fas fa-sync text-2xl"></i>
+                </div>
+                <div class="revolving-border"><svg class="w-full h-full">
+                        <rect class="dash-path" width="100%" height="100%" rx="16" ry="16" />
+                    </svg></div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-emerald-500 transition-colors">GIF to
+                        Video</h4>
+                    <p class="text-sm text-slate-400">Convert GIF animations to video.</p>
+                </div>
+            </a>
+
+            <!-- Video Flip -->
+            <a href="./Video Flip/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-rose-500/10 flex items-center justify-center text-rose-500 group-hover:scale-110 transition-transform duration-300 gap-4 shrink-0">
+                    <i class="fas fa-arrows-alt-h text-2xl"></i>
+                </div>
+                <div class="revolving-border"><svg class="w-full h-full">
+                        <rect class="dash-path" width="100%" height="100%" rx="16" ry="16" />
+                    </svg></div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-rose-500 transition-colors">Video Flip
+                    </h4>
+                    <p class="text-sm text-slate-400">Mirror video frames.</p>
+                </div>
+            </a>
+
+            <!-- Video Reverse -->
+            <a href="./Video Reverse/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-500 group-hover:scale-110 transition-transform duration-300 gap-4 shrink-0">
+                    <i class="fas fa-history text-2xl"></i>
+                </div>
+                <div class="revolving-border"><svg class="w-full h-full">
+                        <rect class="dash-path" width="100%" height="100%" rx="16" ry="16" />
+                    </svg></div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-amber-500 transition-colors">Video
+                        Reverse</h4>
+                    <p class="text-sm text-slate-400">Play video backwards.</p>
+                </div>
+            </a>
+
+            <!-- Volume Booster -->
+            <a href="./Volume Booster/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-pink-500/10 flex items-center justify-center text-pink-500 group-hover:scale-110 transition-transform duration-300 gap-4 shrink-0">
+                    <i class="fas fa-volume-up text-2xl"></i>
+                </div>
+                <div class="revolving-border"><svg class="w-full h-full">
+                        <rect class="dash-path" width="100%" height="100%" rx="16" ry="16" />
+                    </svg></div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-pink-500 transition-colors">Volume
+                        Booster</h4>
+                    <p class="text-sm text-slate-400">Increase video audio gain.</p>
+                </div>
+            </a>
+
+            <!-- Mute Video -->
+            <a href="./Mute Video/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-slate-500/10 flex items-center justify-center text-slate-400 group-hover:scale-110 transition-transform duration-300 gap-4 shrink-0">
+                    <i class="fas fa-volume-mute text-2xl"></i>
+                </div>
+                <div class="revolving-border"><svg class="w-full h-full">
+                        <rect class="dash-path" width="100%" height="100%" rx="16" ry="16" />
+                    </svg></div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-slate-400 transition-colors">Mute
+                        Video</h4>
+                    <p class="text-sm text-slate-400">Remove audio track.</p>
+                </div>
+            </a>
+
+            <!-- Video Cropper -->
+            <a href="./Video Cropper/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-violet-500/10 flex items-center justify-center text-violet-500 group-hover:scale-110 transition-transform duration-300 gap-4 shrink-0">
+                    <i class="fas fa-crop-alt text-2xl"></i>
+                </div>
+                <div class="revolving-border"><svg class="w-full h-full">
+                        <rect class="dash-path" width="100%" height="100%" rx="16" ry="16" />
+                    </svg></div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-violet-500 transition-colors">Video
+                        Cropper</h4>
+                    <p class="text-sm text-slate-400">Crop video dimensions.</p>
+                </div>
+            </a>
+
+            <!-- Video Resizer -->
+            <a href="./Video Resizer/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-500 group-hover:scale-110 transition-transform duration-300 gap-4 shrink-0">
+                    <i class="fas fa-expand-arrows-alt text-2xl"></i>
+                </div>
+                <div class="revolving-border"><svg class="w-full h-full">
+                        <rect class="dash-path" width="100%" height="100%" rx="16" ry="16" />
+                    </svg></div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-blue-500 transition-colors">Video
+                        Resizer</h4>
+                    <p class="text-sm text-slate-400">Resize width and height.</p>
+                </div>
+            </a>
+
+            <!-- Loop Video -->
+            <a href="./Loop Video/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-green-500/10 flex items-center justify-center text-green-500 group-hover:scale-110 transition-transform duration-300 gap-4 shrink-0">
+                    <i class="fas fa-redo text-2xl"></i>
+                </div>
+                <div class="revolving-border"><svg class="w-full h-full">
+                        <rect class="dash-path" width="100%" height="100%" rx="16" ry="16" />
+                    </svg></div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-green-500 transition-colors">Loop
+                        Video</h4>
+                    <p class="text-sm text-slate-400">Create looped videos.</p>
+                </div>
+            </a>
+
+            <!-- Metadata Viewer -->
+            <a href="./Metadata Viewer/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-sky-500/10 flex items-center justify-center text-sky-500 group-hover:scale-110 transition-transform duration-300 gap-4 shrink-0">
+                    <i class="fas fa-info-circle text-2xl"></i>
+                </div>
+                <div class="revolving-border"><svg class="w-full h-full">
+                        <rect class="dash-path" width="100%" height="100%" rx="16" ry="16" />
+                    </svg></div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-sky-500 transition-colors">Metadata
+                    </h4>
+                    <p class="text-sm text-slate-400">Inspect video details.</p>
+                </div>
+            </a>
+
+            <!-- Video Filters -->
+            <a href="./Video Filters/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-fuchsia-500/10 flex items-center justify-center text-fuchsia-500 group-hover:scale-110 transition-transform duration-300 gap-4 shrink-0">
+                    <i class="fas fa-magic text-2xl"></i>
+                </div>
+                <div class="revolving-border"><svg class="w-full h-full">
+                        <rect class="dash-path" width="100%" height="100%" rx="16" ry="16" />
+                    </svg></div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-fuchsia-500 transition-colors">Video
+                        FX</h4>
+                    <p class="text-sm text-slate-400">Apply visual filters.</p>
+                </div>
+            </a>
+
+            <!-- Chroma Key -->
+            <a href="./Chroma Key/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-green-500/10 flex items-center justify-center text-green-500 group-hover:scale-110 transition-transform duration-300 gap-4 shrink-0">
+                    <i class="fas fa-layer-group text-2xl"></i>
+                </div>
+                <div class="revolving-border"><svg class="w-full h-full">
+                        <rect class="dash-path" width="100%" height="100%" rx="16" ry="16" />
+                    </svg></div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-green-500 transition-colors">Chroma
+                        Key</h4>
+                    <p class="text-sm text-slate-400">Green screen removal.</p>
+                </div>
+            </a>
+
+            <!-- PIP Enabler -->
+            <a href="./PIP Enabler/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-rose-500/10 flex items-center justify-center text-rose-500 group-hover:scale-110 transition-transform duration-300 gap-4 shrink-0">
+                    <i class="fas fa-external-link-alt text-2xl"></i>
+                </div>
+                <div class="revolving-border"><svg class="w-full h-full">
+                        <rect class="dash-path" width="100%" height="100%" rx="16" ry="16" />
+                    </svg></div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-rose-500 transition-colors">PIP
+                        Enabler</h4>
+                    <p class="text-sm text-slate-400">Picture-in-Picture mode.</p>
+                </div>
+            </a>
+
+            <!-- Thumbnail Generator -->
+            <a href="./Thumbnail Generator/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-500 group-hover:scale-110 transition-transform duration-300 gap-4 shrink-0">
+                    <i class="fas fa-th-large text-2xl"></i>
+                </div>
+                <div class="revolving-border"><svg class="w-full h-full">
+                        <rect class="dash-path" width="100%" height="100%" rx="16" ry="16" />
+                    </svg></div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-amber-500 transition-colors">
+                        Thumbnails</h4>
+                    <p class="text-sm text-slate-400">Generate grid previews.</p>
+                </div>
+            </a>
+
+            <!-- Audio Replacer -->
+            <a href="./Audio Replacer/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-500 group-hover:scale-110 transition-transform duration-300 gap-4 shrink-0">
+                    <i class="fas fa-music text-2xl"></i>
+                </div>
+                <div class="revolving-border"><svg class="w-full h-full">
+                        <rect class="dash-path" width="100%" height="100%" rx="16" ry="16" />
+                    </svg></div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-indigo-500 transition-colors">Swap
+                        Audio</h4>
+                    <p class="text-sm text-slate-400">Replace video soundtrack.</p>
+                </div>
+            </a>
+
+            <!-- Video Watermark -->
+            <a href="./Video Watermark/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-teal-500/10 flex items-center justify-center text-teal-500 group-hover:scale-110 transition-transform duration-300 gap-4 shrink-0">
+                    <i class="fas fa-copyright text-2xl"></i>
+                </div>
+                <div class="revolving-border"><svg class="w-full h-full">
+                        <rect class="dash-path" width="100%" height="100%" rx="16" ry="16" />
+                    </svg></div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-teal-500 transition-colors">Watermark
+                    </h4>
+                    <p class="text-sm text-slate-400">Add text overlay.</p>
+                </div>
+            </a>
+
+            <!-- Bitrate Calculator -->
+            <a href="./Bitrate Calculator/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-slate-500/10 flex items-center justify-center text-slate-500 group-hover:scale-110 transition-transform duration-300 gap-4 shrink-0">
+                    <i class="fas fa-calculator text-2xl"></i>
+                </div>
+                <div class="revolving-border"><svg class="w-full h-full">
+                        <rect class="dash-path" width="100%" height="100%" rx="16" ry="16" />
+                    </svg></div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-slate-500 transition-colors">Bitrate
+                        Calc</h4>
+                    <p class="text-sm text-slate-400">Estimate optimal settings.</p>
+                </div>
+            </a>
+
+            <!-- Video Sync -->
+            <a href="./Video Sync/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-red-500/10 flex items-center justify-center text-red-500 group-hover:scale-110 transition-transform duration-300 gap-4 shrink-0">
+                    <i class="fas fa-sliders-h text-2xl"></i>
+                </div>
+                <div class="revolving-border"><svg class="w-full h-full">
+                        <rect class="dash-path" width="100%" height="100%" rx="16" ry="16" />
+                    </svg></div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-red-500 transition-colors">Audio Sync
+                    </h4>
+                    <p class="text-sm text-slate-400">Adjust A/V synchronization.</p>
+                </div>
+            </a>
+
+            <!-- Teleprompter -->
+            <a href="./Teleprompter/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center text-white group-hover:scale-110 transition-transform duration-300 gap-4 shrink-0">
+                    <i class="fas fa-stream text-2xl"></i>
+                </div>
+                <div class="revolving-border"><svg class="w-full h-full">
+                        <rect class="dash-path" width="100%" height="100%" rx="16" ry="16" />
+                    </svg></div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-slate-300 transition-colors">
+                        Teleprompter</h4>
+                    <p class="text-sm text-slate-400">Scroll text for reading.</p>
+                </div>
+            </a>
+
+        </div>
+    </main>
+
+    <!-- Shared Background Script -->
+    <script type="module" src="../shared/bg-particles.js"></script>
+</body>
+
+</html>

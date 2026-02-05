@@ -1,0 +1,1295 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CipherSuite X - Ultimate Cryptography Tool</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+        :root {
+            --primary-rgb: 16, 185, 129;
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --glass-bg: rgba(10, 10, 15, 0.65);
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: #050505;
+            color: #e2e8f0;
+            overflow-x: hidden;
+            background-image: radial-gradient(circle at 50% 0%, #1a1a2e 0%, #050505 60%);
+            /* Extreme font scaling for mobile */
+            font-size: 10px;
+        }
+
+        @media (min-width: 640px) {
+            body {
+                font-size: 12px;
+            }
+        }
+
+        @media (min-width: 768px) {
+            body {
+                font-size: 14px;
+            }
+        }
+
+        .font-mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* --- Advanced Glassmorphism --- */
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .glass-input {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(4px);
+            transition: all 0.3s ease;
+        }
+
+        .glass-input:focus {
+            border-color: rgba(var(--primary-rgb), 0.5);
+            box-shadow: 0 0 20px rgba(var(--primary-rgb), 0.15);
+            background: rgba(0, 0, 0, 0.6);
+            transform: translateY(-1px);
+        }
+
+        /* --- Animations & Transitions --- */
+        .hover-scale {
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
+        }
+
+        .hover-scale:active {
+            transform: scale(0.96);
+        }
+
+        .hover-scale:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn-glow {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-glow::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: 0.5s;
+        }
+
+        .btn-glow:hover::after {
+            left: 100%;
+        }
+
+        /* Staggered Entrance Animations */
+        @keyframes slideUpFade {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-enter {
+            animation: slideUpFade 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0;
+            /* Start hidden */
+        }
+
+        .delay-100 {
+            animation-delay: 0.05s;
+        }
+
+        .delay-200 {
+            animation-delay: 0.1s;
+        }
+
+        .delay-300 {
+            animation-delay: 0.15s;
+        }
+
+        .delay-400 {
+            animation-delay: 0.2s;
+        }
+
+        /* Active Tab Indicator */
+        .nav-btn {
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        /* Desktop Indicator */
+        @media (min-width: 768px) {
+            .nav-btn::before {
+                content: '';
+                position: absolute;
+                left: 0;
+                top: 0;
+                bottom: 0;
+                width: 3px;
+                background: #10b981;
+                transform: scaleY(0);
+                transition: transform 0.3s ease;
+            }
+
+            .nav-btn.active-tab::before {
+                transform: scaleY(1);
+            }
+        }
+
+        /* Mobile Indicator (Top Border) */
+        @media (max-width: 767px) {
+            .nav-btn::before {
+                content: '';
+                position: absolute;
+                left: 0;
+                right: 0;
+                top: 0;
+                height: 3px;
+                background: #10b981;
+                transform: scaleX(0);
+                transition: transform 0.3s ease;
+            }
+
+            .nav-btn.active-tab::before {
+                transform: scaleX(1);
+            }
+        }
+
+        .nav-btn.active-tab {
+            background: rgba(255, 255, 255, 0.03);
+            color: white;
+        }
+
+        .nav-btn:hover {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        /* Canvas Background */
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .text-glow {
+            text-shadow: 0 0 10px rgba(var(--primary-rgb), 0.4);
+        }
+
+        /* Utility to hide scrollbar on mobile nav */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen selection:bg-emerald-500/30">
+
+    <canvas id="bg-canvas"></canvas>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed top-5 right-5 z-[60] flex flex-col gap-2 pointer-events-none"></div>
+
+    <div class="max-w-5xl mx-auto px-3 py-4 md:px-4 md:py-16 pb-24 md:pb-16">
+
+        <!-- Header -->
+        <header class="mb-4 md:mb-10 text-center relative z-10 animate-enter flex flex-col items-center">
+            <!-- Logo: Small on mobile, Large on desktop -->
+            <div
+                class="inline-flex items-center justify-center p-3 md:p-4 glass-panel rounded-xl md:rounded-2xl mb-2 md:mb-4 border-emerald-500/20 shadow-[0_0_40px_-10px_rgba(16,185,129,0.3)] transform hover:scale-105 transition-transform duration-500">
+                <i data-lucide="shield-check"
+                    class="text-emerald-400 w-6 h-6 md:w-10 md:h-10 drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]"></i>
+            </div>
+
+            <!-- App Name: Hidden on small screens -->
+            <h1 class="hidden md:block text-4xl md:text-6xl font-bold text-white tracking-tighter mb-2">
+                CIPHER<span class="text-emerald-500 text-glow">SUITE</span>
+            </h1>
+
+            <div class="flex items-center justify-center gap-2">
+                <span
+                    class="text-[8px] md:text-[10px] font-mono uppercase tracking-widest bg-white/5 border border-white/10 px-1.5 py-0.5 rounded text-slate-400">Ver
+                    2.0</span>
+                <!-- Tagline hidden on very small screens -->
+                <span class="hidden sm:inline text-slate-400 text-[10px] md:text-sm tracking-wide">Secure Local
+                    Cryptography</span>
+            </div>
+        </header>
+
+        <!-- Main Interface -->
+        <div
+            class="glass-panel rounded-2xl md:rounded-3xl overflow-hidden min-h-[500px] md:min-h-[650px] flex flex-col md:flex-row shadow-2xl animate-enter delay-100 border-t border-white/10 relative">
+
+            <!-- Navigation: Sidebar on Desktop, Bottom Bar on Mobile -->
+            <nav class="
+                fixed bottom-0 left-0 right-0 z-50 h-16 
+                md:static md:h-auto md:w-72 
+                bg-[#050505]/90 md:bg-[#08080c]/50 backdrop-blur-xl md:backdrop-blur-sm
+                border-t md:border-t-0 md:border-r border-white/10 md:border-white/5 
+                flex flex-row md:flex-col justify-around md:justify-start
+                p-1 md:p-6 gap-1 md:gap-2 
+                safe-area-pb
+            ">
+
+                <div class="hidden md:block text-xs font-bold text-slate-500 uppercase tracking-widest mb-4 pl-2">
+                    Modules</div>
+
+                <button onclick="switchTab('encrypt')" id="nav-encrypt"
+                    class="nav-btn flex-1 md:flex-none flex flex-col md:flex-row items-center justify-center md:justify-start gap-1 md:gap-4 p-2 md:px-4 md:py-3.5 rounded-lg md:rounded-xl text-slate-400 text-center md:text-left group active-tab">
+                    <div
+                        class="p-1.5 md:p-2 rounded-lg bg-emerald-500/10 group-[.active-tab]:bg-emerald-500/20 text-emerald-500 transition-colors">
+                        <i data-lucide="lock" class="w-5 h-5 md:w-5 md:h-5"></i>
+                    </div>
+                    <div class="hidden md:block">
+                        <span
+                            class="block font-semibold group-[.active-tab]:text-white transition-colors">Encryption</span>
+                        <span class="block text-[10px] opacity-60">AES-GCM Secure</span>
+                    </div>
+                </button>
+
+                <button onclick="switchTab('hash')" id="nav-hash"
+                    class="nav-btn flex-1 md:flex-none flex flex-col md:flex-row items-center justify-center md:justify-start gap-1 md:gap-4 p-2 md:px-4 md:py-3.5 rounded-lg md:rounded-xl text-slate-400 text-center md:text-left group">
+                    <div
+                        class="p-1.5 md:p-2 rounded-lg bg-blue-500/10 group-[.active-tab]:bg-blue-500/20 text-blue-500 transition-colors">
+                        <i data-lucide="hash" class="w-5 h-5 md:w-5 md:h-5"></i>
+                    </div>
+                    <div class="hidden md:block">
+                        <span
+                            class="block font-semibold group-[.active-tab]:text-white transition-colors">Hashing</span>
+                        <span class="block text-[10px] opacity-60">Integrity Check</span>
+                    </div>
+                </button>
+
+                <button onclick="switchTab('stego')" id="nav-stego"
+                    class="nav-btn flex-1 md:flex-none flex flex-col md:flex-row items-center justify-center md:justify-start gap-1 md:gap-4 p-2 md:px-4 md:py-3.5 rounded-lg md:rounded-xl text-slate-400 text-center md:text-left group">
+                    <div
+                        class="p-1.5 md:p-2 rounded-lg bg-purple-500/10 group-[.active-tab]:bg-purple-500/20 text-purple-500 transition-colors">
+                        <i data-lucide="image" class="w-5 h-5 md:w-5 md:h-5"></i>
+                    </div>
+                    <div class="hidden md:block">
+                        <span
+                            class="block font-semibold group-[.active-tab]:text-white transition-colors">Steganography</span>
+                        <span class="block text-[10px] opacity-60">Hide Data in Media</span>
+                    </div>
+                </button>
+
+                <div class="hidden md:block text-xs font-bold text-slate-500 uppercase tracking-widest mt-6 mb-4 pl-2">
+                    Utilities</div>
+
+                <button onclick="switchTab('tools')" id="nav-tools"
+                    class="nav-btn flex-1 md:flex-none flex flex-col md:flex-row items-center justify-center md:justify-start gap-1 md:gap-4 p-2 md:px-4 md:py-3.5 rounded-lg md:rounded-xl text-slate-400 text-center md:text-left group">
+                    <div
+                        class="p-1.5 md:p-2 rounded-lg bg-amber-500/10 group-[.active-tab]:bg-amber-500/20 text-amber-500 transition-colors">
+                        <i data-lucide="key" class="w-5 h-5 md:w-5 md:h-5"></i>
+                    </div>
+                    <div class="hidden md:block">
+                        <span class="block font-semibold group-[.active-tab]:text-white transition-colors">Key
+                            Gen</span>
+                        <span class="block text-[10px] opacity-60">Pass & Keys</span>
+                    </div>
+                </button>
+            </nav>
+
+            <!-- Content Area -->
+            <main
+                class="flex-1 p-4 md:p-10 bg-gradient-to-br from-transparent via-white/[0.02] to-transparent relative overflow-y-auto overflow-x-hidden">
+
+                <!-- ENCRYPTION MODULE -->
+                <div id="view-encrypt" class="h-full flex flex-col pb-6 md:pb-0">
+                    <header
+                        class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 md:mb-8 animate-enter gap-4">
+                        <div>
+                            <h2 class="text-xl md:text-2xl font-bold text-white mb-1">Encryption</h2>
+                            <p class="text-slate-400 text-[10px] md:text-xs">AES-GCM 256-bit military grade encryption
+                            </p>
+                        </div>
+
+                        <!-- Toggle File/Text -->
+                        <div
+                            class="bg-black/40 p-1 rounded-lg border border-white/5 flex text-[10px] md:text-xs w-full md:w-auto">
+                            <button onclick="toggleEncryptType('text')" id="btn-enc-type-text"
+                                class="flex-1 md:flex-none px-4 py-1.5 rounded-md bg-emerald-600 text-white shadow-lg transition-all hover-scale">Text</button>
+                            <button onclick="toggleEncryptType('file')" id="btn-enc-type-file"
+                                class="flex-1 md:flex-none px-4 py-1.5 rounded-md text-slate-400 hover:text-white transition-all hover-scale">File</button>
+                        </div>
+                    </header>
+
+                    <div class="flex-1 flex flex-col gap-4 md:gap-6">
+                        <!-- Mode Toggle -->
+                        <div
+                            class="grid grid-cols-2 gap-2 bg-black/20 p-1.5 rounded-xl border border-white/5 animate-enter delay-100 w-full md:w-2/3 mx-auto">
+                            <button onclick="setEncryptMode(true)" id="btn-mode-encrypt"
+                                class="px-2 md:px-4 py-2 md:py-2.5 rounded-lg text-[10px] md:text-sm font-medium transition-all bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.1)] hover-scale flex items-center justify-center">
+                                <i data-lucide="lock" class="inline w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2"></i>Encrypt
+                            </button>
+                            <button onclick="setEncryptMode(false)" id="btn-mode-decrypt"
+                                class="px-2 md:px-4 py-2 md:py-2.5 rounded-lg text-[10px] md:text-sm font-medium transition-all text-slate-400 hover:text-white hover:bg-white/5 hover-scale flex items-center justify-center">
+                                <i data-lucide="unlock" class="inline w-3 h-3 md:w-4 md:h-4 mr-1 md:mr-2"></i>Decrypt
+                            </button>
+                        </div>
+
+                        <!-- Text Input Area -->
+                        <div id="enc-input-text-area" class="flex-1 flex flex-col gap-2 animate-enter delay-200">
+                            <label
+                                class="text-[10px] md:text-xs font-semibold text-slate-500 uppercase tracking-wider pl-1">Input
+                                Data</label>
+                            <div class="relative group">
+                                <textarea id="input-encrypt"
+                                    class="w-full h-32 md:h-40 glass-input rounded-xl md:rounded-2xl p-3 md:p-5 text-slate-200 font-mono text-[10px] md:text-sm resize-none focus:outline-none placeholder-slate-600"
+                                    placeholder="Enter confidential message here..."></textarea>
+                                <div
+                                    class="absolute inset-0 rounded-2xl bg-emerald-500/5 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-500">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- File Input Area -->
+                        <div id="enc-input-file-area"
+                            class="hidden flex-1 flex flex-col gap-2 justify-center animate-enter delay-200">
+                            <label
+                                class="block w-full h-32 md:h-40 border-2 border-dashed border-slate-700/50 hover:border-emerald-500/50 rounded-xl md:rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-all bg-black/20 hover:bg-black/40 group relative overflow-hidden">
+                                <input type="file" id="input-encrypt-file" class="hidden"
+                                    onchange="handleFileSelect(this, 'file-name-display')">
+                                <div
+                                    class="absolute inset-0 bg-emerald-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                                </div>
+                                <div
+                                    class="p-3 md:p-4 rounded-full bg-slate-800/50 group-hover:bg-emerald-500/20 mb-2 md:mb-3 transition-colors duration-300">
+                                    <i data-lucide="file-up"
+                                        class="w-6 h-6 md:w-8 md:h-8 text-slate-400 group-hover:text-emerald-400 transition-colors"></i>
+                                </div>
+                                <span
+                                    class="text-slate-400 text-[10px] md:text-sm font-medium group-hover:text-white transition-colors">Drop
+                                    file or click to upload</span>
+                                <span id="file-name-display"
+                                    class="text-[8px] md:text-xs text-emerald-400 mt-2 font-mono bg-emerald-950/30 px-2 py-1 rounded max-w-[80%] truncate"></span>
+                            </label>
+                        </div>
+
+                        <!-- Password & Action -->
+                        <div class="grid md:grid-cols-2 gap-4 md:gap-6 animate-enter delay-300">
+                            <div>
+                                <label
+                                    class="text-[10px] md:text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 block pl-1">Secret
+                                    Key</label>
+                                <div class="relative group">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <i data-lucide="key-round"
+                                            class="h-3 w-3 md:h-4 md:w-4 text-slate-500 group-focus-within:text-emerald-500 transition-colors"></i>
+                                    </div>
+                                    <input type="password" id="input-password"
+                                        class="w-full glass-input rounded-lg md:rounded-xl py-2.5 md:py-3.5 pl-9 md:pl-10 pr-9 md:pr-10 text-slate-200 focus:outline-none text-[10px] md:text-sm transition-all"
+                                        placeholder="Enter strong password">
+                                    <button
+                                        class="absolute right-3 top-2.5 md:top-3.5 text-slate-500 hover:text-white transition-colors"
+                                        onclick="togglePassVisibility('input-password')">
+                                        <i data-lucide="eye" class="w-3 h-3 md:w-4 md:h-4"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="flex items-end">
+                                <button onclick="processEncryption()" id="btn-process-encrypt"
+                                    class="hover-scale btn-glow w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 md:py-3.5 rounded-lg md:rounded-xl shadow-lg shadow-emerald-900/40 flex items-center justify-center gap-2 transition-all text-[10px] md:text-sm">
+                                    <i data-lucide="shield-alert" class="w-4 h-4 md:w-5 md:h-5"></i>
+                                    <span id="btn-text-action">Encrypt Data</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Output Area (Text Mode) -->
+                        <div id="encrypt-result-container"
+                            class="hidden glass-panel rounded-xl md:rounded-2xl p-4 md:p-5 mt-2 relative border-t border-emerald-500/20 animate-enter">
+                            <div class="flex justify-between items-center mb-3">
+                                <label
+                                    class="text-[8px] md:text-[10px] font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-2">
+                                    <span
+                                        class="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    Output Result
+                                </label>
+                                <div class="flex gap-2">
+                                    <button onclick="copyToClipboard('encrypt-output')"
+                                        class="p-1.5 rounded-md hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
+                                        title="Copy">
+                                        <i data-lucide="copy" class="w-3 h-3 md:w-4 md:h-4"></i>
+                                    </button>
+                                    <button onclick="downloadTextAsFile('encrypt-output')"
+                                        class="p-1.5 rounded-md hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
+                                        title="Download">
+                                        <i data-lucide="download" class="w-3 h-3 md:w-4 md:h-4"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="bg-black/30 rounded-xl p-3 md:p-4 border border-white/5">
+                                <div id="encrypt-output"
+                                    class="font-mono text-[10px] md:text-xs text-slate-300 break-all max-h-24 md:max-h-32 overflow-y-auto custom-scrollbar">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- HASHING MODULE -->
+                <div id="view-hash" class="hidden h-full flex flex-col pb-6 md:pb-0">
+                    <header
+                        class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 md:mb-8 animate-enter gap-4">
+                        <div>
+                            <h2 class="text-xl md:text-2xl font-bold text-white mb-1">Integrity Check</h2>
+                            <p class="text-slate-400 text-[10px] md:text-xs">Verify file authenticity via Hashing</p>
+                        </div>
+                        <div
+                            class="bg-black/40 p-1 rounded-lg border border-white/5 flex text-[10px] md:text-xs w-full md:w-auto">
+                            <button onclick="toggleHashType('text')" id="btn-hash-type-text"
+                                class="flex-1 md:flex-none px-4 py-1.5 rounded-md bg-blue-600 text-white shadow-lg transition-all hover-scale">Text</button>
+                            <button onclick="toggleHashType('file')" id="btn-hash-type-file"
+                                class="flex-1 md:flex-none px-4 py-1.5 rounded-md text-slate-400 hover:text-white transition-all hover-scale">File</button>
+                        </div>
+                    </header>
+
+                    <div class="flex-1 flex flex-col gap-4 md:gap-6">
+                        <!-- Text Hash Input -->
+                        <div id="hash-text-area" class="animate-enter delay-100">
+                            <textarea id="input-hash" oninput="generateHashes()"
+                                class="w-full h-24 md:h-32 glass-input rounded-xl md:rounded-2xl p-3 md:p-5 text-slate-200 font-mono text-[10px] md:text-sm resize-none focus:outline-none placeholder-slate-600"
+                                placeholder="Type or paste content to verify..."></textarea>
+                        </div>
+
+                        <!-- File Hash Input -->
+                        <div id="hash-file-area" class="hidden animate-enter delay-100">
+                            <label
+                                class="block w-full h-24 md:h-32 border-2 border-dashed border-slate-700/50 hover:border-blue-500/50 rounded-xl md:rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-all bg-black/20 hover:bg-black/40 group relative">
+                                <input type="file" id="input-hash-file" class="hidden"
+                                    onchange="generateFileHash(this)">
+                                <div
+                                    class="p-2 md:p-3 rounded-full bg-slate-800/50 group-hover:bg-blue-500/20 mb-2 transition-colors">
+                                    <i data-lucide="file-search"
+                                        class="w-5 h-5 md:w-6 md:h-6 text-slate-400 group-hover:text-blue-400 transition-colors"></i>
+                                </div>
+                                <span class="text-slate-400 text-[10px] md:text-sm group-hover:text-white">Select file
+                                    to analyze</span>
+                                <span id="hash-file-name"
+                                    class="text-[8px] md:text-xs text-blue-400 mt-2 font-mono bg-blue-950/30 px-2 py-1 rounded empty:hidden max-w-[80%] truncate"></span>
+                            </label>
+                        </div>
+
+                        <!-- Results -->
+                        <div class="space-y-3 md:space-y-4 animate-enter delay-200">
+                            <div
+                                class="glass-input rounded-lg md:rounded-xl p-3 md:p-4 group hover:border-blue-500/40 transition-all hover:-translate-y-1">
+                                <div class="flex justify-between items-center mb-1 md:mb-2">
+                                    <span class="text-[8px] md:text-xs font-bold text-blue-400 tracking-wider">SHA-256
+                                        (Standard)</span>
+                                    <button onclick="copyToClipboard('out-sha256')"
+                                        class="text-slate-500 hover:text-white transition-colors"><i data-lucide="copy"
+                                            class="w-3 h-3 md:w-4 md:h-4"></i></button>
+                                </div>
+                                <code id="out-sha256"
+                                    class="block font-mono text-[8px] md:text-xs text-slate-300 break-all bg-black/30 p-1.5 md:p-2 rounded border border-white/5">Waiting for input...</code>
+                            </div>
+
+                            <div
+                                class="glass-input rounded-lg md:rounded-xl p-3 md:p-4 group hover:border-blue-500/40 transition-all hover:-translate-y-1">
+                                <div class="flex justify-between items-center mb-1 md:mb-2">
+                                    <span class="text-[8px] md:text-xs font-bold text-slate-400 tracking-wider">SHA-512
+                                        (Ultra Secure)</span>
+                                    <button onclick="copyToClipboard('out-sha512')"
+                                        class="text-slate-500 hover:text-white transition-colors"><i data-lucide="copy"
+                                            class="w-3 h-3 md:w-4 md:h-4"></i></button>
+                                </div>
+                                <code id="out-sha512"
+                                    class="block font-mono text-[8px] md:text-xs text-slate-500 group-hover:text-slate-300 transition-colors break-all bg-black/30 p-1.5 md:p-2 rounded border border-white/5">Waiting for input...</code>
+                            </div>
+
+                            <div
+                                class="glass-input rounded-lg md:rounded-xl p-3 md:p-4 group hover:border-amber-500/40 transition-all hover:-translate-y-1">
+                                <div class="flex justify-between items-center mb-1 md:mb-2">
+                                    <span class="text-[8px] md:text-xs font-bold text-amber-500/70 tracking-wider">MD5
+                                        (Legacy/Fast)</span>
+                                    <button onclick="copyToClipboard('out-sha1')"
+                                        class="text-slate-500 hover:text-white transition-colors"><i data-lucide="copy"
+                                            class="w-3 h-3 md:w-4 md:h-4"></i></button>
+                                </div>
+                                <code id="out-sha1"
+                                    class="block font-mono text-[8px] md:text-xs text-slate-500 group-hover:text-slate-300 transition-colors break-all bg-black/30 p-1.5 md:p-2 rounded border border-white/5">Waiting for input...</code>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STEGANOGRAPHY MODULE -->
+                <div id="view-stego" class="hidden h-full flex flex-col pb-6 md:pb-0">
+                    <header
+                        class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 md:mb-8 animate-enter gap-4">
+                        <div>
+                            <h2 class="text-xl md:text-2xl font-bold text-white mb-1">Steganography</h2>
+                            <p class="text-slate-400 text-[10px] md:text-xs">Hide data within plain sight</p>
+                        </div>
+                        <div
+                            class="bg-black/40 p-1 rounded-lg border border-white/5 flex text-[10px] md:text-xs w-full md:w-auto">
+                            <button onclick="toggleStegoType('text')" id="btn-stego-type-text"
+                                class="flex-1 md:flex-none px-4 py-1.5 rounded-md bg-purple-600 text-white shadow-lg transition-all hover-scale">Text</button>
+                            <button onclick="toggleStegoType('image')" id="btn-stego-type-image"
+                                class="flex-1 md:flex-none px-4 py-1.5 rounded-md text-slate-400 hover:text-white transition-all hover-scale">Image</button>
+                        </div>
+                    </header>
+
+                    <!-- Text-in-Text Mode -->
+                    <div id="stego-mode-text" class="space-y-4 md:space-y-6 animate-enter delay-100">
+                        <div
+                            class="flex justify-center bg-black/20 p-1 rounded-xl border border-white/5 w-full md:w-fit mx-auto">
+                            <button onclick="setStegoMode('hide')" id="btn-stego-hide"
+                                class="flex-1 md:flex-none px-4 md:px-6 py-2 rounded-lg text-[10px] md:text-xs font-bold transition-all bg-purple-500/20 text-purple-400 border border-purple-500/30 shadow-[0_0_15px_rgba(168,85,247,0.15)]">Encode
+                                (Hide)</button>
+                            <button onclick="setStegoMode('reveal')" id="btn-stego-reveal"
+                                class="flex-1 md:flex-none px-4 md:px-6 py-2 rounded-lg text-[10px] md:text-xs font-bold transition-all text-slate-400 hover:text-white">Decode
+                                (Reveal)</button>
+                        </div>
+
+                        <div id="stego-text-hide-inputs" class="space-y-4 animate-enter delay-200">
+                            <div class="relative">
+                                <label
+                                    class="absolute -top-2 left-3 bg-[#0a0a0f] px-2 text-[8px] md:text-[10px] text-purple-400 uppercase font-bold">Public
+                                    Cover</label>
+                                <textarea id="stego-cover-input"
+                                    class="w-full h-20 md:h-24 glass-input rounded-xl p-3 md:p-4 text-slate-200 font-mono text-[10px] md:text-xs focus:outline-none"
+                                    placeholder="This looks like a normal message..."></textarea>
+                            </div>
+                            <div class="relative">
+                                <label
+                                    class="absolute -top-2 left-3 bg-[#0a0a0f] px-2 text-[8px] md:text-[10px] text-emerald-400 uppercase font-bold">Secret
+                                    Payload</label>
+                                <input type="text" id="stego-secret-input"
+                                    class="w-full glass-input rounded-xl p-3 md:p-4 text-slate-200 text-[10px] md:text-xs focus:outline-none"
+                                    placeholder="The hidden truth...">
+                            </div>
+                            <button onclick="processStegoHide()"
+                                class="hover-scale btn-glow w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-2.5 md:py-3 rounded-xl text-[10px] md:text-sm shadow-lg shadow-purple-900/40 transition-all">Inject
+                                Invisible Data</button>
+                        </div>
+
+                        <div id="stego-text-reveal-inputs" class="hidden space-y-4 animate-enter delay-200">
+                            <textarea id="stego-reveal-input"
+                                class="w-full h-28 md:h-32 glass-input rounded-xl p-3 md:p-4 text-slate-200 font-mono text-[10px] md:text-xs focus:outline-none"
+                                placeholder="Paste the suspicious text here to analyze..."></textarea>
+                            <button onclick="processStegoReveal()"
+                                class="hover-scale btn-glow w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-2.5 md:py-3 rounded-xl text-[10px] md:text-sm shadow-lg shadow-purple-900/40 transition-all">Extract
+                                Hidden Data</button>
+                        </div>
+
+                        <div id="stego-text-output"
+                            class="hidden glass-panel rounded-2xl p-4 md:p-5 relative border-t border-purple-500/20 animate-enter">
+                            <div class="flex justify-between items-center mb-2">
+                                <span
+                                    class="text-[8px] md:text-[10px] text-purple-400 uppercase font-bold">Result</span>
+                                <button onclick="copyToClipboard('stego-output-content')"
+                                    class="text-slate-400 hover:text-white transition-colors"><i data-lucide="copy"
+                                        class="w-3 h-3 md:w-4 md:h-4"></i></button>
+                            </div>
+                            <p id="stego-output-content"
+                                class="text-[10px] md:text-xs font-mono text-slate-300 break-all bg-black/30 p-3 rounded-lg">
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Image Stego Mode -->
+                    <div id="stego-mode-image" class="hidden space-y-4 md:space-y-6 animate-enter delay-100">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                            <div class="space-y-2">
+                                <label class="text-[10px] md:text-xs font-bold text-slate-500 uppercase pl-1">1. Source
+                                    Image</label>
+                                <label
+                                    class="block w-full h-32 md:h-40 border-2 border-dashed border-slate-700 hover:border-purple-500/50 rounded-2xl flex flex-col items-center justify-center cursor-pointer bg-black/20 hover:bg-black/30 transition-all group">
+                                    <input type="file" id="stego-img-upload" class="hidden"
+                                        accept="image/png, image/jpeg" onchange="handleImageUpload(this)">
+                                    <div
+                                        class="p-2 md:p-3 bg-slate-800/50 rounded-full group-hover:bg-purple-500/20 transition-colors mb-2">
+                                        <i data-lucide="image-plus"
+                                            class="w-5 h-5 md:w-6 md:h-6 text-slate-400 group-hover:text-purple-400 transition-colors"></i>
+                                    </div>
+                                    <span
+                                        class="text-[8px] md:text-[10px] text-slate-400 group-hover:text-slate-200 transition-colors">PNG
+                                        / JPG</span>
+                                </label>
+                            </div>
+                            <div class="space-y-2">
+                                <label class="text-[10px] md:text-xs font-bold text-slate-500 uppercase pl-1">2. Secret
+                                    Payload</label>
+                                <textarea id="stego-img-secret"
+                                    class="w-full h-32 md:h-40 glass-input rounded-2xl p-3 md:p-4 text-slate-200 text-[10px] md:text-xs resize-none focus:outline-none"
+                                    placeholder="Message to embed into pixels..."></textarea>
+                            </div>
+                        </div>
+
+                        <div class="flex flex-col md:flex-row gap-2 md:gap-4">
+                            <button onclick="processImageStego('encode')"
+                                class="hover-scale btn-glow flex-1 bg-purple-600 hover:bg-purple-500 text-white font-bold py-2.5 md:py-3 rounded-xl text-[10px] md:text-xs shadow-lg shadow-purple-900/40">Encode
+                                & Download Image</button>
+                            <button onclick="processImageStego('decode')"
+                                class="hover-scale flex-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-slate-500 text-white font-bold py-2.5 md:py-3 rounded-xl text-[10px] md:text-xs transition-colors">Decode
+                                from Image</button>
+                        </div>
+
+                        <canvas id="stego-canvas" class="hidden"></canvas>
+                        <div id="stego-img-result"
+                            class="hidden glass-panel rounded-2xl p-4 md:p-5 border-t border-purple-500/20 animate-enter">
+                            <span
+                                class="text-[8px] md:text-[10px] text-purple-400 uppercase font-bold block mb-2 flex items-center gap-2"><i
+                                    data-lucide="unlock" class="w-3 h-3"></i> Decoded Message</span>
+                            <p id="stego-img-decoded-text"
+                                class="text-[10px] md:text-sm text-white font-mono break-all bg-black/30 p-3 rounded-lg border border-white/5">
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TOOLS MODULE -->
+                <div id="view-tools" class="hidden h-full flex flex-col pb-6 md:pb-0">
+                    <header class="mb-6 md:mb-8 animate-enter">
+                        <h2 class="text-xl md:text-2xl font-bold text-white mb-1">Key Generator</h2>
+                        <p class="text-slate-400 text-[10px] md:text-xs">Cryptographically secure password generation
+                        </p>
+                    </header>
+
+                    <div
+                        class="glass-panel p-4 md:p-8 rounded-2xl md:rounded-3xl border-t border-amber-500/20 animate-enter delay-100 relative overflow-hidden">
+                        <div
+                            class="absolute top-0 right-0 p-32 bg-amber-500/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none">
+                        </div>
+
+                        <div class="flex flex-col md:flex-row gap-2 md:gap-4 items-center mb-6 md:mb-8 relative z-10">
+                            <div class="relative w-full">
+                                <input type="text" id="gen-password-out"
+                                    class="w-full glass-input rounded-xl p-3 md:p-4 text-base md:text-xl font-mono text-center text-white tracking-widest border-amber-500/30 focus:border-amber-500"
+                                    readonly value="GENERATOR-READY">
+                                <div class="absolute right-2 top-1.5 bottom-1.5 md:top-2 md:bottom-2 flex items-center">
+                                    <button onclick="copyToClipboard('gen-password-out')"
+                                        class="p-2 hover:bg-white/10 rounded-lg text-slate-400 hover:text-white transition-colors"><i
+                                            data-lucide="copy" class="w-4 h-4 md:w-5 md:h-5"></i></button>
+                                </div>
+                            </div>
+                            <button onclick="generatePassword()"
+                                class="w-full md:w-auto p-3 md:p-4 bg-amber-600 hover:bg-amber-500 text-white rounded-xl shadow-lg shadow-amber-900/30 hover-scale transition-all flex justify-center">
+                                <i data-lucide="refresh-cw"
+                                    class="w-5 h-5 md:w-6 md:h-6 animate-[spin_0.5s_ease-in-out_reverse]"></i>
+                            </button>
+                        </div>
+
+                        <div class="bg-black/20 p-4 md:p-6 rounded-2xl border border-white/5 relative z-10">
+                            <label
+                                class="text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-wider mb-4 block">Settings</label>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4 mb-4 md:mb-6">
+                                <label
+                                    class="flex items-center gap-2 md:gap-3 p-2 md:p-3 rounded-lg bg-white/5 hover:bg-white/10 cursor-pointer transition-colors border border-transparent hover:border-amber-500/30">
+                                    <input type="checkbox" id="chk-upper" checked
+                                        class="accent-amber-500 w-3 h-3 md:w-4 md:h-4">
+                                    <span class="text-[10px] md:text-xs text-slate-300">ABC</span>
+                                </label>
+                                <label
+                                    class="flex items-center gap-2 md:gap-3 p-2 md:p-3 rounded-lg bg-white/5 hover:bg-white/10 cursor-pointer transition-colors border border-transparent hover:border-amber-500/30">
+                                    <input type="checkbox" id="chk-lower" checked
+                                        class="accent-amber-500 w-3 h-3 md:w-4 md:h-4">
+                                    <span class="text-[10px] md:text-xs text-slate-300">abc</span>
+                                </label>
+                                <label
+                                    class="flex items-center gap-2 md:gap-3 p-2 md:p-3 rounded-lg bg-white/5 hover:bg-white/10 cursor-pointer transition-colors border border-transparent hover:border-amber-500/30">
+                                    <input type="checkbox" id="chk-num" checked
+                                        class="accent-amber-500 w-3 h-3 md:w-4 md:h-4">
+                                    <span class="text-[10px] md:text-xs text-slate-300">123</span>
+                                </label>
+                                <label
+                                    class="flex items-center gap-2 md:gap-3 p-2 md:p-3 rounded-lg bg-white/5 hover:bg-white/10 cursor-pointer transition-colors border border-transparent hover:border-amber-500/30">
+                                    <input type="checkbox" id="chk-sym" checked
+                                        class="accent-amber-500 w-3 h-3 md:w-4 md:h-4">
+                                    <span class="text-[10px] md:text-xs text-slate-300">#@$</span>
+                                </label>
+                            </div>
+
+                            <div class="flex items-center gap-4">
+                                <span class="text-[10px] md:text-xs text-slate-500 font-mono w-16 md:w-24">Len: <span
+                                        id="len-val" class="text-amber-400 text-sm md:text-base">24</span></span>
+                                <input type="range" id="rng-len" min="8" max="64" value="24"
+                                    class="flex-1 accent-amber-500 h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer"
+                                    oninput="document.getElementById('len-val').innerText = this.value">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+
+        <footer class="mt-8 text-center animate-enter delay-400 pb-16 md:pb-0">
+            <p class="text-[8px] md:text-[10px] text-slate-600 font-mono uppercase tracking-widest">
+                <i data-lucide="cpu" class="inline w-3 h-3 mr-1 align-sub"></i>
+                Client-Side Processing • Zero-Knowledge Architecture
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        // --- Initialization ---
+        lucide.createIcons();
+
+        // --- Background Animation (Digital Dust) ---
+        const canvas = document.getElementById('bg-canvas');
+        const ctx = canvas.getContext('2d');
+        let width, height;
+        const particles = [];
+
+        function resizeCanvas() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+                this.vx = (Math.random() - 0.5) * 0.5;
+                this.vy = (Math.random() - 0.5) * 0.5;
+                this.size = Math.random() * 2;
+                this.color = Math.random() > 0.5 ? 'rgba(16, 185, 129, ' : 'rgba(147, 51, 234, ';
+                this.alpha = Math.random() * 0.5;
+            }
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                if (this.x < 0) this.x = width;
+                if (this.x > width) this.x = 0;
+                if (this.y < 0) this.y = height;
+                if (this.y > height) this.y = 0;
+            }
+            draw() {
+                ctx.fillStyle = this.color + this.alpha + ')';
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        for (let i = 0; i < 60; i++) particles.push(new Particle());
+
+        function animateBg() {
+            ctx.clearRect(0, 0, width, height); // Transparent clear
+            particles.forEach(p => { p.update(); p.draw(); });
+            requestAnimationFrame(animateBg);
+        }
+        animateBg();
+
+        // --- Notification System ---
+        function showToast(msg, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+
+            // Cyberpunk Toast Styles
+            const baseStyles = "pointer-events-auto flex items-center gap-3 px-5 py-4 rounded-lg backdrop-blur-xl shadow-2xl border-l-4 animate-enter min-w-[250px] md:min-w-[300px] transition-all duration-300";
+            const typeStyles = type === 'error'
+                ? 'border-red-500 bg-red-950/90 text-white shadow-[0_5px_15px_rgba(239,68,68,0.3)]'
+                : 'border-emerald-500 bg-emerald-950/90 text-white shadow-[0_5px_15px_rgba(16,185,129,0.3)]';
+            const icon = type === 'error' ? 'alert-octagon' : 'check-circle-2';
+
+            toast.className = `${baseStyles} ${typeStyles}`;
+            toast.innerHTML = `<i data-lucide="${icon}" class="w-5 h-5 shrink-0"></i><span class="text-xs font-semibold tracking-wide">${msg}</span>`;
+
+            container.appendChild(toast);
+            lucide.createIcons();
+
+            // Animation Out
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(20px)';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // --- Tab Management ---
+        function switchTab(tabId) {
+            ['encrypt', 'hash', 'stego', 'tools'].forEach(id => {
+                document.getElementById(`view-${id}`).classList.add('hidden');
+                const btn = document.getElementById(`nav-${id}`);
+                btn.classList.remove('active-tab');
+            });
+
+            const view = document.getElementById(`view-${tabId}`);
+            view.classList.remove('hidden');
+
+            // Re-trigger entrance animations for the new tab elements
+            const animatedElements = view.querySelectorAll('.animate-enter');
+            animatedElements.forEach(el => {
+                el.style.animation = 'none';
+                el.offsetHeight; /* trigger reflow */
+                el.style.animation = '';
+            });
+
+            document.getElementById(`nav-${tabId}`).classList.add('active-tab');
+        }
+
+        // --- Toggle Logic ---
+        function toggleEncryptType(type) {
+            const isText = type === 'text';
+            document.getElementById('enc-input-text-area').classList.toggle('hidden', !isText);
+            document.getElementById('enc-input-file-area').classList.toggle('hidden', isText);
+
+            const btnText = document.getElementById('btn-enc-type-text');
+            const btnFile = document.getElementById('btn-enc-type-file');
+
+            if (isText) {
+                btnText.className = "flex-1 md:flex-none px-4 py-1.5 rounded-md bg-emerald-600 text-white shadow-lg transition-all hover-scale";
+                btnFile.className = "flex-1 md:flex-none px-4 py-1.5 rounded-md text-slate-400 hover:text-white transition-all hover-scale";
+            } else {
+                btnText.className = "flex-1 md:flex-none px-4 py-1.5 rounded-md text-slate-400 hover:text-white transition-all hover-scale";
+                btnFile.className = "flex-1 md:flex-none px-4 py-1.5 rounded-md bg-emerald-600 text-white shadow-lg transition-all hover-scale";
+            }
+        }
+
+        let isEncryptMode = true;
+        function setEncryptMode(encrypt) {
+            isEncryptMode = encrypt;
+            const btnEnc = document.getElementById('btn-mode-encrypt');
+            const btnDec = document.getElementById('btn-mode-decrypt');
+            const actionBtnText = document.getElementById('btn-text-action');
+
+            const activeClass = "px-2 md:px-4 py-2 md:py-2.5 rounded-lg text-[10px] md:text-sm font-medium transition-all bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.1)] hover-scale flex items-center justify-center";
+            const inactiveClass = "px-2 md:px-4 py-2 md:py-2.5 rounded-lg text-[10px] md:text-sm font-medium transition-all text-slate-400 hover:text-white hover:bg-white/5 hover-scale flex items-center justify-center";
+
+            if (encrypt) {
+                btnEnc.className = activeClass;
+                btnDec.className = inactiveClass;
+                actionBtnText.innerText = "Encrypt Data";
+            } else {
+                btnDec.className = activeClass;
+                btnEnc.className = inactiveClass;
+                actionBtnText.innerText = "Decrypt Data";
+            }
+        }
+
+        function toggleHashType(type) {
+            const isText = type === 'text';
+            document.getElementById('hash-text-area').classList.toggle('hidden', !isText);
+            document.getElementById('hash-file-area').classList.toggle('hidden', isText);
+
+            const btnText = document.getElementById('btn-hash-type-text');
+            const btnFile = document.getElementById('btn-hash-type-file');
+
+            if (isText) {
+                btnText.className = "flex-1 md:flex-none px-4 py-1.5 rounded-md bg-blue-600 text-white shadow-lg transition-all hover-scale";
+                btnFile.className = "flex-1 md:flex-none px-4 py-1.5 rounded-md text-slate-400 hover:text-white transition-all hover-scale";
+            } else {
+                btnText.className = "flex-1 md:flex-none px-4 py-1.5 rounded-md text-slate-400 hover:text-white transition-all hover-scale";
+                btnFile.className = "flex-1 md:flex-none px-4 py-1.5 rounded-md bg-blue-600 text-white shadow-lg transition-all hover-scale";
+            }
+        }
+
+        function toggleStegoType(type) {
+            const isText = type === 'text';
+            document.getElementById('stego-mode-text').classList.toggle('hidden', !isText);
+            document.getElementById('stego-mode-image').classList.toggle('hidden', isText);
+
+            const btnText = document.getElementById('btn-stego-type-text');
+            const btnImage = document.getElementById('btn-stego-type-image');
+
+            if (isText) {
+                btnText.className = "flex-1 md:flex-none px-4 py-1.5 rounded-md bg-purple-600 text-white shadow-lg transition-all hover-scale";
+                btnImage.className = "flex-1 md:flex-none px-4 py-1.5 rounded-md text-slate-400 hover:text-white transition-all hover-scale";
+            } else {
+                btnText.className = "flex-1 md:flex-none px-4 py-1.5 rounded-md text-slate-400 hover:text-white transition-all hover-scale";
+                btnImage.className = "flex-1 md:flex-none px-4 py-1.5 rounded-md bg-purple-600 text-white shadow-lg transition-all hover-scale";
+            }
+        }
+
+        // --- Stego Mode (Hide/Reveal) ---
+        function setStegoMode(mode) {
+            document.getElementById('stego-text-hide-inputs').classList.toggle('hidden', mode !== 'hide');
+            document.getElementById('stego-text-reveal-inputs').classList.toggle('hidden', mode === 'hide');
+
+            const btnHide = document.getElementById('btn-stego-hide');
+            const btnReveal = document.getElementById('btn-stego-reveal');
+
+            const activeClass = "flex-1 md:flex-none px-4 md:px-6 py-2 rounded-lg text-[10px] md:text-xs font-bold transition-all bg-purple-500/20 text-purple-400 border border-purple-500/30 shadow-[0_0_15px_rgba(168,85,247,0.15)]";
+            const inactiveClass = "flex-1 md:flex-none px-4 md:px-6 py-2 rounded-lg text-[10px] md:text-xs font-bold transition-all text-slate-400 hover:text-white";
+
+            if (mode === 'hide') {
+                btnHide.className = activeClass;
+                btnReveal.className = inactiveClass;
+            } else {
+                btnReveal.className = activeClass;
+                btnHide.className = inactiveClass;
+            }
+        }
+
+        // --- Common Utils ---
+        function handleFileSelect(input, displayId) {
+            const file = input.files[0];
+            if (file) document.getElementById(displayId).innerText = file.name;
+        }
+
+        function togglePassVisibility(id) {
+            const el = document.getElementById(id);
+            el.type = el.type === 'password' ? 'text' : 'password';
+        }
+
+        function copyToClipboard(id) {
+            const element = document.getElementById(id);
+            const text = element.innerText || element.value;
+            if (!text || text === "Waiting for input...") return;
+
+            navigator.clipboard.writeText(text).then(() => showToast('Copied to clipboard!'));
+        }
+
+        function downloadTextAsFile(id) {
+            const text = document.getElementById(id).innerText;
+            if (!text) return;
+            const blob = new Blob([text], { type: 'text/plain' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'cipher_output.txt';
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+
+        const textToBuffer = text => new TextEncoder().encode(text);
+        const bufferToText = buf => new TextDecoder().decode(buf);
+        const bufferToBase64 = buf => {
+            let binary = '';
+            const bytes = new Uint8Array(buf);
+            for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
+            return window.btoa(binary);
+        };
+        const base64ToBuffer = b64 => {
+            const binary = window.atob(b64);
+            const bytes = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+            return bytes.buffer;
+        };
+
+        // --- CRYPTO LOGIC ---
+
+        async function getKeyMaterial(password) {
+            return window.crypto.subtle.importKey("raw", textToBuffer(password), { name: "PBKDF2" }, false, ["deriveKey"]);
+        }
+
+        async function deriveKey(password, salt, usage) {
+            const keyMaterial = await getKeyMaterial(password);
+            return window.crypto.subtle.deriveKey(
+                { name: "PBKDF2", salt: salt, iterations: 100000, hash: "SHA-256" },
+                keyMaterial,
+                { name: "AES-GCM", length: 256 },
+                false,
+                usage
+            );
+        }
+
+        async function processEncryption() {
+            const password = document.getElementById('input-password').value;
+            if (!password) return showToast('Password required', 'error');
+
+            const isText = !document.getElementById('enc-input-text-area').classList.contains('hidden');
+
+            try {
+                if (isText) {
+                    // TEXT MODE
+                    const input = document.getElementById('input-encrypt').value;
+                    if (!input) return showToast('Enter text message', 'error');
+
+                    if (isEncryptMode) {
+                        const salt = window.crypto.getRandomValues(new Uint8Array(16));
+                        const iv = window.crypto.getRandomValues(new Uint8Array(12));
+                        const key = await deriveKey(password, salt, ["encrypt"]);
+                        const encrypted = await window.crypto.subtle.encrypt({ name: "AES-GCM", iv: iv }, key, textToBuffer(input));
+
+                        const packed = new Uint8Array(salt.byteLength + iv.byteLength + encrypted.byteLength);
+                        packed.set(salt, 0); packed.set(iv, 16); packed.set(new Uint8Array(encrypted), 28);
+
+                        document.getElementById('encrypt-output').innerText = bufferToBase64(packed.buffer);
+                        document.getElementById('encrypt-result-container').classList.remove('hidden');
+                        showToast('Message encrypted!');
+                    } else {
+                        // DECRYPT TEXT
+                        const packed = new Uint8Array(base64ToBuffer(input));
+                        const salt = packed.slice(0, 16);
+                        const iv = packed.slice(16, 28);
+                        const data = packed.slice(28);
+                        const key = await deriveKey(password, salt, ["decrypt"]);
+                        const decrypted = await window.crypto.subtle.decrypt({ name: "AES-GCM", iv: iv }, key, data);
+
+                        document.getElementById('encrypt-output').innerText = bufferToText(decrypted);
+                        document.getElementById('encrypt-result-container').classList.remove('hidden');
+                        showToast('Message decrypted!');
+                    }
+                } else {
+                    // FILE MODE
+                    const fileInput = document.getElementById('input-encrypt-file');
+                    if (!fileInput.files.length) return showToast('Select a file', 'error');
+                    const file = fileInput.files[0];
+                    const reader = new FileReader();
+
+                    reader.onload = async (e) => {
+                        try {
+                            const buffer = e.target.result;
+                            if (isEncryptMode) {
+                                const salt = window.crypto.getRandomValues(new Uint8Array(16));
+                                const iv = window.crypto.getRandomValues(new Uint8Array(12));
+                                const key = await deriveKey(password, salt, ["encrypt"]);
+                                const encrypted = await window.crypto.subtle.encrypt({ name: "AES-GCM", iv: iv }, key, buffer);
+
+                                const packed = new Uint8Array(salt.byteLength + iv.byteLength + encrypted.byteLength);
+                                packed.set(salt, 0); packed.set(iv, 16); packed.set(new Uint8Array(encrypted), 28);
+
+                                const blob = new Blob([packed], { type: "application/octet-stream" });
+                                const link = document.createElement('a');
+                                link.href = URL.createObjectURL(blob);
+                                link.download = file.name + ".enc";
+                                link.click();
+                                showToast('File encrypted & downloading');
+                            } else {
+                                const arr = new Uint8Array(buffer);
+                                const salt = arr.slice(0, 16);
+                                const iv = arr.slice(16, 28);
+                                const data = arr.slice(28);
+                                const key = await deriveKey(password, salt, ["decrypt"]);
+                                const decrypted = await window.crypto.subtle.decrypt({ name: "AES-GCM", iv: iv }, key, data);
+
+                                const blob = new Blob([decrypted], { type: "application/octet-stream" });
+                                const link = document.createElement('a');
+                                link.href = URL.createObjectURL(blob);
+                                link.download = file.name.replace(".enc", "") || "decrypted_file";
+                                link.click();
+                                showToast('File decrypted & downloading');
+                            }
+                        } catch (err) {
+                            showToast('Operation failed: Wrong password?', 'error');
+                            console.error(err);
+                        }
+                    };
+                    reader.readAsArrayBuffer(file);
+                }
+            } catch (e) {
+                showToast('Failed. Check password/format.', 'error');
+                console.error(e);
+            }
+        }
+
+        // --- HASH LOGIC ---
+
+        async function computeHash(data, algo) {
+            const hashBuffer = await window.crypto.subtle.digest(algo, data);
+            return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        async function generateHashes() {
+            const text = document.getElementById('input-hash').value;
+            if (!text) return;
+            const data = textToBuffer(text);
+            document.getElementById('out-sha256').innerText = await computeHash(data, 'SHA-256');
+            document.getElementById('out-sha512').innerText = await computeHash(data, 'SHA-512');
+            document.getElementById('out-sha1').innerText = await computeHash(data, 'SHA-1');
+        }
+
+        async function generateFileHash(input) {
+            if (!input.files.length) return;
+            const file = input.files[0];
+            document.getElementById('hash-file-name').innerText = file.name;
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                const data = e.target.result;
+                document.getElementById('out-sha256').innerText = await computeHash(data, 'SHA-256');
+                document.getElementById('out-sha512').innerText = await computeHash(data, 'SHA-512');
+                document.getElementById('out-sha1').innerText = await computeHash(data, 'SHA-1');
+                showToast('File hash computed');
+            }
+            reader.readAsArrayBuffer(file);
+        }
+
+        // --- STEGANOGRAPHY LOGIC ---
+
+        // Text
+        const ZWS = '\u200B', ZWNJ = '\u200C';
+        function strToBin(str) { return str.split('').map(c => c.charCodeAt(0).toString(2).padStart(16, '0')).join(''); }
+        function binToStr(bin) {
+            let str = '';
+            for (let i = 0; i < bin.length; i += 16) str += String.fromCharCode(parseInt(bin.substr(i, 16), 2));
+            return str;
+        }
+
+        function processStegoHide() {
+            const cover = document.getElementById('stego-cover-input').value;
+            const secret = document.getElementById('stego-secret-input').value;
+            if (!cover || !secret) return showToast('Fill all fields', 'error');
+
+            const binary = strToBin(secret);
+            const hidden = binary.split('').map(b => b === '0' ? ZWS : ZWNJ).join('');
+            const result = cover[0] + hidden + cover.slice(1);
+
+            document.getElementById('stego-output-content').innerText = result;
+            document.getElementById('stego-text-output').classList.remove('hidden');
+            showToast('Secret injected!');
+        }
+
+        function processStegoReveal() {
+            const text = document.getElementById('stego-reveal-input').value;
+            let bin = '';
+            for (let c of text) { if (c === ZWS) bin += '0'; else if (c === ZWNJ) bin += '1'; }
+            try {
+                if (!bin) throw new Error();
+                const msg = binToStr(bin);
+                document.getElementById('stego-output-content').innerText = msg;
+                document.getElementById('stego-text-output').classList.remove('hidden');
+                showToast('Secret revealed!');
+            } catch {
+                showToast('No secret found', 'error');
+            }
+        }
+
+        // Image
+        function handleImageUpload(input) {
+            const file = input.files[0];
+            if (file) showToast(`Image loaded: ${file.name}`);
+        }
+
+        function processImageStego(action) {
+            const fileInput = document.getElementById('stego-img-upload');
+            if (!fileInput.files.length) return showToast('Upload an image first', 'error');
+
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+
+            reader.onload = function (event) {
+                const img = new Image();
+                img.onload = function () {
+                    const canvas = document.getElementById('stego-canvas');
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    ctx.drawImage(img, 0, 0);
+                    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    const data = imgData.data;
+
+                    if (action === 'encode') {
+                        const secret = document.getElementById('stego-img-secret').value;
+                        if (!secret) return showToast('Enter a secret message', 'error');
+
+                        const binaryMsg = strToBin(secret);
+                        const lengthBin = secret.length.toString(2).padStart(16, '0');
+                        const fullBin = lengthBin + binaryMsg;
+
+                        if (fullBin.length > data.length / 4) return showToast('Message too long for this image', 'error');
+
+                        let binIdx = 0;
+                        for (let i = 0; i < data.length; i += 4) {
+                            if (binIdx < fullBin.length) {
+                                let val = data[i];
+                                const bit = parseInt(fullBin[binIdx]);
+                                if ((val & 1) !== bit) {
+                                    val = (val & ~1) | bit;
+                                    data[i] = val;
+                                }
+                                binIdx++;
+                            } else {
+                                break;
+                            }
+                        }
+                        ctx.putImageData(imgData, 0, 0);
+
+                        const link = document.createElement('a');
+                        link.download = 'stego_image.png';
+                        link.href = canvas.toDataURL();
+                        link.click();
+                        showToast('Image encoded & downloaded');
+
+                    } else {
+                        let binLen = '';
+                        for (let i = 0; i < 16 * 4; i += 4) {
+                            binLen += (data[i] & 1).toString();
+                        }
+                        const msgLen = parseInt(binLen, 2);
+                        if (isNaN(msgLen) || msgLen <= 0 || msgLen > 10000) return showToast('No hidden message detected', 'error');
+
+                        let binMsg = '';
+                        let start = 16 * 4;
+                        let end = start + (msgLen * 16 * 4);
+
+                        for (let i = start; i < end; i += 4) {
+                            binMsg += (data[i] & 1).toString();
+                        }
+
+                        const msg = binToStr(binMsg);
+                        document.getElementById('stego-img-decoded-text').innerText = msg;
+                        document.getElementById('stego-img-result').classList.remove('hidden');
+                        showToast('Hidden message found!');
+                    }
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // --- PASSWORD GEN ---
+        function generatePassword() {
+            const chars = {
+                upper: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+                lower: 'abcdefghijklmnopqrstuvwxyz',
+                num: '0123456789',
+                sym: '!@#$%^&*()_+~`|}{[]:;?><,./-='
+            };
+
+            let charset = '';
+            if (document.getElementById('chk-upper').checked) charset += chars.upper;
+            if (document.getElementById('chk-lower').checked) charset += chars.lower;
+            if (document.getElementById('chk-num').checked) charset += chars.num;
+            if (document.getElementById('chk-sym').checked) charset += chars.sym;
+
+            if (!charset) return showToast('Select at least one character type', 'error');
+
+            const len = document.getElementById('rng-len').value;
+            let pass = '';
+            const array = new Uint32Array(len);
+            window.crypto.getRandomValues(array);
+
+            for (let i = 0; i < len; i++) {
+                pass += charset[array[i] % charset.length];
+            }
+
+            document.getElementById('gen-password-out').value = pass;
+        }
+
+    </script>
+</body>
+
+</html>

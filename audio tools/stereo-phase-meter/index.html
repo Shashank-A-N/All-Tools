@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phase Meter - Shadow Audio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;500;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="../../styles.css">
+</head>
+
+<body class="bg-gray-900 text-white font-sans antialiased overflow-x-hidden">
+
+    <nav
+        class="sticky top-0 z-50 glass-effect border-b border-white/5 px-6 py-4 flex items-center justify-between backdrop-blur-md">
+        <div class="flex items-center gap-3">
+            <a href="../index.html" class="flex items-center gap-2 group">
+                <div
+                    class="relative w-10 h-10 flex items-center justify-center bg-purple-600/20 rounded-lg border border-purple-500/30 group-hover:border-purple-500/50 transition-all">
+                    <i
+                        class="fas fa-circle-notch text-purple-400 text-xl group-hover:scale-110 transition-transform"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-orbitron font-bold tracking-widest text-white">SHADOW<span
+                            class="text-purple-500">AUDIO</span></h1>
+                    <span class="text-xs text-slate-400 font-mono tracking-wider">GONIOMETER</span>
+                </div>
+            </a>
+        </div>
+        <a href="../index.html" class="text-slate-400 hover:text-white transition-colors"><i
+                class="fas fa-times text-xl"></i></a>
+    </nav>
+
+    <main class="container mx-auto px-4 py-12 max-w-4xl">
+        <div class="text-center mb-10">
+            <h2 class="text-4xl font-bold font-orbitron mb-2">Stereo Phase Meter</h2>
+            <p class="text-slate-400 text-sm">Visualize stereo width and phase correlation (Lissajous).</p>
+        </div>
+
+        <div class="glass p-8 rounded-3xl border border-white/5 shadow-2xl flex flex-col items-center">
+            <!-- File Upload -->
+            <div id="upload-area"
+                class="w-full border-2 border-dashed border-white/10 rounded-2xl p-10 text-center hover:border-purple-500/50 transition-colors cursor-pointer mb-8 bg-black/20">
+                <input type="file" id="file-input" accept="audio/*" class="hidden">
+                <i class="fas fa-cloud-upload-alt text-4xl text-slate-500 mb-4"></i>
+                <p class="text-lg font-bold text-slate-300">Drop Audio File Here</p>
+                <p class="text-sm text-slate-500">or click to browse</p>
+            </div>
+
+            <div id="viewer" class="hidden flex flex-col items-center gap-6">
+                <div
+                    class="relative w-80 h-80 bg-black rounded-full border border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.5)] overflow-hidden">
+                    <!-- Grid -->
+                    <div class="absolute inset-0 opacity-20 pointer-events-none"
+                        style="background: linear-gradient(45deg, transparent 49%, white 50%, transparent 51%), linear-gradient(-45deg, transparent 49%, white 50%, transparent 51%);">
+                    </div>
+                    <canvas id="gonio" width="320" height="320" class="absolute inset-0"></canvas>
+                </div>
+
+                <div class="flex gap-4">
+                    <button id="play-btn"
+                        class="px-8 py-3 bg-purple-600 hover:bg-purple-500 rounded-xl font-bold flex items-center gap-2">
+                        <i class="fas fa-play"></i> PLAY
+                    </button>
+                    <button id="stop-btn"
+                        class="px-8 py-3 bg-slate-700 hover:bg-slate-600 rounded-xl font-bold flex items-center gap-2"
+                        disabled>
+                        <i class="fas fa-stop"></i> STOP
+                    </button>
+                </div>
+
+                <div class="text-xs text-slate-500 font-mono text-center">
+                    <p>Vertical = Mono (In Phase)</p>
+                    <p>Horizontal = Out of Phase</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script type="module">
+        import { audioEngine } from '../shared/audio-utils.js';
+
+        const uploadArea = document.getElementById('upload-area');
+        const fileInput = document.getElementById('file-input');
+        const viewer = document.getElementById('viewer');
+        const canvas = document.getElementById('gonio');
+        const ctx2d = canvas.getContext('2d');
+        const playBtn = document.getElementById('play-btn');
+        const stopBtn = document.getElementById('stop-btn');
+
+        let audioBuffer = null;
+        let sourceNode = null;
+        let splitter = null;
+        let analyserL = null;
+        let analyserR = null;
+        let scriptNode = null;
+        let frameId = null;
+
+        uploadArea.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+
+        async function handleFile(file) {
+            if (!file) return;
+            uploadArea.classList.add('hidden');
+            viewer.classList.remove('hidden');
+
+            const ctx = audioEngine.init();
+            const arrayBuffer = await file.arrayBuffer();
+            audioBuffer = await ctx.decodeAudioData(arrayBuffer);
+        }
+
+        playBtn.onclick = start;
+        stopBtn.onclick = stop;
+
+        function start() {
+            if (sourceNode) stop();
+            const ctx = audioEngine.init();
+            sourceNode = ctx.createBufferSource();
+            sourceNode.buffer = audioBuffer;
+
+            splitter = ctx.createChannelSplitter(2);
+            analyserL = ctx.createAnalyser();
+            analyserR = ctx.createAnalyser();
+
+            analyserL.fftSize = 4096;
+            analyserR.fftSize = 4096;
+
+            sourceNode.connect(splitter);
+            splitter.connect(analyserL, 0);
+            splitter.connect(analyserR, 1);
+
+            sourceNode.connect(ctx.destination); // For hearing
+
+            sourceNode.onended = stop;
+            sourceNode.start(0);
+
+            playBtn.disabled = true;
+            stopBtn.disabled = false;
+
+            draw();
+        }
+
+        function stop() {
+            if (sourceNode) sourceNode.stop();
+            if (frameId) cancelAnimationFrame(frameId);
+            playBtn.disabled = false;
+            stopBtn.disabled = true;
+
+            // Clear canvas
+            ctx2d.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function draw() {
+            if (!sourceNode) return;
+            frameId = requestAnimationFrame(draw);
+
+            const bufferLen = analyserL.frequencyBinCount; // Time domain data length
+            const dataL = new Uint8Array(bufferLen);
+            const dataR = new Uint8Array(bufferLen);
+
+            analyserL.getByteTimeDomainData(dataL);
+            analyserR.getByteTimeDomainData(dataR);
+
+            // Fade out
+            ctx2d.fillStyle = 'rgba(0, 0, 0, 0.2)';
+            ctx2d.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx2d.lineWidth = 1;
+            ctx2d.strokeStyle = '#a855f7';
+            ctx2d.beginPath();
+
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2;
+            const scale = canvas.width / 2; // scale factor
+
+            // Plot L vs R
+            // Lissajous: X = (L - R) * 0.707, Y = (L + R) * 0.707 (Rotate 45deg) or direct L,R
+            // Standard Gonio:
+            // X = L - R (Side)
+            // Y = L + R (Mid)
+
+            // Step to avoid too many points
+            for (let i = 0; i < bufferLen; i += 4) {
+                // Normalize 0-255 to -1..1
+                const l = (dataL[i] - 128) / 128.0;
+                const r = (dataR[i] - 128) / 128.0;
+
+                // Rotate 45 deg
+                // x' = x cos - y sin
+                // y' = x sin + y cos
+                // Here x=l, y=r? No, usually M/S
+
+                const x = (l - r) * 0.707 * scale + cx;
+                const y = (l + r) * 0.707 * scale + cy; // Positive Y is down in canvas, but +Audio is up. Invert?
+
+                // Actually Y = -(l+r)...
+                const y_inv = cy - ((l + r) * 0.707 * scale);
+
+                if (i === 0) ctx2d.moveTo(x, y_inv);
+                else ctx2d.lineTo(x, y_inv);
+            }
+            ctx2d.stroke();
+        }
+    </script>
+</body>
+
+</html>

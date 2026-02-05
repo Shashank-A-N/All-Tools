@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shadow Text - Binary Converter</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;500;600;700&display=swap"
+        rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link rel="stylesheet" href="../../styles.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        mono: ['Courier New', 'monospace'],
+                        sans: ['Rajdhani', 'sans-serif'],
+                        orbitron: ['Orbitron', 'sans-serif']
+                    },
+                    colors: {
+                        cyber: {
+                            accent: '#22c55e', // Green-500
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body
+    class="min-h-screen flex flex-col font-sans overflow-x-hidden bg-slate-900 text-white selection:bg-green-500 selection:text-black">
+
+    <!-- 3D Background -->
+    <div id="bg-3d-container"></div>
+
+    <!-- Navigation -->
+    <nav
+        class="sticky top-0 z-50 glass-effect border-b border-white/5 px-4 md:px-6 py-3 flex items-center justify-between backdrop-blur-md">
+        <a href="../index.html" class="flex items-center gap-3 text-slate-300 hover:text-white transition-colors group">
+            <div
+                class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center border border-white/10 group-hover:border-green-500/50 transition-all">
+                <i class="fas fa-chevron-left text-xs group-hover:-translate-x-0.5 transition-transform"></i>
+            </div>
+            <span class="font-orbitron font-bold tracking-wider hidden md:block">BACK</span>
+        </a>
+
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded bg-green-500/20 flex items-center justify-center text-green-400">
+                <i class="fas fa-terminal"></i>
+            </div>
+            <h1 class="text-lg md:text-xl font-orbitron font-bold tracking-widest text-white">SHADOW<span
+                    class="text-green-500">BINARY</span></h1>
+        </div>
+
+        <div class="w-8"></div>
+    </nav>
+
+    <!-- Main Content -->
+    <main
+        class="flex-grow container mx-auto px-4 py-8 relative z-10 flex flex-col items-center justify-center h-[calc(100vh-80px)] min-h-[600px]">
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-6xl h-full">
+
+            <!-- Left Panel: Text -->
+            <div class="group relative flex flex-col h-full">
+                <!-- Header -->
+                <div
+                    class="glass-header px-6 py-3 border-b border-white/5 bg-slate-900/40 rounded-t-2xl flex justify-between items-center">
+                    <span class="text-xs font-bold text-slate-400 tracking-widest uppercase"><i
+                            class="fas fa-font mr-2"></i>Text Input</span>
+                    <button onclick="clearAll()"
+                        class="text-[10px] text-slate-500 hover:text-white transition-colors uppercase font-bold tracking-wider">Clear</button>
+                </div>
+
+                <!-- Editor -->
+                <div class="flex-grow glass border border-white/5 rounded-b-2xl shadow-xl overflow-hidden relative">
+                    <textarea id="textInput" oninput="toBinary()"
+                        class="w-full h-full bg-transparent p-6 text-sm md:text-base font-mono text-slate-300 placeholder-slate-600 focus:outline-none resize-none custom-scrollbar"
+                        placeholder="Enter text..."></textarea>
+                </div>
+            </div>
+
+            <!-- Right Panel: Binary -->
+            <div class="group relative flex flex-col h-full">
+                <!-- Header -->
+                <div
+                    class="glass-header px-6 py-3 border-b border-white/5 bg-slate-900/40 rounded-t-2xl flex justify-between items-center">
+                    <span class="text-xs font-bold text-green-400 tracking-widest uppercase"><i
+                            class="fas fa-microchip mr-2"></i>Binary Output</span>
+                    <button onclick="copy('binaryInput')"
+                        class="text-[10px] text-green-400 hover:text-white transition-colors uppercase font-bold tracking-wider"><i
+                            class="fas fa-copy mr-1"></i>Copy</button>
+                </div>
+
+                <!-- Editor -->
+                <div class="flex-grow glass border border-white/5 rounded-b-2xl shadow-xl overflow-hidden relative">
+                    <textarea id="binaryInput" oninput="toText()"
+                        class="w-full h-full bg-transparent p-6 text-sm md:text-base font-mono text-green-400 placeholder-green-900/50 focus:outline-none resize-none custom-scrollbar breaking-all"
+                        placeholder="01010100..."></textarea>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Shared Script -->
+    <script type="module" src="../../shared/bg-particles.js"></script>
+
+    <script>
+        const textEl = document.getElementById('textInput');
+        const binEl = document.getElementById('binaryInput');
+
+        function toBinary() {
+            const text = textEl.value;
+            let binary = '';
+            for (let i = 0; i < text.length; i++) {
+                binary += text[i].charCodeAt(0).toString(2).padStart(8, '0') + ' ';
+            }
+            binEl.value = binary.trim();
+        }
+
+        function toText() {
+            const binary = binEl.value.replace(/\s+/g, ' ').trim();
+            const bytes = binary.split(' ');
+            let text = '';
+            try {
+                for (let i = 0; i < bytes.length; i++) {
+                    if (bytes[i]) {
+                        text += String.fromCharCode(parseInt(bytes[i], 2));
+                    }
+                }
+                textEl.value = text;
+                binEl.classList.remove('text-red-400');
+                binEl.classList.add('text-green-400');
+            } catch (e) {
+                binEl.classList.add('text-red-400');
+            }
+        }
+
+        function clearAll() {
+            textEl.value = '';
+            binEl.value = '';
+        }
+
+        function copy(id) {
+            const el = document.getElementById(id);
+            el.select();
+            document.execCommand('copy');
+            const btn = document.querySelector(`button[onclick="copy('${id}')"]`);
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-check mr-1"></i>COPIED';
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+            }, 1500);
+        }
+    </script>
+</body>
+
+</html>

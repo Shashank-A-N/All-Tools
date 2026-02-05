@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shadow Text - Zalgo Glitch</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;500;600;700&display=swap"
+        rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link rel="stylesheet" href="../../styles.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        mono: ['Courier New', 'monospace'],
+                        sans: ['Rajdhani', 'sans-serif'],
+                        orbitron: ['Orbitron', 'sans-serif']
+                    },
+                    colors: {
+                        cyber: {
+                            accent: '#ef4444', // Red-500 for chaos
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body
+    class="min-h-screen flex flex-col font-sans overflow-x-hidden bg-slate-900 text-white selection:bg-red-900 selection:text-white">
+
+    <!-- 3D Background -->
+    <div id="bg-3d-container"></div>
+
+    <!-- Navigation -->
+    <nav
+        class="sticky top-0 z-50 glass-effect border-b border-white/5 px-4 md:px-6 py-3 flex items-center justify-between backdrop-blur-md">
+        <a href="../index.html" class="flex items-center gap-3 text-slate-300 hover:text-white transition-colors group">
+            <div
+                class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center border border-white/10 group-hover:border-red-500/50 transition-all">
+                <i class="fas fa-chevron-left text-xs group-hover:-translate-x-0.5 transition-transform"></i>
+            </div>
+            <span class="font-orbitron font-bold tracking-wider hidden md:block">BACK</span>
+        </a>
+
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded bg-red-500/20 flex items-center justify-center text-red-500">
+                <i class="fas fa-bug"></i>
+            </div>
+            <h1 class="text-lg md:text-xl font-orbitron font-bold tracking-widest text-white">SHADOW<span
+                    class="text-red-600">ZALGO</span></h1>
+        </div>
+
+        <div class="w-8"></div>
+    </nav>
+
+    <!-- Main Content -->
+    <main
+        class="flex-grow container mx-auto px-4 py-8 relative z-10 flex flex-col items-center justify-center h-[calc(100vh-80px)] min-h-[600px]">
+
+        <div class="w-full max-w-4xl flex flex-col gap-6 ">
+
+            <!-- Controls Card -->
+            <div class="glass p-6 rounded-2xl border border-white/5 shadow-xl flex flex-col gap-4">
+
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-sm font-bold text-red-500 uppercase tracking-widest">Chaos Level</span>
+                    <span id="chaosVal" class="text-xl font-orbitron text-white">50%</span>
+                </div>
+
+                <input type="range" id="chaos" min="1" max="100" value="50" oninput="updateChaos(); glitch()"
+                    class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-red-600">
+
+                <div class="flex justify-between text-[10px] text-slate-500 font-bold uppercase tracking-wider mt-1">
+                    <span>Mild</span>
+                    <span>Corrupt</span>
+                    <span>Destroy</span>
+                </div>
+
+                <div class="flex justify-center gap-6 mt-2">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" id="up" checked onchange="glitch()" class="accent-red-500">
+                        <span class="text-xs text-slate-400">Up</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" id="mid" checked onchange="glitch()" class="accent-red-500">
+                        <span class="text-xs text-slate-400">Mid</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" id="down" checked onchange="glitch()" class="accent-red-500">
+                        <span class="text-xs text-slate-400">Down</span>
+                    </label>
+                </div>
+
+            </div>
+
+            <!-- Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 h-[50vh]">
+
+                <!-- Input -->
+                <div class="flex flex-col glass rounded-2xl border border-white/5 shadow-xl overflow-hidden h-full">
+                    <div class="px-6 py-3 border-b border-white/5 bg-slate-900/50">
+                        <span class="text-xs font-bold text-slate-400 tracking-widest uppercase">Normal Text</span>
+                    </div>
+                    <textarea id="textInput" oninput="glitch()"
+                        class="flex-1 w-full bg-transparent p-6 text-lg font-sans text-slate-300 focus:outline-none resize-none custom-scrollbar placeholder-slate-700"
+                        placeholder="He comes..."></textarea>
+                </div>
+
+                <!-- Output -->
+                <div
+                    class="flex flex-col glass rounded-2xl border border-white/5 shadow-xl overflow-hidden h-full relative">
+                    <div
+                        class="px-6 py-3 border-b border-white/5 bg-slate-900/50 flex justify-between items-center bg-red-900/10">
+                        <span class="text-xs font-bold text-red-500 tracking-widest uppercase">Glitched</span>
+                        <button onclick="copy('zalgoOutput')"
+                            class="text-[10px] text-red-500 hover:text-white transition-colors uppercase font-bold tracking-wider">Copy</button>
+                    </div>
+                    <textarea id="zalgoOutput" readonly
+                        class="flex-1 w-full bg-slate-950/30 p-6 text-lg font-sans text-red-500 focus:outline-none resize-none custom-scrollbar placeholder-red-900/30 overflow-visible"
+                        placeholder="H̶̒̽e̴̽͝ c̶̽͝ö̵́͛m̸̈́͝e̶̽͝s..."></textarea>
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Shared Script -->
+    <script type="module" src="../../shared/bg-particles.js"></script>
+
+    <script>
+        function updateChaos() {
+            document.getElementById('chaosVal').innerText = document.getElementById('chaos').value + '%';
+        }
+
+        const zalgoUp = [
+            '\u030d', '\u030e', '\u0304', '\u0305', '\u033f',
+            '\u0311', '\u0306', '\u0310', '\u0352', '\u0357',
+            '\u0351', '\u0307', '\u0308', '\u030a', '\u0342',
+            '\u0343', '\u0344', '\u034a', '\u034b', '\u034c',
+            '\u0303', '\u0302', '\u030c', '\u0350', '\u0300',
+            '\u0301', '\u030b', '\u030f', '\u0312', '\u0313',
+            '\u0314', '\u033d', '\u0309', '\u0363', '\u0364',
+            '\u0365', '\u0366', '\u0367', '\u0368', '\u0369',
+            '\u036a', '\u036b', '\u036c', '\u036d', '\u036e',
+            '\u036f', '\u033e', '\u035b', '\u0346', '\u031a'
+        ];
+        const zalgoDown = [
+            '\u0316', '\u0317', '\u0318', '\u0319', '\u031c',
+            '\u031d', '\u031e', '\u031f', '\u0320', '\u0324',
+            '\u0325', '\u0326', '\u0329', '\u032a', '\u032b',
+            '\u032c', '\u032d', '\u032e', '\u032f', '\u0330',
+            '\u0331', '\u0332', '\u0333', '\u0339', '\u033a',
+            '\u033b', '\u033c', '\u0345', '\u0347', '\u0348',
+            '\u0349', '\u034d', '\u034e', '\u0353', '\u0354',
+            '\u0355', '\u0356', '\u0359', '\u035a', '\u0323'
+        ];
+        const zalgoMid = [
+            '\u0315', '\u031b', '\u0340', '\u0341', '\u0358',
+            '\u0321', '\u0322', '\u0327', '\u0328', '\u0334',
+            '\u0335', '\u0336', '\u034f', '\u035c', '\u035d',
+            '\u035e', '\u035f', '\u0360', '\u0362', '\u0338',
+            '\u0337', '\u0361', '\u0489'
+        ];
+
+        function glitch() {
+            const text = document.getElementById('textInput').value;
+            const chaos = document.getElementById('chaos').value / 10; // 0-10
+            const doUp = document.getElementById('up').checked;
+            const doMid = document.getElementById('mid').checked;
+            const doDown = document.getElementById('down').checked;
+
+            let result = '';
+            for (let i = 0; i < text.length; i++) {
+                result += text[i];
+                if (text[i] === ' ' || text[i] === '\n') continue;
+
+                // Amount of glitch marks per char
+                const num = Math.floor(Math.random() * chaos) + 1;
+
+                for (let j = 0; j < num; j++) {
+                    if (doUp && Math.random() > 0.5) result += zalgoUp[Math.floor(Math.random() * zalgoUp.length)];
+                    if (doMid && Math.random() > 0.5) result += zalgoMid[Math.floor(Math.random() * zalgoMid.length)];
+                    if (doDown && Math.random() > 0.5) result += zalgoDown[Math.floor(Math.random() * zalgoDown.length)];
+                }
+            }
+
+            document.getElementById('zalgoOutput').value = result;
+        }
+
+        function copy(id) {
+            const el = document.getElementById(id);
+            el.select();
+            document.execCommand('copy');
+            const btn = document.querySelector(`button[onclick="copy('${id}')"]`);
+            const originalText = btn.innerHTML;
+            btn.innerHTML = 'COPIED';
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+            }, 1500);
+        }
+    </script>
+</body>
+
+</html>

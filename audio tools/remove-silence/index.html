@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Remove Silence - Shadow Audio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;500;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="../../styles.css">
+</head>
+
+<body class="bg-gray-900 text-white font-sans antialiased overflow-x-hidden">
+
+    <nav
+        class="sticky top-0 z-50 glass-effect border-b border-white/5 px-6 py-4 flex items-center justify-between backdrop-blur-md">
+        <div class="flex items-center gap-3">
+            <a href="../index.html" class="flex items-center gap-2 group">
+                <div
+                    class="relative w-10 h-10 flex items-center justify-center bg-purple-600/20 rounded-lg border border-purple-500/30 group-hover:border-purple-500/50 transition-all">
+                    <i class="fas fa-cut text-purple-400 text-xl group-hover:scale-110 transition-transform"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-orbitron font-bold tracking-widest text-white">SHADOW<span
+                            class="text-purple-500">AUDIO</span></h1>
+                    <span class="text-xs text-slate-400 font-mono tracking-wider">SILENCE</span>
+                </div>
+            </a>
+        </div>
+        <a href="../index.html" class="text-slate-400 hover:text-white transition-colors"><i
+                class="fas fa-times text-xl"></i></a>
+    </nav>
+
+    <main class="container mx-auto px-4 py-12 max-w-4xl">
+        <div class="text-center mb-10">
+            <h2 class="text-4xl font-bold font-orbitron mb-2">Silence Remover</h2>
+            <p class="text-slate-400 text-sm">Automatically trim silence from the beginning and end.</p>
+        </div>
+
+        <div class="glass p-8 rounded-3xl border border-white/5 shadow-2xl">
+            <!-- File Upload -->
+            <div id="upload-area"
+                class="border-2 border-dashed border-white/10 rounded-2xl p-10 text-center hover:border-purple-500/50 transition-colors cursor-pointer mb-8 bg-black/20">
+                <input type="file" id="file-input" accept="audio/*" class="hidden">
+                <i class="fas fa-cloud-upload-alt text-4xl text-slate-500 mb-4"></i>
+                <p class="text-lg font-bold text-slate-300">Drop Audio File Here</p>
+                <p class="text-sm text-slate-500">or click to browse</p>
+            </div>
+
+            <div id="controls" class="hidden space-y-8">
+                <div class="max-w-lg mx-auto space-y-6">
+                    <div>
+                        <div class="flex justify-between items-end mb-2">
+                            <label class="font-orbitron text-sm text-white">THRESHOLD</label>
+                            <span class="font-mono text-purple-400" id="thresh-val">-40 dB</span>
+                        </div>
+                        <input type="range" id="thresh-slider" min="-60" max="-10" value="-40" step="1"
+                            class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-purple-500">
+                    </div>
+                </div>
+
+                <div class="bg-black/40 p-6 rounded-2xl border border-white/5 text-center">
+                    <h3 class="font-orbitron text-slate-300 mb-2">Trim Preview</h3>
+                    <p class="text-xs text-slate-500 mb-4" id="stats">Original: 0.0s | Trimmed: 0.0s | Removed: 0.0s</p>
+                    <button id="process-btn"
+                        class="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-lg mb-4">
+                        ANALYZE & TRIM
+                    </button>
+                    <p class="text-[10px] text-slate-600 italic">Click Analyze to calculate new start/end points</p>
+                </div>
+
+                <div class="flex justify-center gap-4">
+                    <button id="play-btn"
+                        class="px-8 py-3 bg-green-600 hover:bg-green-500 text-white font-bold rounded-xl transition-all flex items-center gap-2"
+                        disabled>
+                        <i class="fas fa-play"></i> PLAY RESULT
+                    </button>
+                    <button id="stop-btn"
+                        class="px-8 py-3 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl transition-all flex items-center gap-2"
+                        disabled>
+                        <i class="fas fa-stop"></i> STOP
+                    </button>
+                </div>
+
+                <div id="now-playing" class="text-center text-purple-400 font-mono text-sm"></div>
+                <canvas id="visualizer" width="600" height="100"
+                    class="w-full h-24 bg-black/40 rounded-lg border border-white/5"></canvas>
+            </div>
+        </div>
+    </main>
+
+    <script type="module">
+        import { audioEngine } from '../shared/audio-utils.js';
+
+        const uploadArea = document.getElementById('upload-area');
+        const fileInput = document.getElementById('file-input');
+        const controls = document.getElementById('controls');
+
+        const threshSlider = document.getElementById('thresh-slider');
+        const threshVal = document.getElementById('thresh-val');
+        const stats = document.getElementById('stats');
+
+        const processBtn = document.getElementById('process-btn');
+        const playBtn = document.getElementById('play-btn');
+        const stopBtn = document.getElementById('stop-btn');
+
+        let originalBuffer = null;
+        let trimmedBuffer = null; // We will simulate or create new buffer
+        let sourceNode = null;
+        let isPlaying = false;
+
+        let startTrim = 0;
+        let endTrim = 0;
+
+        uploadArea.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+
+        async function handleFile(file) {
+            if (!file) return;
+            controls.classList.remove('hidden');
+            uploadArea.classList.add('hidden');
+            document.getElementById('now-playing').textContent = `LOADED: ${file.name}`;
+
+            const ctx = audioEngine.init();
+            const arrayBuffer = await file.arrayBuffer();
+            originalBuffer = await ctx.decodeAudioData(arrayBuffer);
+
+            stats.innerHTML = `Original: ${originalBuffer.duration.toFixed(2)}s`;
+        }
+
+        threshSlider.addEventListener('input', (e) => {
+            threshVal.textContent = e.target.value + ' dB';
+        });
+
+        processBtn.addEventListener('click', () => {
+            if (!originalBuffer) return;
+
+            const thresholdDb = parseFloat(threshSlider.value);
+            // Convert dB to Amplitude: 10^(db/20)
+            const threshold = Math.pow(10, thresholdDb / 20);
+
+            // Analyze raw data (Channel 0 usually enough for silence detection)
+            const data = originalBuffer.getChannelData(0);
+            const len = data.length;
+
+            // Find start
+            let startIndex = 0;
+            for (let i = 0; i < len; i++) {
+                if (Math.abs(data[i]) > threshold) {
+                    startIndex = i;
+                    break;
+                }
+            }
+
+            // Find end
+            let endIndex = len - 1;
+            for (let i = len - 1; i >= 0; i--) {
+                if (Math.abs(data[i]) > threshold) {
+                    endIndex = i;
+                    break;
+                }
+            }
+
+            // Create Trimmed Buffer
+            if (endIndex > startIndex) {
+                const newLen = endIndex - startIndex;
+                const ctx = audioEngine.init();
+
+                // New buffer with same channel count and rate
+                const newBuff = ctx.createBuffer(originalBuffer.numberOfChannels, newLen, originalBuffer.sampleRate);
+
+                for (let ch = 0; ch < originalBuffer.numberOfChannels; ch++) {
+                    const oldData = originalBuffer.getChannelData(ch);
+                    const newData = newBuff.getChannelData(ch);
+                    for (let i = 0; i < newLen; i++) {
+                        newData[i] = oldData[i + startIndex];
+                    }
+                }
+
+                trimmedBuffer = newBuff;
+                const removed = originalBuffer.duration - trimmedBuffer.duration;
+                stats.innerHTML = `Original: ${originalBuffer.duration.toFixed(2)}s | Trimmed: ${trimmedBuffer.duration.toFixed(2)}s | Removed: ${removed.toFixed(2)}s`;
+                playBtn.disabled = false;
+                processBtn.textContent = "RE-ANALYZE";
+            } else {
+                stats.innerHTML = "Silence not found or threshold too high.";
+            }
+        });
+
+        playBtn.addEventListener('click', () => {
+            if (!trimmedBuffer) return;
+            if (isPlaying) return;
+            startPlayback();
+        });
+
+        stopBtn.addEventListener('click', () => {
+            if (sourceNode) {
+                sourceNode.stop();
+                isPlaying = false;
+                playBtn.disabled = false;
+                stopBtn.disabled = true;
+                audioEngine.stop();
+            }
+        });
+
+        function startPlayback() {
+            const ctx = audioEngine.init();
+            sourceNode = ctx.createBufferSource();
+            sourceNode.buffer = trimmedBuffer;
+
+            sourceNode.connect(ctx.destination);
+            const analyser = audioEngine.createAnalyser(sourceNode);
+
+            sourceNode.onended = () => {
+                isPlaying = false;
+                playBtn.disabled = false;
+                stopBtn.disabled = true;
+            };
+
+            sourceNode.start(0);
+            isPlaying = true;
+            playBtn.disabled = true;
+            stopBtn.disabled = false;
+
+            audioEngine.drawVisualizer('visualizer', 'frequency', '#a855f7');
+        }
+    </script>
+</body>
+
+</html>

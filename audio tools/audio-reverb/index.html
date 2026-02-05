@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reverb Studio - Shadow Audio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;500;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="../../styles.css">
+</head>
+
+<body class="bg-gray-900 text-white font-sans antialiased overflow-x-hidden">
+
+    <nav
+        class="sticky top-0 z-50 glass-effect border-b border-white/5 px-6 py-4 flex items-center justify-between backdrop-blur-md">
+        <div class="flex items-center gap-3">
+            <a href="../index.html" class="flex items-center gap-2 group">
+                <div
+                    class="relative w-10 h-10 flex items-center justify-center bg-purple-600/20 rounded-lg border border-purple-500/30 group-hover:border-purple-500/50 transition-all">
+                    <i class="fas fa-dungeon text-purple-400 text-xl group-hover:scale-110 transition-transform"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-orbitron font-bold tracking-widest text-white">SHADOW<span
+                            class="text-purple-500">AUDIO</span></h1>
+                    <span class="text-xs text-slate-400 font-mono tracking-wider">REVERB</span>
+                </div>
+            </a>
+        </div>
+        <a href="../index.html" class="text-slate-400 hover:text-white transition-colors"><i
+                class="fas fa-times text-xl"></i></a>
+    </nav>
+
+    <main class="container mx-auto px-4 py-12 max-w-4xl">
+        <div class="text-center mb-10">
+            <h2 class="text-4xl font-bold font-orbitron mb-2">Reverb Studio</h2>
+            <p class="text-slate-400 text-sm">Add spatial ambience using convolution reverb.</p>
+        </div>
+
+        <div class="glass p-8 rounded-3xl border border-white/5 shadow-2xl">
+            <!-- File Upload -->
+            <div id="upload-area"
+                class="border-2 border-dashed border-white/10 rounded-2xl p-10 text-center hover:border-purple-500/50 transition-colors cursor-pointer mb-8 bg-black/20">
+                <input type="file" id="file-input" accept="audio/*" class="hidden">
+                <i class="fas fa-cloud-upload-alt text-4xl text-slate-500 mb-4"></i>
+                <p class="text-lg font-bold text-slate-300">Drop Audio File Here</p>
+                <p class="text-sm text-slate-500">or click to browse</p>
+            </div>
+
+            <div id="controls" class="hidden space-y-8">
+                <div class="space-y-4">
+                    <h3 class="font-orbitron text-purple-400">Environment</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <button onclick="setImpulse('hall')"
+                            class="reverb-btn active bg-purple-600 hover:bg-purple-500 p-4 rounded-xl border border-white/10 flex flex-col items-center gap-2 transition-all">
+                            <i class="fas fa-church text-2xl"></i>
+                            <span class="font-bold text-xs uppercase">Hall</span>
+                        </button>
+                        <button onclick="setImpulse('room')"
+                            class="reverb-btn bg-black/40 hover:bg-white/5 p-4 rounded-xl border border-white/10 flex flex-col items-center gap-2 transition-all">
+                            <i class="fas fa-home text-2xl"></i>
+                            <span class="font-bold text-xs uppercase">Room</span>
+                        </button>
+                        <button onclick="setImpulse('cave')"
+                            class="reverb-btn bg-black/40 hover:bg-white/5 p-4 rounded-xl border border-white/10 flex flex-col items-center gap-2 transition-all">
+                            <i class="fas fa-mountain text-2xl"></i>
+                            <span class="font-bold text-xs uppercase">Cave</span>
+                        </button>
+                        <button onclick="setImpulse('cathedral')"
+                            class="reverb-btn bg-black/40 hover:bg-white/5 p-4 rounded-xl border border-white/10 flex flex-col items-center gap-2 transition-all">
+                            <i class="fas fa-archway text-2xl"></i>
+                            <span class="font-bold text-xs uppercase">Cathedral</span>
+                        </button>
+                    </div>
+
+                    <div class="space-y-6 mt-6 max-w-lg mx-auto">
+                        <div>
+                            <div class="flex justify-between mb-2">
+                                <label class="text-xs font-bold text-slate-400">DRY / WET MIX</label>
+                                <span class="text-xs font-mono text-purple-400" id="mix-val">50%</span>
+                            </div>
+                            <input type="range" id="mix-slider" min="0" max="1" step="0.05" value="0.5"
+                                class="w-full accent-purple-500">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-center gap-4">
+                    <button id="play-btn"
+                        class="px-8 py-3 bg-green-600 hover:bg-green-500 text-white font-bold rounded-xl transition-all flex items-center gap-2">
+                        <i class="fas fa-play"></i> PREVIEW
+                    </button>
+                    <button id="stop-btn"
+                        class="px-8 py-3 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl transition-all flex items-center gap-2"
+                        disabled>
+                        <i class="fas fa-stop"></i> STOP
+                    </button>
+                </div>
+
+                <div id="now-playing" class="text-center text-purple-400 font-mono text-sm"></div>
+                <canvas id="visualizer" width="600" height="100"
+                    class="w-full h-24 bg-black/40 rounded-lg border border-white/5"></canvas>
+            </div>
+        </div>
+    </main>
+
+    <script type="module">
+        import { audioEngine } from '../shared/audio-utils.js';
+
+        const uploadArea = document.getElementById('upload-area');
+        const fileInput = document.getElementById('file-input');
+        const controls = document.getElementById('controls');
+
+        const mixSlider = document.getElementById('mix-slider');
+        const mixVal = document.getElementById('mix-val');
+
+        const playBtn = document.getElementById('play-btn');
+        const stopBtn = document.getElementById('stop-btn');
+
+        let audioBuffer = null;
+        let sourceNode = null;
+        let convolverNode = null;
+        let dryGain = null;
+        let wetGain = null;
+        let currentImpulse = 'hall';
+        let isPlaying = false;
+
+        // Upload Logic
+        uploadArea.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+
+        async function handleFile(file) {
+            if (!file) return;
+            controls.classList.remove('hidden');
+            uploadArea.classList.add('hidden');
+            document.getElementById('now-playing').textContent = `LOADED: ${file.name}`;
+
+            const ctx = audioEngine.init();
+            const arrayBuffer = await file.arrayBuffer();
+            audioBuffer = await ctx.decodeAudioData(arrayBuffer);
+        }
+
+        window.setImpulse = (type) => {
+            currentImpulse = type;
+            document.querySelectorAll('.reverb-btn').forEach(btn => {
+                btn.classList.remove('bg-purple-600', 'active');
+                btn.classList.add('bg-black/40');
+                if (btn.textContent.toLowerCase().includes(type)) {
+                    btn.classList.add('bg-purple-600', 'active');
+                    btn.classList.remove('bg-black/40');
+                }
+            });
+            if (isPlaying && convolverNode) {
+                // If we want to change in real-time we need to regenerate buffer
+                // For simplicity, stop and restart or swap buffer
+                generateImpulse(audioEngine.context).then(buffer => {
+                    convolverNode.buffer = buffer;
+                });
+            }
+        };
+
+        mixSlider.addEventListener('input', (e) => {
+            const v = parseFloat(e.target.value);
+            mixVal.textContent = Math.round(v * 100) + '%';
+            if (dryGain && wetGain) {
+                dryGain.gain.value = 1 - v;
+                wetGain.gain.value = v;
+            }
+        });
+
+        playBtn.addEventListener('click', () => {
+            if (!audioBuffer) return;
+            if (isPlaying) return;
+            startPlayback();
+        });
+
+        stopBtn.addEventListener('click', () => {
+            if (sourceNode) {
+                sourceNode.stop();
+                isPlaying = false;
+                playBtn.disabled = false;
+                stopBtn.disabled = true;
+                audioEngine.stop();
+            }
+        });
+
+        async function startPlayback() {
+            const ctx = audioEngine.init();
+            sourceNode = ctx.createBufferSource();
+            sourceNode.buffer = audioBuffer;
+
+            convolverNode = ctx.createConvolver();
+            convolverNode.buffer = await generateImpulse(ctx);
+
+            dryGain = ctx.createGain();
+            wetGain = ctx.createGain();
+
+            const mix = parseFloat(mixSlider.value);
+            dryGain.gain.value = 1 - mix;
+            wetGain.gain.value = mix;
+
+            // Route
+            // Source -> Dry -> Dest
+            sourceNode.connect(dryGain);
+            dryGain.connect(ctx.destination);
+
+            // Source -> Convolver -> Wet -> Dest
+            sourceNode.connect(convolverNode);
+            convolverNode.connect(wetGain);
+            wetGain.connect(ctx.destination);
+
+            // Visualizer via main mix
+            const analyser = audioEngine.createAnalyser(wetGain); // Visualizing wet mix mostly gives cool effect
+
+            sourceNode.onended = () => {
+                isPlaying = false;
+                playBtn.disabled = false;
+                stopBtn.disabled = true;
+            };
+
+            sourceNode.start(0);
+            isPlaying = true;
+            playBtn.disabled = true;
+            stopBtn.disabled = false;
+
+            audioEngine.drawVisualizer('visualizer', 'frequency', '#a855f7');
+        }
+
+        // Impulse Response Generation (Synthetic)
+        async function generateImpulse(ctx) {
+            const rate = ctx.sampleRate;
+            let duration = 2.0;
+            let decay = 2.0;
+
+            if (currentImpulse === 'room') { duration = 1.0; decay = 4.0; }
+            if (currentImpulse === 'cave') { duration = 4.0; decay = 1.5; }
+            if (currentImpulse === 'cathedral') { duration = 5.0; decay = 1.0; }
+
+            const length = rate * duration;
+            const impulse = ctx.createBuffer(2, length, rate);
+
+            for (let channel = 0; channel < 2; channel++) {
+                const data = impulse.getChannelData(channel);
+                for (let i = 0; i < length; i++) {
+                    // Simple noise with exponential decay
+                    data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, decay);
+                }
+            }
+            return impulse;
+        }
+    </script>
+</body>
+
+</html>

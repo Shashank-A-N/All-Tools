@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SpeedControl Studio</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        /* Base Theme */
+        :root {
+            --bg-dark: #0f172a;
+            --panel-bg: #1e293b;
+            --accent-blue: #3b82f6;
+            --accent-orange: #f97316;
+            --accent-green: #22c55e;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            background-image: radial-gradient(circle at top right, #1e293b 0%, transparent 40%), radial-gradient(circle at bottom left, #1e1b4b 0%, transparent 40%);
+        }
+
+        /* Custom Scrollbar */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 10px;
+            border: 2px solid #0f172a;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+
+        /* Advanced Range Slider */
+        input[type=range] {
+            -webkit-appearance: none;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #fff;
+            margin-top: -8px;
+            cursor: grab;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+            border: 2px solid #3b82f6;
+        }
+
+        input[type=range]::-webkit-slider-thumb:active {
+            cursor: grabbing;
+            scale: 1.1;
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: linear-gradient(to right, #f97316 0%, #64748b 33%, #3b82f6 100%);
+            border-radius: 4px;
+        }
+
+        /* Glassmorphism Utilities */
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        /* Segment Item Styling */
+        .segment-item {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .segment-item:hover {
+            transform: translateX(4px);
+        }
+
+        .segment-item.editing {
+            border-left: 4px solid #3b82f6;
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        /* Digital Clock Input */
+        .digital-input {
+            font-family: 'Courier New', Courier, monospace;
+            letter-spacing: -0.5px;
+        }
+
+        /* Mobile Adjustments */
+        @media (max-width: 640px) {
+            .btn-text {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body class="text-slate-200 font-sans min-h-screen p-3 md:p-6 selection:bg-blue-500 selection:text-white flex flex-col">
+
+    <!-- Navbar -->
+    <nav
+        class="w-full max-w-7xl mx-auto flex flex-wrap items-center justify-between mb-6 glass-panel rounded-2xl p-4 shadow-lg z-20 sticky top-4">
+        <div class="flex items-center gap-3">
+            <div
+                class="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl flex items-center justify-center shadow-lg shadow-blue-900/30">
+                <i data-lucide="zap" class="text-white w-5 h-5"></i>
+            </div>
+            <div class="flex flex-wrap flex-col">
+                <h1 class="text-lg font-bold tracking-tight text-white leading-tight max-w-[90px] md:max-w-xs">
+                    SpeedControl</h1>
+                <span id="video-meta-info"
+                    class="text-[10px] uppercase tracking-wider text-slate-400 font-medium truncate max-w-[150px] md:max-w-xs">No
+                    Media Loaded</span>
+            </div>
+        </div>
+
+        <div id="header-actions" class="flex items-center gap-2">
+            <!-- Injected Actions -->
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1">
+
+        <!-- Empty State (Upload View) -->
+        <div id="upload-view"
+            class="lg:col-span-12 glass-panel rounded-3xl h-[60vh] flex flex-col items-center justify-center text-center p-8 border-2 border-dashed border-slate-700/50 hover:border-blue-500/50 transition-colors group">
+            <div
+                class="w-24 h-24 bg-slate-800/50 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 shadow-2xl">
+                <i data-lucide="film" class="w-10 h-10 text-slate-400 group-hover:text-blue-400 transition-colors"></i>
+            </div>
+            <h3 class="text-2xl font-bold text-white mb-2">Import Media</h3>
+            <p class="text-slate-400 max-w-md mb-8 text-sm">Drag and drop or select a video file to enter the studio
+                editor. <br>Supports MP4, WebM, MOV.</p>
+            <button onclick="document.getElementById('file-input').click()"
+                class="flex items-center gap-3 px-8 py-4 bg-blue-600 hover:bg-blue-500 transition rounded-xl cursor-pointer font-bold shadow-xl shadow-blue-900/20 text-white group-hover:ring-4 ring-blue-500/20">
+                <i data-lucide="upload-cloud" class="w-5 h-5"></i>
+                <span>Select Video File</span>
+            </button>
+        </div>
+
+        <!-- Editor View (Hidden) -->
+        <div id="editor-view" class="hidden lg:col-span-12 grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+            <!-- LEFT: Preview Console (Video + Timeline) -->
+            <div class="lg:col-span-8 flex flex-col gap-4">
+
+                <!-- Video Player -->
+                <div
+                    class="relative bg-black rounded-2xl overflow-hidden shadow-2xl ring-1 ring-white/10 group aspect-video">
+                    <video id="main-video" class="w-full h-full object-contain"></video>
+
+                    <!-- Hover Play Button -->
+                    <div id="play-overlay"
+                        class="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer backdrop-blur-[2px]">
+                        <div
+                            class="p-5 bg-white/10 backdrop-blur-md rounded-full hover:scale-110 transition-transform shadow-2xl border border-white/20">
+                            <i id="play-icon" data-lucide="play" class="w-8 h-8 fill-white text-white ml-1"></i>
+                        </div>
+                    </div>
+
+                    <!-- Live Speed Badge -->
+                    <div id="current-speed-indicator"
+                        class="absolute top-4 right-4 bg-black/70 backdrop-blur-md text-white px-3 py-1.5 rounded-lg text-sm font-bold border border-white/10 hidden shadow-lg flex items-center gap-2">
+                        <i data-lucide="gauge" class="w-3 h-3"></i>
+                        <span>1.0x</span>
+                    </div>
+                </div>
+
+                <!-- Integrated Timeline -->
+                <div class="glass-panel p-4 rounded-xl relative">
+                    <!-- Time Info Header -->
+                    <div class="flex justify-between items-end mb-3 px-1">
+                        <div class="flex flex-col">
+                            <span class="text-[10px] uppercase text-slate-500 font-bold tracking-widest">Playback
+                                Time</span>
+                            <span id="current-time-display"
+                                class="text-white text-xl font-mono font-bold tracking-tight text-shadow">0:00.0</span>
+                        </div>
+                        <div class="flex flex-col items-end text-right">
+                            <span class="text-[10px] uppercase text-slate-500 font-bold tracking-widest">Total
+                                Length</span>
+                            <span id="duration-display" class="text-slate-300 text-sm font-mono">0:00.0</span>
+                        </div>
+                    </div>
+
+                    <!-- Interactive Track -->
+                    <div id="timeline-track"
+                        class="relative h-16 bg-slate-900/80 rounded-lg w-full mb-3 cursor-pointer overflow-hidden group ring-1 ring-white/5 shadow-inner">
+                        <!-- Grid Lines -->
+                        <div class="absolute inset-0 w-full h-full opacity-10 pointer-events-none"
+                            style="background-image: linear-gradient(90deg, #fff 1px, transparent 1px); background-size: 10% 100%;">
+                        </div>
+
+                        <!-- Segments -->
+                        <div id="timeline-segments"></div>
+
+                        <!-- Playhead -->
+                        <div id="playhead"
+                            class="absolute top-0 bottom-0 w-0.5 bg-red-500 pointer-events-none transition-all duration-75 left-0 z-20 shadow-[0_0_10px_rgba(239,68,68,0.8)]">
+                            <div class="w-3 h-3 bg-red-500 rounded-full absolute -top-1.5 -left-[5px] shadow-sm"></div>
+                        </div>
+                    </div>
+
+                    <!-- Footer Info -->
+                    <div class="flex justify-between items-center text-xs">
+                        <div
+                            class="flex items-center gap-2 text-slate-400 bg-slate-800/50 px-3 py-1 rounded-full border border-white/5">
+                            <i data-lucide="clock-4" class="w-3 h-3 text-green-400"></i>
+                            <span>Est. Output: <span id="effective-duration"
+                                    class="text-green-400 font-bold font-mono ml-1">0:00.0</span></span>
+                        </div>
+
+                        <div
+                            class="flex items-center gap-3 bg-slate-800/50 px-3 py-1 rounded-full border border-white/5">
+                            <div class="flex items-center gap-1.5">
+                                <span
+                                    class="w-2 h-2 rounded-full bg-orange-500 shadow-[0_0_6px_rgba(249,115,22,0.6)]"></span>
+                                <span class="text-slate-400">Slow</span>
+                            </div>
+                            <div class="w-px h-3 bg-slate-700"></div>
+                            <div class="flex items-center gap-1.5">
+                                <span
+                                    class="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_6px_rgba(59,130,246,0.6)]"></span>
+                                <span class="text-slate-400">Fast</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT: Command Center -->
+            <div class="lg:col-span-4 flex flex-col gap-4 h-full">
+
+                <!-- Speed Zone Editor -->
+                <div class="glass-panel rounded-2xl p-5 shadow-xl border-t-4 border-t-blue-500">
+                    <div class="flex items-center justify-between mb-5 border-b border-white/5 pb-3">
+                        <div class="flex items-center gap-2 text-white font-bold">
+                            <i id="mode-icon" data-lucide="plus-circle" class="w-5 h-5 text-blue-400"></i>
+                            <h2 id="mode-title" class="tracking-tight">New Zone</h2>
+                        </div>
+                        <button id="btn-cancel-edit"
+                            class="hidden text-xs text-slate-400 hover:text-white px-2 py-1 hover:bg-slate-700 rounded transition flex items-center gap-1">
+                            <i data-lucide="x" class="w-3 h-3"></i> Cancel
+                        </button>
+                    </div>
+
+                    <div class="space-y-5">
+                        <!-- Time Inputs -->
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="space-y-1.5">
+                                <div class="flex justify-between items-center">
+                                    <label class="text-[10px] uppercase font-bold text-slate-500">Start Time</label>
+                                    <button onclick="setCurrentTime('start')"
+                                        class="text-[10px] bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 px-1.5 py-0.5 rounded transition">GET</button>
+                                </div>
+                                <div class="relative group">
+                                    <input type="number" id="input-start" min="0" step="0.1" value="0"
+                                        class="w-full bg-slate-900/80 border border-slate-700 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500/50 outline-none transition-all font-mono digital-input text-white group-hover:border-slate-600">
+                                    <span class="absolute right-3 top-2.5 text-slate-600 text-xs font-mono">s</span>
+                                </div>
+                            </div>
+                            <div class="space-y-1.5">
+                                <div class="flex justify-between items-center">
+                                    <label class="text-[10px] uppercase font-bold text-slate-500">End Time</label>
+                                    <button onclick="setCurrentTime('end')"
+                                        class="text-[10px] bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 px-1.5 py-0.5 rounded transition">GET</button>
+                                </div>
+                                <div class="relative group">
+                                    <input type="number" id="input-end" min="0" step="0.1" value="5"
+                                        class="w-full bg-slate-900/80 border border-slate-700 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500/50 outline-none transition-all font-mono digital-input text-white group-hover:border-slate-600">
+                                    <span class="absolute right-3 top-2.5 text-slate-600 text-xs font-mono">s</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Speed Slider -->
+                        <div class="bg-slate-900/40 p-4 rounded-xl border border-white/5">
+                            <div class="flex justify-between items-center mb-4">
+                                <label class="text-[10px] uppercase font-bold text-slate-500">Playback Speed</label>
+                                <span id="speed-display"
+                                    class="bg-blue-600 text-white font-bold px-2 py-0.5 rounded text-sm font-mono shadow-lg shadow-blue-900/50">1.5x</span>
+                            </div>
+                            <input type="range" id="input-speed" min="0.25" max="4" step="0.25" value="1.5"
+                                class="w-full mb-2">
+                            <div
+                                class="flex justify-between text-[10px] font-bold text-slate-600 font-mono tracking-widest px-1">
+                                <span>0.25x</span>
+                                <span class="text-slate-500">NORMAL</span>
+                                <span>4.00x</span>
+                            </div>
+                        </div>
+
+                        <button id="btn-action-segment"
+                            class="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold text-sm transition shadow-lg shadow-blue-900/20 flex items-center justify-center gap-2 group active:scale-[0.98]">
+                            <i data-lucide="plus" class="w-5 h-5 group-hover:rotate-90 transition-transform"></i>
+                            <span class="btn-text">Add Speed Zone</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Segments List -->
+                <div
+                    class="glass-panel rounded-2xl p-4 flex-1 flex flex-col min-h-[250px] shadow-lg relative overflow-hidden">
+                    <div class="flex items-center justify-between mb-4 pb-2 border-b border-white/5 z-10 relative">
+                        <h2 class="flex items-center gap-2 font-bold text-slate-300 text-sm tracking-wide">
+                            <i data-lucide="list-video" class="w-4 h-4 text-slate-500"></i>
+                            Zone Queue
+                        </h2>
+                        <span id="segment-count"
+                            class="text-[10px] font-bold bg-slate-700 px-2 py-0.5 rounded-full text-slate-300">0</span>
+                    </div>
+
+                    <div id="segments-list"
+                        class="space-y-2 overflow-y-auto pr-1 custom-scrollbar flex-1 relative z-10">
+                        <!-- JS Injected -->
+                    </div>
+
+                    <!-- Background Decor -->
+                    <div class="absolute bottom-0 right-0 opacity-5 pointer-events-none">
+                        <i data-lucide="layers" class="w-32 h-32"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hidden Utils -->
+        <input type="file" id="file-input" accept="video/*" class="hidden">
+        <canvas id="processing-canvas" class="hidden"></canvas>
+    </div>
+
+    <!-- Modals (Reset / Export) -->
+
+    <!-- Reset Modal -->
+    <div id="reset-modal"
+        class="fixed inset-0 bg-black/90 z-[70] hidden flex items-center justify-center p-4 backdrop-blur-sm transition-opacity opacity-0">
+        <div class="bg-slate-900 rounded-2xl border border-red-500/30 w-full max-w-xs md:max-w-sm p-6 shadow-2xl shadow-red-900/20 transform transition-all scale-95 opacity-0 text-center"
+            id="reset-modal-content">
+            <div
+                class="w-14 h-14 bg-red-500/10 rounded-full flex items-center justify-center mb-5 mx-auto ring-1 ring-red-500/20">
+                <i data-lucide="alert-triangle" class="w-7 h-7 text-red-500"></i>
+            </div>
+            <h3 class="text-xl font-bold text-white mb-2">Reset Project?</h3>
+            <p class="text-sm text-slate-400 mb-8 leading-relaxed">This will discard the current video and all unsaved
+                speed zones. This action cannot be undone.</p>
+
+            <div class="flex gap-3 w-full">
+                <button onclick="closeResetModal()"
+                    class="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl font-medium text-sm transition">Cancel</button>
+                <button onclick="executeReset()"
+                    class="flex-1 py-3 bg-red-600 hover:bg-red-500 text-white rounded-xl font-bold text-sm transition shadow-lg shadow-red-900/20">Confirm
+                    Reset</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export Modal -->
+    <div id="export-modal"
+        class="fixed inset-0 bg-black/90 z-[60] hidden flex items-center justify-center p-4 backdrop-blur-sm transition-opacity opacity-0">
+        <div class="glass-panel bg-slate-900 rounded-2xl w-full max-w-sm md:max-w-md p-6 shadow-2xl transform transition-all scale-95 opacity-0 border border-white/10"
+            id="export-modal-content">
+            <h3 class="text-xl font-bold text-white mb-6 flex items-center gap-2 pb-4 border-b border-white/5">
+                <i data-lucide="download" class="w-5 h-5 text-green-400"></i> Export Final Video
+            </h3>
+
+            <div class="mb-8">
+                <label class="block text-[10px] text-slate-500 mb-3 uppercase tracking-wider font-bold">Select Output
+                    Format</label>
+                <div class="grid grid-cols-2 gap-4">
+                    <button id="modal-fmt-webm"
+                        class="group relative px-4 py-4 rounded-xl text-sm font-bold border transition-all flex flex-col items-center justify-center gap-1 bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-900/20"
+                        onclick="selectFormat('video/webm')">
+                        <span class="text-lg">WebM</span>
+                        <span
+                            class="text-[10px] opacity-75 font-normal tracking-wide bg-black/20 px-2 py-0.5 rounded-full">Recommended</span>
+                    </button>
+                    <button id="modal-fmt-mp4"
+                        class="group relative px-4 py-4 rounded-xl text-sm font-bold border transition-all flex flex-col items-center justify-center gap-1 bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500 hover:bg-slate-700"
+                        onclick="selectFormat('video/mp4')">
+                        <span class="text-lg">MP4</span>
+                        <span class="text-[10px] opacity-50 font-normal tracking-wide">Experimental</span>
+                    </button>
+                </div>
+            </div>
+
+            <div id="modal-progress-container"
+                class="hidden mb-6 bg-slate-950 rounded-xl p-4 border border-white/5 shadow-inner">
+                <div class="flex justify-between text-xs text-slate-400 mb-2">
+                    <span class="animate-pulse text-blue-400 font-medium">Processing Frames...</span>
+                    <span id="modal-export-percentage" class="font-mono text-white">0%</span>
+                </div>
+                <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                    <div id="modal-export-progress-bar"
+                        class="bg-gradient-to-r from-blue-500 to-green-400 h-full transition-all duration-100 ease-linear shadow-[0_0_10px_rgba(59,130,246,0.5)]"
+                        style="width: 0%"></div>
+                </div>
+                <p class="text-[10px] text-slate-600 mt-2 text-center">Do not close this window or switch tabs.</p>
+            </div>
+
+            <div class="flex gap-3">
+                <button id="btn-modal-cancel" onclick="closeExportModal()"
+                    class="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-medium text-sm transition">Cancel</button>
+                <button id="btn-modal-start" onclick="startExport()"
+                    class="flex-[2] py-3 bg-green-600 hover:bg-green-500 text-white rounded-xl font-bold text-sm transition shadow-lg shadow-green-900/20 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98]">
+                    Start Export <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application Logic -->
+    <script>
+        // --- State Management ---
+        const state = {
+            videoFile: null,
+            videoUrl: null,
+            duration: 0,
+            segments: [],
+            isPlaying: false,
+            isExporting: false,
+            editingId: null,
+            exportFormat: 'video/webm',
+            inputs: { start: 0, end: 5, speed: 1.5 }
+        };
+
+        // --- DOM Elements ---
+        const els = {
+            uploadView: document.getElementById('upload-view'),
+            editorView: document.getElementById('editor-view'),
+            videoMetaInfo: document.getElementById('video-meta-info'),
+            fileInput: document.getElementById('file-input'),
+            video: document.getElementById('main-video'),
+            playOverlay: document.getElementById('play-overlay'),
+            playIcon: document.getElementById('play-icon'),
+            timelineTrack: document.getElementById('timeline-track'),
+            timelineSegments: document.getElementById('timeline-segments'),
+            playhead: document.getElementById('playhead'),
+            currentTimeDisplay: document.getElementById('current-time-display'),
+            durationDisplay: document.getElementById('duration-display'),
+            effectiveDurationDisplay: document.getElementById('effective-duration'),
+            segmentsList: document.getElementById('segments-list'),
+            segmentCount: document.getElementById('segment-count'),
+
+            // Input Form
+            modeTitle: document.getElementById('mode-title'),
+            modeIcon: document.getElementById('mode-icon'),
+            btnAction: document.getElementById('btn-action-segment'),
+            btnCancelEdit: document.getElementById('btn-cancel-edit'),
+            inputStart: document.getElementById('input-start'),
+            inputEnd: document.getElementById('input-end'),
+            inputSpeed: document.getElementById('input-speed'),
+            speedDisplay: document.getElementById('speed-display'),
+
+            headerActions: document.getElementById('header-actions'),
+            canvas: document.getElementById('processing-canvas'),
+            currentSpeedIndicator: document.getElementById('current-speed-indicator'),
+
+            // Modal Elements
+            exportModal: document.getElementById('export-modal'),
+            exportModalContent: document.getElementById('export-modal-content'),
+            modalProgressBar: document.getElementById('modal-export-progress-bar'),
+            modalPercentage: document.getElementById('modal-export-percentage'),
+            modalProgressContainer: document.getElementById('modal-progress-container'),
+            btnModalStart: document.getElementById('btn-modal-start'),
+            btnModalCancel: document.getElementById('btn-modal-cancel'),
+            modalBtns: {
+                webm: document.getElementById('modal-fmt-webm'),
+                mp4: document.getElementById('modal-fmt-mp4')
+            },
+
+            // Reset Modal Elements
+            resetModal: document.getElementById('reset-modal'),
+            resetModalContent: document.getElementById('reset-modal-content')
+        };
+
+        // --- Initialization ---
+        function init() {
+            lucide.createIcons();
+            setupEventListeners();
+        }
+
+        function setupEventListeners() {
+            els.fileInput.addEventListener('change', handleFileUpload);
+
+            els.video.addEventListener('loadedmetadata', () => {
+                state.duration = els.video.duration;
+                els.durationDisplay.textContent = formatTime(state.duration);
+                state.inputs.end = Math.min(5, state.duration);
+                updateInputs();
+                calculateEffectiveDuration();
+                if (state.videoFile) {
+                    const sizeMB = (state.videoFile.size / (1024 * 1024)).toFixed(1);
+                    els.videoMetaInfo.textContent = `${state.videoFile.name} (${sizeMB} MB)`;
+                    els.videoMetaInfo.className = "text-[10px] uppercase tracking-wider text-blue-400 font-bold truncate max-w-[90px] md:max-w-xs";
+                }
+            });
+
+            els.video.addEventListener('timeupdate', handleTimeUpdate);
+
+            els.video.addEventListener('ended', () => {
+                state.isPlaying = false;
+                updatePlayButton();
+            });
+
+            els.video.addEventListener('play', () => {
+                state.isPlaying = true;
+                updatePlayButton();
+            });
+
+            els.video.addEventListener('pause', () => {
+                state.isPlaying = false;
+                updatePlayButton();
+            });
+
+            els.playOverlay.addEventListener('click', togglePlay);
+
+            els.timelineTrack.addEventListener('click', (e) => {
+                if (!state.videoUrl) return;
+                const rect = els.timelineTrack.getBoundingClientRect();
+                const clickX = e.clientX - rect.left;
+                const ratio = clickX / rect.width;
+                els.video.currentTime = ratio * state.duration;
+            });
+
+            els.inputStart.addEventListener('change', (e) => state.inputs.start = parseFloat(e.target.value));
+            els.inputEnd.addEventListener('change', (e) => state.inputs.end = parseFloat(e.target.value));
+            els.inputSpeed.addEventListener('input', (e) => {
+                state.inputs.speed = parseFloat(e.target.value);
+                els.speedDisplay.textContent = state.inputs.speed + 'x';
+            });
+
+            els.btnAction.addEventListener('click', handleActionSegment);
+            els.btnCancelEdit.addEventListener('click', cancelEdit);
+        }
+
+        function setCurrentTime(field) {
+            if (!els.video) return;
+            const time = parseFloat(els.video.currentTime.toFixed(1));
+            if (field === 'start') {
+                state.inputs.start = time;
+                els.inputStart.value = time;
+            } else {
+                state.inputs.end = time;
+                els.inputEnd.value = time;
+            }
+        }
+
+        // --- Core Logic ---
+
+        function handleFileUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            state.videoFile = file;
+            state.videoUrl = URL.createObjectURL(file);
+            state.segments = [];
+            state.isPlaying = false;
+            cancelEdit();
+
+            els.video.src = state.videoUrl;
+            els.uploadView.classList.add('hidden');
+            els.editorView.classList.remove('hidden');
+
+            // Styled Nav Actions
+            els.headerActions.innerHTML = `
+                <div class="flex items-center gap-3 bg-slate-800/50 p-1 rounded-xl border border-white/5">
+                    <button id="nav-btn-export" onclick="openExportModal()" class="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-500 transition rounded-lg text-xs md:text-sm text-white font-bold shadow-lg shadow-green-900/20">
+                        <i data-lucide="download" class="w-4 h-4"></i> <span class="hidden sm:inline">Export</span>
+                    </button>
+                    <button id="nav-btn-reset" onclick="confirmReset()" class="flex items-center gap-2 px-3 py-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition rounded-lg text-xs md:text-sm">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i> <span class="hidden sm:inline">Reset</span>
+                    </button>
+                </div>
+            `;
+
+            lucide.createIcons();
+
+            state.inputs = { start: 0, end: 5, speed: 1.5 };
+            updateInputs();
+
+            renderSegments();
+            renderTimeline();
+        }
+
+        function confirmReset() {
+            els.resetModal.classList.remove('hidden');
+            setTimeout(() => {
+                els.resetModal.classList.remove('opacity-0');
+                els.resetModalContent.classList.remove('opacity-0', 'scale-95');
+                els.resetModalContent.classList.add('scale-100');
+            }, 10);
+        }
+
+        function closeResetModal() {
+            els.resetModalContent.classList.remove('scale-100');
+            els.resetModalContent.classList.add('opacity-0', 'scale-95');
+            els.resetModal.classList.add('opacity-0');
+            setTimeout(() => {
+                els.resetModal.classList.add('hidden');
+            }, 300);
+        }
+
+        function executeReset() {
+            closeResetModal();
+            setTimeout(() => {
+                resetProject();
+            }, 300);
+        }
+
+        function resetProject() {
+            state.videoFile = null;
+            state.videoUrl = null;
+            state.segments = [];
+            els.video.pause();
+            els.video.src = "";
+
+            els.uploadView.classList.remove('hidden');
+            els.editorView.classList.add('hidden');
+            els.headerActions.innerHTML = ``;
+            els.videoMetaInfo.textContent = "No Media Loaded";
+            els.videoMetaInfo.className = "text-[10px] uppercase tracking-wider text-slate-400 font-medium truncate max-w-[150px] md:max-w-xs";
+        }
+
+        function togglePlay() {
+            if (els.video.paused) els.video.play();
+            else els.video.pause();
+        }
+
+        function updatePlayButton() {
+            if (state.isPlaying) {
+                els.playIcon.setAttribute('data-lucide', 'pause');
+            } else {
+                els.playIcon.setAttribute('data-lucide', 'play');
+                els.playIcon.classList.add('ml-1');
+            }
+            lucide.createIcons();
+        }
+
+        function handleTimeUpdate() {
+            const time = els.video.currentTime;
+            els.currentTimeDisplay.textContent = formatTime(time);
+
+            if (state.duration > 0) {
+                const pct = (time / state.duration) * 100;
+                els.playhead.style.left = `${pct}%`;
+            }
+            applySpeedLogic(time);
+        }
+
+        function applySpeedLogic(time) {
+            const activeSegment = state.segments.find(
+                (seg) => time >= seg.start && time < seg.end
+            );
+            const targetSpeed = activeSegment ? activeSegment.speed : 1.0;
+
+            if (Math.abs(els.video.playbackRate - targetSpeed) > 0.01) {
+                els.video.playbackRate = targetSpeed;
+                els.currentSpeedIndicator.innerHTML = `<i data-lucide="gauge" class="w-3 h-3"></i> ${targetSpeed}x`;
+                els.currentSpeedIndicator.classList.remove('hidden');
+
+                // Smart Coloring
+                let bgClass = "bg-black/70 border-white/10";
+                if (targetSpeed > 1) bgClass = "bg-blue-600/90 border-blue-400/30";
+                if (targetSpeed < 1) bgClass = "bg-orange-600/90 border-orange-400/30";
+
+                els.currentSpeedIndicator.className = `absolute top-4 right-4 backdrop-blur-md text-white px-3 py-1.5 rounded-lg text-sm font-bold border shadow-lg flex items-center gap-2 ${bgClass}`;
+
+                if (targetSpeed === 1) els.currentSpeedIndicator.classList.add('hidden');
+                lucide.createIcons();
+            }
+        }
+
+        // --- Editing & Adding Logic ---
+
+        function updateInputs() {
+            els.inputStart.value = state.inputs.start;
+            els.inputEnd.value = state.inputs.end;
+            els.inputSpeed.value = state.inputs.speed;
+            els.speedDisplay.textContent = state.inputs.speed + 'x';
+
+            // Dynamic Color for Speed Label
+            const speed = state.inputs.speed;
+            if (speed > 1) els.speedDisplay.className = "bg-blue-600 text-white font-bold px-2 py-0.5 rounded text-sm font-mono shadow-lg shadow-blue-900/50";
+            else if (speed < 1) els.speedDisplay.className = "bg-orange-500 text-white font-bold px-2 py-0.5 rounded text-sm font-mono shadow-lg shadow-orange-900/50";
+            else els.speedDisplay.className = "bg-slate-600 text-white font-bold px-2 py-0.5 rounded text-sm font-mono";
+        }
+
+        function handleActionSegment() {
+            if (state.editingId) saveEdit();
+            else addSegment();
+        }
+
+        function addSegment() {
+            if (!validateInputs()) return;
+
+            const newSeg = {
+                id: Date.now(),
+                start: state.inputs.start,
+                end: state.inputs.end,
+                speed: state.inputs.speed
+            };
+
+            state.segments.push(newSeg);
+            state.segments.sort((a, b) => a.start - b.start);
+            finalizeUpdate();
+        }
+
+        function editSegment(id) {
+            const seg = state.segments.find(s => s.id === id);
+            if (!seg) return;
+
+            state.editingId = id;
+            state.inputs = { start: seg.start, end: seg.end, speed: seg.speed };
+            updateInputs();
+
+            els.modeTitle.textContent = "Edit Zone";
+            els.modeIcon.setAttribute('data-lucide', 'edit-3');
+            els.modeIcon.className = "w-5 h-5 text-green-400";
+
+            els.btnAction.innerHTML = `<i data-lucide="save" class="w-4 h-4"></i> <span class="btn-text">Save Changes</span>`;
+            els.btnAction.classList.replace('bg-blue-600', 'bg-green-600');
+            els.btnAction.classList.replace('hover:bg-blue-500', 'hover:bg-green-500');
+            els.btnAction.classList.replace('shadow-blue-900/20', 'shadow-green-900/20');
+
+            // Highlight container
+            els.btnAction.parentElement.parentElement.classList.replace('border-t-blue-500', 'border-t-green-500');
+
+            els.btnCancelEdit.classList.remove('hidden');
+
+            lucide.createIcons();
+            renderSegments();
+        }
+
+        function saveEdit() {
+            if (!validateInputs(state.editingId)) return;
+
+            const index = state.segments.findIndex(s => s.id === state.editingId);
+            if (index !== -1) {
+                state.segments[index] = {
+                    ...state.segments[index],
+                    start: state.inputs.start,
+                    end: state.inputs.end,
+                    speed: state.inputs.speed
+                };
+                state.segments.sort((a, b) => a.start - b.start);
+            }
+
+            cancelEdit();
+            finalizeUpdate();
+        }
+
+        function cancelEdit() {
+            state.editingId = null;
+            state.inputs = { start: 0, end: 5, speed: 1.5 };
+
+            els.modeTitle.textContent = "New Zone";
+            els.modeIcon.setAttribute('data-lucide', 'plus-circle');
+            els.modeIcon.className = "w-5 h-5 text-blue-400";
+
+            els.btnAction.innerHTML = `<i data-lucide="plus" class="w-5 h-5"></i> <span class="btn-text">Add Speed Zone</span>`;
+            els.btnAction.classList.replace('bg-green-600', 'bg-blue-600');
+            els.btnAction.classList.replace('hover:bg-green-500', 'hover:bg-blue-500');
+            els.btnAction.classList.replace('shadow-green-900/20', 'shadow-blue-900/20');
+
+            // Reset container highlight
+            els.btnAction.parentElement.parentElement.classList.replace('border-t-green-500', 'border-t-blue-500');
+
+            els.btnCancelEdit.classList.add('hidden');
+
+            updateInputs();
+            lucide.createIcons();
+            renderSegments();
+        }
+
+        function validateInputs(excludeId = null) {
+            const start = state.inputs.start;
+            const end = state.inputs.end;
+
+            if (start >= end) {
+                alert("Start time must be earlier than End time.");
+                return false;
+            }
+            if (end > state.duration) {
+                alert("End time cannot exceed video duration.");
+                return false;
+            }
+
+            const overlap = state.segments.some(seg => {
+                if (excludeId && seg.id === excludeId) return false;
+                return (
+                    (start >= seg.start && start < seg.end) ||
+                    (end > seg.start && end <= seg.end) ||
+                    (start <= seg.start && end >= seg.end)
+                );
+            });
+
+            if (overlap) {
+                alert("Segments cannot overlap time ranges.");
+                return false;
+            }
+            return true;
+        }
+
+        function removeSegment(id, event) {
+            event.stopPropagation();
+            if (state.editingId === id) cancelEdit();
+            state.segments = state.segments.filter(s => s.id !== id);
+            finalizeUpdate();
+        }
+
+        function finalizeUpdate() {
+            renderSegments();
+            renderTimeline();
+            calculateEffectiveDuration();
+        }
+
+        // --- Renderers ---
+
+        function renderSegments() {
+            els.segmentCount.textContent = state.segments.length;
+
+            if (state.segments.length === 0) {
+                els.segmentsList.innerHTML = `
+                    <div class="text-center py-12 text-slate-500 text-sm flex flex-col items-center">
+                        <div class="bg-slate-800/50 p-4 rounded-full mb-3">
+                            <i data-lucide="layers" class="w-6 h-6 opacity-50"></i>
+                        </div>
+                        <p class="font-medium">No active zones</p>
+                        <p class="text-[10px] mt-1 text-slate-600">Add a time range above to start.</p>
+                    </div>
+                `;
+            } else {
+                els.segmentsList.innerHTML = state.segments.map(seg => {
+                    const isSpeedUp = seg.speed > 1;
+                    // Colors
+                    const accentColor = isSpeedUp ? 'blue' : 'orange';
+                    const icon = isSpeedUp ? 'fast-forward' : 'rewind';
+
+                    const isEditing = seg.id === state.editingId;
+                    const editingClass = isEditing ? 'editing bg-slate-800' : 'bg-slate-900/50 hover:bg-slate-800 border-l-4 border-transparent';
+
+                    return `
+                        <div onclick="editSegment(${seg.id})" class="segment-item flex items-center justify-between p-3 rounded-r-lg mb-2 cursor-pointer border border-white/5 shadow-sm group ${editingClass}">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-lg flex flex-col items-center justify-center text-[10px] font-bold border border-${accentColor}-500/30 bg-${accentColor}-500/10 text-${accentColor}-400">
+                                    <span>${seg.speed}x</span>
+                                    <i data-lucide="${icon}" class="w-3 h-3 mt-0.5"></i>
+                                </div>
+                                <div>
+                                    <div class="text-xs font-mono text-slate-200 font-bold tracking-tight">
+                                        <span class="text-slate-400">T:</span> ${formatTime(seg.start)} <span class="text-slate-600">➔</span> ${formatTime(seg.end)}
+                                    </div>
+                                    <div class="text-[10px] text-slate-500 mt-0.5">
+                                        Duration: <span class="text-slate-400">${(seg.end - seg.start).toFixed(1)}s</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <button onclick="removeSegment(${seg.id}, event)" class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition opacity-0 group-hover:opacity-100">
+                                <i data-lucide="x" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    `;
+                }).join('');
+            }
+            lucide.createIcons();
+        }
+
+        function renderTimeline() {
+            if (!state.duration) return;
+
+            els.timelineSegments.innerHTML = state.segments.map(seg => {
+                const left = (seg.start / state.duration) * 100;
+                const width = ((seg.end - seg.start) / state.duration) * 100;
+                let colorClass = seg.speed > 1 ? 'bg-blue-500' : 'bg-orange-500';
+                if (seg.speed === 1) colorClass = 'bg-slate-500';
+
+                return `
+                    <div 
+                        class="absolute top-1 bottom-1 h-auto opacity-70 ${colorClass} rounded-sm shadow-sm backdrop-blur-sm border-x border-white/20 hover:opacity-100 transition-opacity z-10"
+                        style="left: ${left}%; width: ${width}%"
+                    >
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function calculateEffectiveDuration() {
+            let totalTime = 0;
+            let currentTime = 0;
+            const sorted = [...state.segments].sort((a, b) => a.start - b.start);
+
+            sorted.forEach(seg => {
+                totalTime += (seg.start - currentTime);
+                const segmentDuration = seg.end - seg.start;
+                totalTime += segmentDuration / seg.speed;
+                currentTime = seg.end;
+            });
+
+            if (currentTime < state.duration) {
+                totalTime += (state.duration - currentTime);
+            }
+            els.effectiveDurationDisplay.textContent = formatTime(totalTime);
+        }
+
+        // --- Modal & Export Logic ---
+
+        function openExportModal() {
+            if (!state.videoUrl) return;
+            state.isPlaying = false;
+            els.video.pause();
+            updatePlayButton();
+
+            els.exportModal.classList.remove('hidden');
+            setTimeout(() => {
+                els.exportModal.classList.remove('opacity-0');
+                els.exportModalContent.classList.remove('opacity-0', 'scale-95');
+                els.exportModalContent.classList.add('scale-100');
+            }, 10);
+        }
+
+        function closeExportModal() {
+            if (state.isExporting) return;
+            els.exportModalContent.classList.remove('scale-100');
+            els.exportModalContent.classList.add('opacity-0', 'scale-95');
+            els.exportModal.classList.add('opacity-0');
+            setTimeout(() => {
+                els.exportModal.classList.add('hidden');
+            }, 300);
+        }
+
+        function selectFormat(fmt) {
+            state.exportFormat = fmt;
+            if (fmt === 'video/webm') {
+                els.modalBtns.webm.classList.replace('bg-slate-800', 'bg-blue-600');
+                els.modalBtns.webm.classList.replace('border-slate-700', 'border-blue-500');
+                els.modalBtns.webm.classList.replace('text-slate-400', 'text-white');
+                els.modalBtns.webm.classList.remove('hover:border-slate-500', 'hover:bg-slate-700');
+                els.modalBtns.webm.classList.add('shadow-lg', 'shadow-blue-900/20');
+
+                els.modalBtns.mp4.classList.replace('bg-blue-600', 'bg-slate-800');
+                els.modalBtns.mp4.classList.replace('border-blue-500', 'border-slate-700');
+                els.modalBtns.mp4.classList.replace('text-white', 'text-slate-400');
+                els.modalBtns.mp4.classList.add('hover:border-slate-500', 'hover:bg-slate-700');
+                els.modalBtns.mp4.classList.remove('shadow-lg', 'shadow-blue-900/20');
+            } else {
+                els.modalBtns.mp4.classList.replace('bg-slate-800', 'bg-blue-600');
+                els.modalBtns.mp4.classList.replace('border-slate-700', 'border-blue-500');
+                els.modalBtns.mp4.classList.replace('text-slate-400', 'text-white');
+                els.modalBtns.mp4.classList.remove('hover:border-slate-500', 'hover:bg-slate-700');
+                els.modalBtns.mp4.classList.add('shadow-lg', 'shadow-blue-900/20');
+
+                els.modalBtns.webm.classList.replace('bg-blue-600', 'bg-slate-800');
+                els.modalBtns.webm.classList.replace('border-blue-500', 'border-slate-700');
+                els.modalBtns.webm.classList.replace('text-white', 'text-slate-400');
+                els.modalBtns.webm.classList.add('hover:border-slate-500', 'hover:bg-slate-700');
+                els.modalBtns.webm.classList.remove('shadow-lg', 'shadow-blue-900/20');
+            }
+        }
+
+        async function startExport() {
+            if (!state.videoUrl || state.isExporting) return;
+
+            state.isExporting = true;
+            els.modalProgressContainer.classList.remove('hidden');
+            els.btnModalStart.disabled = true;
+            els.btnModalStart.classList.add('opacity-50', 'cursor-not-allowed');
+            els.btnModalCancel.disabled = true;
+            els.btnModalCancel.classList.add('opacity-50', 'cursor-not-allowed');
+
+            const video = els.video;
+            const originalTime = video.currentTime;
+            const originalSpeed = video.playbackRate;
+
+            const canvas = els.canvas;
+            const ctx = canvas.getContext('2d');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+
+            const mimeType = MediaRecorder.isTypeSupported(state.exportFormat) ? state.exportFormat : 'video/webm';
+
+            const canvasStream = canvas.captureStream(30);
+            let finalStream = canvasStream;
+
+            try {
+                if (video.captureStream || video.mozCaptureStream) {
+                    const vidStream = video.captureStream ? video.captureStream() : video.mozCaptureStream();
+                    const audioTracks = vidStream.getAudioTracks();
+                    if (audioTracks.length > 0) {
+                        finalStream.addTrack(audioTracks[0]);
+                    }
+                }
+            } catch (e) { console.log("Audio capture error:", e); }
+
+            let mediaRecorder;
+            try {
+                mediaRecorder = new MediaRecorder(finalStream, { mimeType, videoBitsPerSecond: 5000000 });
+            } catch (e) {
+                mediaRecorder = new MediaRecorder(finalStream);
+            }
+
+            const chunks = [];
+            mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
+
+            mediaRecorder.onstop = () => {
+                const blob = new Blob(chunks, { type: mimeType });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `SpeedControl_Export_${Date.now()}.${mimeType === 'video/mp4' ? 'mp4' : 'webm'}`;
+                a.click();
+
+                state.isExporting = false;
+                els.modalProgressContainer.classList.add('hidden');
+                els.btnModalStart.disabled = false;
+                els.btnModalStart.classList.remove('opacity-50', 'cursor-not-allowed');
+                els.btnModalCancel.disabled = false;
+                els.btnModalCancel.classList.remove('opacity-50', 'cursor-not-allowed');
+
+                video.currentTime = originalTime;
+                video.playbackRate = originalSpeed;
+
+                closeExportModal();
+                els.currentSpeedIndicator.classList.add('hidden');
+            };
+
+            video.pause();
+            video.currentTime = 0;
+            video.playbackRate = 1.0;
+
+            mediaRecorder.start();
+
+            async function processFrame() {
+                if (video.ended) {
+                    mediaRecorder.stop();
+                    return;
+                }
+
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+                const pct = Math.round((video.currentTime / state.duration) * 100);
+                els.modalProgressBar.style.width = `${pct}%`;
+                els.modalPercentage.textContent = `${pct}%`;
+
+                applySpeedLogic(video.currentTime);
+
+                if (!video.ended && state.isExporting) {
+                    requestAnimationFrame(processFrame);
+                }
+            }
+
+            await video.play();
+            processFrame();
+        }
+
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            const ms = Math.floor((seconds % 1) * 10);
+            return `${mins}:${secs.toString().padStart(2, '0')}.${ms}`;
+        }
+
+        window.addEventListener('DOMContentLoaded', init);
+
+    </script>
+</body>
+
+</html>

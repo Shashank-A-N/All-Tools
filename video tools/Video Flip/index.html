@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shadow Video - Video Flip</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;500;600;700&display=swap"
+        rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link rel="stylesheet" href="../../styles.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Rajdhani', 'sans-serif'],
+                        orbitron: ['Orbitron', 'sans-serif']
+                    },
+                    colors: {
+                        cyber: {
+                            primary: '#f43f5e', // Rose
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body
+    class="min-h-screen flex flex-col font-sans overflow-x-hidden bg-slate-900 text-white selection:bg-rose-500 selection:text-white">
+
+    <!-- 3D Background -->
+    <div id="bg-3d-container"></div>
+
+    <!-- Navigation -->
+    <nav
+        class="sticky top-0 z-50 glass-effect border-b border-white/5 px-4 md:px-6 py-3 flex items-center justify-between backdrop-blur-md">
+        <a href="../index.html" class="flex items-center gap-3 text-slate-300 hover:text-white transition-colors group">
+            <div
+                class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center border border-white/10 group-hover:border-rose-500/50 transition-all">
+                <i class="fas fa-chevron-left text-xs group-hover:-translate-x-0.5 transition-transform"></i>
+            </div>
+            <span class="font-orbitron font-bold tracking-wider hidden md:block">BACK</span>
+        </a>
+
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded bg-rose-500/20 flex items-center justify-center text-rose-400">
+                <i class="fas fa-arrows-alt-h"></i>
+            </div>
+            <h1 class="text-lg md:text-xl font-orbitron font-bold tracking-widest text-white">SHADOW<span
+                    class="text-rose-500">FLIP</span></h1>
+        </div>
+
+        <div class="w-8"></div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="flex-grow container mx-auto px-4 py-8 relative z-10 flex flex-col items-center gap-6">
+
+        <!-- Upload Area -->
+        <div id="uploadArea"
+            class="w-full max-w-2xl p-12 glass rounded-3xl border-2 border-dashed border-white/10 hover:border-rose-500/50 transition-all flex flex-col items-center justify-center cursor-pointer group"
+            onclick="document.getElementById('fileInput').click()"
+            ondragover="event.preventDefault(); this.classList.add('border-rose-500')"
+            ondragleave="this.classList.remove('border-rose-500')">
+            <input type="file" id="fileInput" accept="video/*" class="hidden" onchange="handleFile(this.files[0])">
+            <div
+                class="w-20 h-20 rounded-2xl bg-rose-500/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                <i class="fas fa-cloud-upload-alt text-4xl text-rose-400"></i>
+            </div>
+            <h3 class="text-2xl font-orbitron font-bold text-white mb-2">Upload Video</h3>
+            <p class="text-slate-400 text-sm">Drag & drop or click to browse</p>
+        </div>
+
+        <!-- Editor -->
+        <div id="editorArea" class="w-full max-w-5xl hidden flex-col gap-6 animate-fade-in-up">
+            <!-- Video Container with Transforms -->
+            <div
+                class="relative w-full aspect-video bg-black/50 rounded-2xl border border-white/10 overflow-hidden flex items-center justify-center">
+                <video id="videoPreview" controls
+                    class="max-h-full max-w-full transition-transform duration-300"></video>
+                <canvas id="canvas" class="hidden"></canvas>
+            </div>
+
+            <!-- Controls -->
+            <div class="glass p-6 rounded-2xl border border-white/5 flex flex-wrap gap-4 justify-center">
+                <button onclick="toggleFlip('h')"
+                    class="px-6 py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-lg transition-all flex items-center gap-2">
+                    <i class="fas fa-arrows-alt-h text-rose-400"></i> Flip Horizontal
+                </button>
+                <button onclick="toggleFlip('v')"
+                    class="px-6 py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-lg transition-all flex items-center gap-2">
+                    <i class="fas fa-arrows-alt-v text-rose-400"></i> Flip Vertical
+                </button>
+            </div>
+
+            <!-- Process & Save -->
+            <div class="flex justify-center">
+                <button onclick="processVideo()" id="processBtn"
+                    class="px-10 py-4 bg-rose-600 hover:bg-rose-500 text-white font-bold font-orbitron tracking-wider rounded-xl shadow-lg shadow-rose-900/40 transition-transform hover:-translate-y-1">
+                    PROCESS & DOWNLOAD
+                </button>
+            </div>
+
+            <div id="status" class="text-center text-slate-400 hidden">Processing... Please wait.</div>
+
+        </div>
+
+    </main>
+
+    <!-- Shared Script -->
+    <script type="module" src="../../shared/bg-particles.js"></script>
+
+    <script>
+        const uploadArea = document.getElementById('uploadArea');
+        const editorArea = document.getElementById('editorArea');
+        const video = document.getElementById('videoPreview');
+        const canvas = document.getElementById('canvas');
+        const processBtn = document.getElementById('processBtn');
+        const status = document.getElementById('status');
+
+        let flipH = false;
+        let flipV = false;
+
+        function handleFile(file) {
+            if (!file) return;
+            const url = URL.createObjectURL(file);
+            video.src = url;
+            uploadArea.classList.add('hidden');
+            editorArea.classList.remove('hidden');
+            editorArea.classList.add('flex');
+        }
+
+        function toggleFlip(axis) {
+            if (axis === 'h') flipH = !flipH;
+            if (axis === 'v') flipV = !flipV;
+
+            const scaleX = flipH ? -1 : 1;
+            const scaleY = flipV ? -1 : 1;
+
+            video.style.transform = `scale(${scaleX}, ${scaleY})`;
+        }
+
+        async function processVideo() {
+            processBtn.disabled = true;
+            processBtn.classList.add('opacity-50');
+            status.classList.remove('hidden');
+
+            // Set up recording
+            const stream = canvas.captureStream(30);
+            const mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp9' });
+            const chunks = [];
+
+            mediaRecorder.ondataavailable = e => chunks.push(e.data);
+            mediaRecorder.onstop = () => {
+                const blob = new Blob(chunks, { type: 'video/webm' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'flipped_video.webm';
+                a.click();
+
+                processBtn.disabled = false;
+                processBtn.classList.remove('opacity-50');
+                status.textContent = "Done!";
+                setTimeout(() => status.classList.add('hidden'), 2000);
+            };
+
+            // Setup Playback for Recording
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+
+            // Apply flips to context
+
+
+            video.currentTime = 0;
+            video.play();
+            mediaRecorder.start();
+
+            const draw = () => {
+                if (video.paused || video.ended) {
+                    if (video.ended) mediaRecorder.stop();
+                    return;
+                }
+
+                ctx.save();
+                ctx.translate(flipH ? canvas.width : 0, flipV ? canvas.height : 0);
+                ctx.scale(flipH ? -1 : 1, flipV ? -1 : 1);
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                ctx.restore();
+
+                requestAnimationFrame(draw);
+            };
+            draw();
+
+            video.onended = () => { };
+        }
+    </script>
+</body>
+
+</html>

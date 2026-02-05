@@ -1,0 +1,998 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shadow PDF: Comprehensive Security & Privacy Report</title>
+
+    <!-- Fonts: Inter (UI), JetBrains Mono (Code/Data), Rajdhani (Tech Headers) -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;700&family=Rajdhani:wght@500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- PDF Generation Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        /* --- PRINT SETTINGS --- */
+        @media print {
+            body {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                background: white;
+                padding: 0;
+            }
+
+            .no-print,
+            .scan-line-overlay {
+                display: none !important;
+            }
+
+            @page {
+                margin: 0;
+                size: A4;
+            }
+
+            .page-break {
+                page-break-before: always;
+            }
+
+            .a4-sheet {
+                box-shadow: none !important;
+                margin: 0 !important;
+                width: 100% !important;
+                height: 100% !important;
+                animation: none !important;
+                break-inside: avoid;
+            }
+
+            .text-slate-300 {
+                color: #475569 !important;
+            }
+        }
+
+        /* --- PDF GENERATION MODE (STRICT FITTING) --- */
+        body.pdf-mode {
+            background: white !important;
+            padding: 0 !important;
+        }
+
+        body.pdf-mode .a4-sheet {
+            margin: 0 !important;
+            box-shadow: none !important;
+            height: 297mm !important;
+            /* Strict A4 height */
+            min-height: 297mm !important;
+            width: 210mm !important;
+            overflow: hidden !important;
+        }
+
+        body.pdf-mode .scan-line-overlay,
+        body.pdf-mode .no-print {
+            display: none !important;
+        }
+
+        /* --- COMPRESSION LOGIC (Only Active During Download) --- */
+        /* Reduces spacing and font size slightly to fit content on 3 pages */
+        body.pdf-mode .legal-clause {
+            margin-bottom: 8px !important;
+        }
+
+        body.pdf-mode .legal-clause p,
+        body.pdf-mode .legal-clause li {
+            font-size: 9.5px !important;
+            /* Slight reduction from 10.5px */
+            line-height: 1.35 !important;
+        }
+
+        body.pdf-mode h3 {
+            margin-bottom: 8px !important;
+            padding-bottom: 4px !important;
+        }
+
+        body.pdf-mode .mb-6 {
+            margin-bottom: 12px !important;
+        }
+
+        body.pdf-mode .content-layer {
+            padding-top: 10mm !important;
+            padding-bottom: 10mm !important;
+        }
+
+        body.pdf-mode .matrix-table td,
+        body.pdf-mode .matrix-table th {
+            padding: 4px 8px !important;
+        }
+
+        /* --- BASE STYLES --- */
+        :root {
+            --security-green: #10b981;
+            --cyber-slate: #0f172a;
+            --alert-amber: #f59e0b;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0b0f19;
+            /* Deep Cyber Dark */
+            background-image:
+                linear-gradient(rgba(16, 185, 129, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(16, 185, 129, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px 10px;
+            /* Reduced padding for mobile */
+            color: #334155;
+        }
+
+        .font-tech {
+            font-family: 'Rajdhani', sans-serif;
+        }
+
+        .font-mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* --- A4 SHEET SIMULATION (RESPONSIVE) --- */
+        .a4-sheet {
+            width: 100%;
+            max-width: 210mm;
+            /* Max width is A4 */
+            min-height: 297mm;
+            background: white;
+            position: relative;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
+            margin-bottom: 30px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: row;
+        }
+
+        /* --- ADVANCED DECORATIONS --- */
+        .hex-gutter {
+            width: 10mm;
+            background: #f1f5f9;
+            border-right: 1px solid #cbd5e1;
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 10mm;
+            flex-shrink: 0;
+            /* Prevent shrinking on mobile */
+        }
+
+        .hex-code {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 6px;
+            color: #94a3b8;
+            line-height: 1.5;
+            text-align: center;
+            word-break: break-all;
+            opacity: 0.5;
+        }
+
+        .content-layer {
+            flex-grow: 1;
+            padding: 15mm;
+            position: relative;
+            z-index: 2;
+            /* Allow padding reduction on small screens via media query below if needed, 
+               but 15mm is usually fine on mobile (~56px). 
+               Let's reduce it slightly for mobile usability. */
+        }
+
+        @media (max-width: 640px) {
+            .content-layer {
+                padding: 15px;
+                /* Smaller padding on mobile */
+            }
+
+            .watermark {
+                font-size: 4rem;
+                /* Smaller watermark */
+            }
+        }
+
+        .scan-line-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            background: linear-gradient(to bottom, transparent, rgba(16, 185, 129, 0.05) 50%, transparent);
+            background-size: 100% 200%;
+            animation: scan 8s linear infinite;
+            z-index: 0;
+        }
+
+        @keyframes scan {
+            0% {
+                background-position: 0% -100%;
+            }
+
+            100% {
+                background-position: 0% 200%;
+            }
+        }
+
+        .watermark {
+            position: absolute;
+            top: 45%;
+            left: 55%;
+            transform: translate(-50%, -50%) rotate(-30deg);
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 800;
+            font-size: 8rem;
+            color: rgba(15, 23, 42, 0.03);
+            white-space: nowrap;
+            pointer-events: none;
+            z-index: 0;
+            border: 8px solid rgba(15, 23, 42, 0.03);
+            padding: 20px 60px;
+            text-transform: uppercase;
+        }
+
+        /* --- COMPONENTS --- */
+        .tech-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            /* Desktop: center */
+            border-bottom: 2px solid #0f172a;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        .header-pill {
+            background: #0f172a;
+            color: white;
+            padding: 2px 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 9px;
+            border-radius: 2px;
+            letter-spacing: 1px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .blink-dot {
+            width: 6px;
+            height: 6px;
+            background: #10b981;
+            border-radius: 50%;
+            animation: blink 2s infinite;
+        }
+
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.3;
+            }
+        }
+
+        .data-bar-container {
+            width: 100%;
+            height: 4px;
+            background: #e2e8f0;
+            margin-top: 6px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .data-bar-fill {
+            height: 100%;
+            background: #0f172a;
+            position: relative;
+        }
+
+        .matrix-table {
+            width: 100%;
+            font-size: 10px;
+            border: 1px solid #e2e8f0;
+            margin-top: 8px;
+            margin-bottom: 8px;
+            /* Table responsiveness */
+            display: table;
+        }
+
+        /* Make table scrollable on tiny screens if needed, 
+           or let it shrink. Since content is small, shrink is fine. */
+
+        .matrix-table th {
+            background: #0f172a;
+            color: white;
+            text-align: left;
+            padding: 6px 10px;
+            font-family: 'Rajdhani', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+
+        .matrix-table td {
+            padding: 8px 10px;
+            border-bottom: 1px solid #e2e8f0;
+            font-family: 'Inter', sans-serif;
+            vertical-align: middle;
+        }
+
+        .matrix-table tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+
+        .legal-clause {
+            margin-bottom: 14px;
+            border-left: 2px solid #e2e8f0;
+            padding-left: 12px;
+        }
+
+        .legal-clause h4 {
+            font-size: 11px;
+            font-weight: 700;
+            color: #0f172a;
+            text-transform: uppercase;
+            font-family: 'Inter', sans-serif;
+            margin-bottom: 4px;
+        }
+
+        .legal-clause p {
+            font-size: 10.5px;
+            color: #475569;
+            line-height: 1.5;
+            text-align: justify;
+        }
+
+        .legal-clause ul {
+            list-style-type: disc;
+            margin-left: 16px;
+            margin-top: 4px;
+        }
+
+        .legal-clause li {
+            font-size: 10.5px;
+            color: #475569;
+            margin-bottom: 2px;
+        }
+
+        .barcode {
+            height: 20px;
+            width: 100%;
+            background-image: linear-gradient(90deg, #000 2px, transparent 2px, #000 4px, transparent 4px, #000 5px, transparent 5px, #000 8px, transparent 8px);
+            background-size: 20px 100%;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Export Button -->
+    <div class="no-print fixed bottom-8 right-8 z-50" data-html2canvas-ignore="true">
+        <button id="downloadBtn" onclick="downloadPDF()"
+            class="group flex items-center gap-3 bg-slate-900 text-white px-6 py-3 rounded-lg shadow-2xl hover:bg-emerald-600 transition-all border border-slate-700 cursor-pointer">
+            <i class="fas fa-file-arrow-down fa-lg"></i>
+            <div class="text-left">
+                <div class="text-[10px] text-slate-400 font-mono uppercase tracking-wider">System Action</div>
+                <div class="text-sm font-bold">DOWNLOAD REPORT (3 PG)</div>
+            </div>
+        </button>
+    </div>
+
+    <!-- WRAPPER -->
+    <div id="report-content">
+
+        <!-- ================= PAGE 1: ARCHITECTURE & CRYPTO ================= -->
+        <div class="a4-sheet">
+            <div class="scan-line-overlay" data-html2canvas-ignore="true"></div>
+            <div class="watermark">CLASSIFIED</div>
+            <div class="hex-gutter">
+                <div class="hex-code">0F 1A 2B 3C<br>4D 5E 6F 70<br>...</div>
+            </div>
+            <div class="content-layer">
+                <!-- HEADER (Responsive) -->
+                <header class="tech-header flex-col md:flex-row items-start md:items-center gap-4 md:gap-0">
+                    <div>
+                        <div class="flex items-center gap-3">
+                            <div
+                                class="w-8 h-8 bg-slate-900 text-white flex items-center justify-center text-lg font-bold rounded-sm">
+                                S</div>
+                            <div>
+                                <h1
+                                    class="text-3xl font-tech font-bold text-slate-900 leading-none uppercase tracking-tight">
+                                    Shadow <span class="text-emerald-600">Protocol</span></h1>
+                                <p class="text-[9px] font-mono text-slate-500 uppercase tracking-widest mt-1">Version
+                                    1.0.4 | Build 2026.01.08</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-left md:text-right w-full md:w-auto">
+                        <div class="header-pill mb-1">
+                            <div class="blink-dot"></div> SYSTEM STATUS: ONLINE
+                        </div>
+                        <div class="text-[9px] font-mono text-slate-400">ID: <span
+                                class="text-slate-900 font-bold">SP-SEC-001</span></div>
+                    </div>
+                </header>
+
+                <!-- TITLE BLOCK (Responsive Flex) -->
+                <div class="mb-6 bg-slate-50 p-4 border-l-4 border-emerald-500 shadow-sm">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 md:gap-0">
+                        <div>
+                            <h2 class="text-xl font-tech font-bold text-slate-900 uppercase mb-1">Security Architecture
+                                & Privacy Report</h2>
+                            <p class="text-[10px] text-slate-600 font-mono">CLASSIFICATION: PUBLIC | DISTRIBUTION:
+                                UNLIMITED</p>
+                        </div>
+                        <i class="fas fa-file-contract text-2xl text-emerald-100 self-end md:self-auto"></i>
+                    </div>
+                </div>
+
+                <!-- STATS (Responsive Grid) -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
+                    <div class="p-3 border border-slate-200">
+                        <div class="text-[9px] font-mono text-slate-400 uppercase mb-1">Architecture</div>
+                        <div class="text-sm font-bold text-slate-900 mb-1">Local-First (WASM)</div>
+                        <div class="data-bar-container">
+                            <div class="data-bar-fill bg-emerald-500" style="width: 100%"></div>
+                        </div>
+                    </div>
+                    <div class="p-3 border border-slate-200">
+                        <div class="text-[9px] font-mono text-slate-400 uppercase mb-1">Data Egress</div>
+                        <div class="text-sm font-bold text-slate-900 mb-1">Null / Blocked</div>
+                        <div class="data-bar-container">
+                            <div class="data-bar-fill bg-emerald-500" style="width: 100%"></div>
+                        </div>
+                    </div>
+                    <div class="p-3 border border-slate-200">
+                        <div class="text-[9px] font-mono text-slate-400 uppercase mb-1">Execution Env</div>
+                        <div class="text-sm font-bold text-slate-900 mb-1">Volatile Memory</div>
+                        <div class="data-bar-container">
+                            <div class="data-bar-fill bg-emerald-500" style="width: 100%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 01 EXECUTIVE SUMMARY -->
+                <section class="mb-6">
+                    <h3
+                        class="font-tech text-base font-bold text-slate-900 uppercase border-b border-slate-200 mb-3 pb-1 flex items-center gap-2">
+                        <span
+                            class="bg-slate-900 text-white w-4 h-4 flex items-center justify-center text-[9px] rounded-sm">01</span>
+                        Executive Summary
+                    </h3>
+                    <div class="text-[10px] text-slate-600 text-justify leading-relaxed">
+                        <p class="mb-2">
+                            <strong>Shadow PDF</strong> is a next-generation document utility engineered with a
+                            "Privacy-by-Design" philosophy. By fundamentally re-architecting how PDF operations are
+                            handled—shifting from server-side processing to client-side WebAssembly (WASM)—we have
+                            eliminated the most significant attack vector in modern document management: data
+                            transmission.
+                        </p>
+                        <p>
+                            This report serves as a formal attestation of our security posture, detailing the mechanisms
+                            that ensure user data remains hermetically sealed within the local browser environment. It
+                            is intended for compliance officers, IT security auditors, and end-users requiring assurance
+                            of data sovereignty.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- 02 TECHNICAL ARCHITECTURE (Responsive Grid) -->
+                <section class="mb-6">
+                    <h3
+                        class="font-tech text-base font-bold text-slate-900 uppercase border-b border-slate-200 mb-3 pb-1 flex items-center gap-2">
+                        <span
+                            class="bg-slate-900 text-white w-4 h-4 flex items-center justify-center text-[9px] rounded-sm">02</span>
+                        Technical Architecture
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="legal-clause">
+                            <h4>2.1 WebAssembly (WASM) Isolation</h4>
+                            <p>The core processing engine is compiled to WebAssembly, a binary instruction format that
+                                runs in a sandboxed execution environment within the browser. This sandbox strictly
+                                limits access to the host system and file system, ensuring that the application cannot
+                                perform unauthorized read/write operations.</p>
+                        </div>
+                        <div class="legal-clause">
+                            <h4>2.2 Memory Management</h4>
+                            <p>Document data is loaded into a linear memory buffer allocated by the WASM instance. This
+                                memory is volatile and isolated from other browser tabs. Upon tab closure, the OS
+                                reclaims this memory, ensuring 100% data destruction.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 03 CRYPTOGRAPHY -->
+                <section class="mb-2">
+                    <h3
+                        class="font-tech text-base font-bold text-slate-900 uppercase border-b border-slate-200 mb-3 pb-1 flex items-center gap-2">
+                        <span
+                            class="bg-slate-900 text-white w-4 h-4 flex items-center justify-center text-[9px] rounded-sm">03</span>
+                        Threat Modeling & Cryptography
+                    </h3>
+                    <div class="legal-clause">
+                        <h4>3.1 Threat Mitigation Matrix</h4>
+                        <div class="overflow-x-auto">
+                            <table class="matrix-table w-full">
+                                <thead>
+                                    <tr>
+                                        <th>Attack Vector</th>
+                                        <th>Potential Impact</th>
+                                        <th>Shadow PDF Mitigation Strategy</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="font-bold">MITM Attacks</td>
+                                        <td>Data Interception</td>
+                                        <td class="text-emerald-700 font-bold">Eliminated (No Data Transfer)</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="font-bold">Server Breach</td>
+                                        <td>Database Leak</td>
+                                        <td class="text-emerald-700 font-bold">N/A (No Database Exists)</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="font-bold">XSS Injection</td>
+                                        <td>Session Hijacking</td>
+                                        <td>Strict Content Security Policy (CSP)</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- FOOTER P1 -->
+                <div class="absolute bottom-0 left-0 w-full px-[15mm] pb-6">
+                    <div class="border-t border-slate-900 pt-1 flex justify-between items-end">
+                        <div>
+                            <div class="barcode mb-1 w-24"></div>
+                            <div class="text-[7px] font-mono tracking-widest">SEC_HASH_22910</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-[8px] font-tech font-bold uppercase">Shadow Protocol Industries</div>
+                            <div class="text-[7px] font-mono text-slate-400">Page 01 of 03</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= PAGE 2: DATA GOVERNANCE ================= -->
+        <div class="a4-sheet page-break">
+            <div class="scan-line-overlay" data-html2canvas-ignore="true"></div>
+            <div class="watermark" style="top: 30%;">RESTRICTED</div>
+            <div class="hex-gutter">
+                <div class="hex-code">0F 1A 2B 3C<br>4D 5E 6F 70<br>...</div>
+            </div>
+            <div class="content-layer pt-[15mm]">
+
+                <!-- 04 DATA PROTOCOLS -->
+                <section class="mb-6">
+                    <h3
+                        class="font-tech text-base font-bold text-slate-900 uppercase border-b border-slate-200 mb-3 pb-1 flex items-center gap-2">
+                        <span
+                            class="bg-slate-900 text-white w-4 h-4 flex items-center justify-center text-[9px] rounded-sm">04</span>
+                        Data Collection & Governance
+                    </h3>
+                    <div class="legal-clause">
+                        <h4>4.1 Data Classification Protocol</h4>
+                        <div class="overflow-x-auto">
+                            <table class="matrix-table mt-2 mb-2 w-full">
+                                <thead>
+                                    <tr>
+                                        <th>Data Type</th>
+                                        <th>Definition</th>
+                                        <th>Storage Location</th>
+                                        <th>Retention Period</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="font-bold">Content Data</td>
+                                        <td>PDF binaries, images, text</td>
+                                        <td>Client RAM (Volatile)</td>
+                                        <td>Session Only (0s)</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="font-bold">Telemetry</td>
+                                        <td>Feature usage counts, errors</td>
+                                        <td>Aggregated Analytics</td>
+                                        <td>30 Days (Rolling)</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="font-bold">Local Prefs</td>
+                                        <td>UI State (Dark Mode)</td>
+                                        <td>Browser LocalStorage</td>
+                                        <td>Persistent until cleared</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="legal-clause">
+                            <h4>4.2 Data Lifecycle Management</h4>
+                            <p><strong>Ingestion:</strong> File is selected via native file picker. ->
+                                <strong>Processing:</strong> File is read into ArrayBuffer. ->
+                                <strong>Execution:</strong> WASM modifications applied. -> <strong>Output:</strong> Blob
+                                URL generated. -> <strong>Destruction:</strong> Blob revoked, memory GC triggered on tab
+                                close.
+                            </p>
+                        </div>
+                        <div class="legal-clause">
+                            <h4>4.3 Storage Artifacts (Cookie Audit)</h4>
+                            <p>Shadow PDF is a stateless application. An audit of LocalStorage reveals only
+                                non-sensitive keys:</p>
+                            <ul class="font-mono text-[9px]">
+                                <li><strong>sp_theme:</strong> User theme preference (light/dark)</li>
+                                <li><strong>sp_lang:</strong> User language preference</li>
+                                <li><strong>sp_ack:</strong> Terms of service acknowledgement</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 05 SUBPROCESSORS -->
+                <section class="mb-6">
+                    <h3
+                        class="font-tech text-base font-bold text-slate-900 uppercase border-b border-slate-200 mb-3 pb-1 flex items-center gap-2">
+                        <span
+                            class="bg-slate-900 text-white w-4 h-4 flex items-center justify-center text-[9px] rounded-sm">05</span>
+                        Third-Party Subprocessors
+                    </h3>
+                    <div class="legal-clause">
+                        <h4>5.1 Subprocessor List & Role Assignment</h4>
+                        <p>We engage the following third-party entities. Shadow PDF retains the role of "Controller"
+                            while assigning specific "Processor" tasks to these vendors.</p>
+                        <div class="overflow-x-auto">
+                            <table class="matrix-table mt-2 w-full">
+                                <thead>
+                                    <tr>
+                                        <th>Entity</th>
+                                        <th>Service Role</th>
+                                        <th>Location</th>
+                                        <th>Data Access Scope</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="font-bold">Google Cloud</td>
+                                        <td>AI Processor</td>
+                                        <td>USA / Global</td>
+                                        <td>Text snippets only (Encrypted)</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="font-bold">GitHub Pages</td>
+                                        <td>Content Delivery</td>
+                                        <td>USA</td>
+                                        <td>Metadata/IP (No Content Access)</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="font-bold">Cloudflare</td>
+                                        <td>DNS / CDN</td>
+                                        <td>Global Edge</td>
+                                        <td>Traffic Metadata</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 06 INCIDENT RESPONSE -->
+                <section class="mb-6">
+                    <h3
+                        class="font-tech text-base font-bold text-slate-900 uppercase border-b border-slate-200 mb-3 pb-1 flex items-center gap-2">
+                        <span
+                            class="bg-slate-900 text-white w-4 h-4 flex items-center justify-center text-[9px] rounded-sm">06</span>
+                        Incident Response Protocol
+                    </h3>
+                    <div class="legal-clause">
+                        <h4>6.1 Breach Notification Procedure</h4>
+                        <p>Although our architecture minimizes data risk, we maintain a strict protocol for potential
+                            vulnerabilities:</p>
+                        <ol class="list-decimal list-inside mt-2 text-[10px] text-slate-600">
+                            <li><strong>Detection:</strong> Automated monitoring of repository integrity and dependency
+                                vulnerabilities.</li>
+                            <li><strong>Containment:</strong> Immediate rollback to previous stable build via GitHub
+                                Actions.</li>
+                            <li><strong>Analysis:</strong> Root cause analysis to determine if any client-side code was
+                                compromised.</li>
+                            <li><strong>Notification:</strong> Public disclosure on GitHub Security Advisories within 72
+                                hours of confirmation.</li>
+                        </ol>
+                    </div>
+                </section>
+
+                <!-- FOOTER P2 -->
+                <div class="absolute bottom-0 left-0 w-full px-[15mm] pb-6">
+                    <div class="border-t border-slate-900 pt-1 flex justify-between items-end">
+                        <div>
+                            <div class="barcode mb-1 w-24"></div>
+                            <div class="text-[7px] font-mono tracking-widest">SEC_HASH_22912</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-[8px] font-tech font-bold uppercase">Shadow Protocol Industries</div>
+                            <div class="text-[7px] font-mono text-slate-400">Page 02 of 03</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= PAGE 3: COMPLIANCE & EULA ================= -->
+        <div class="a4-sheet page-break">
+            <div class="scan-line-overlay" data-html2canvas-ignore="true"></div>
+            <div class="watermark" style="top: 30%;">CONFIDENTIAL</div>
+            <div class="hex-gutter">
+                <div class="hex-code">B4 C8 D1 E9<br>5F 1C 9A 22<br>...</div>
+            </div>
+            <div class="content-layer pt-[15mm]">
+
+                <!-- 07 COMPLIANCE -->
+                <section class="mb-6">
+                    <h3
+                        class="font-tech text-base font-bold text-slate-900 uppercase border-b border-slate-200 mb-3 pb-1 flex items-center gap-2">
+                        <span
+                            class="bg-slate-900 text-white w-4 h-4 flex items-center justify-center text-[9px] rounded-sm">07</span>
+                        Regulatory Compliance Matrix
+                    </h3>
+                    <div class="legal-clause">
+                        <h4>7.1 International Standards Alignment</h4>
+                        <div class="overflow-x-auto">
+                            <table class="matrix-table mb-3 w-full">
+                                <thead>
+                                    <tr>
+                                        <th>Framework</th>
+                                        <th>Applicability</th>
+                                        <th>Compliance Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="font-bold">GDPR (EU)</td>
+                                        <td>Art. 5 (Minimization)</td>
+                                        <td class="text-emerald-600 font-bold"><i class="fas fa-check-circle"></i>
+                                            COMPLIANT</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="font-bold">CCPA (California)</td>
+                                        <td>Section 1798.100</td>
+                                        <td class="text-emerald-600 font-bold"><i class="fas fa-check-circle"></i>
+                                            COMPLIANT</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="font-bold">HIPAA (USA)</td>
+                                        <td>Security Rule</td>
+                                        <td class="text-blue-600 font-bold"><i class="fas fa-shield-alt"></i> ALIGNED
+                                            (No BAA Needed)</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="font-bold">LGPD (Brazil)</td>
+                                        <td>Data Sovereignty</td>
+                                        <td class="text-emerald-600 font-bold"><i class="fas fa-check-circle"></i>
+                                            COMPLIANT</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 08 INTERNATIONAL TRANSFER (Responsive Grid) -->
+                <section class="mb-6">
+                    <h3
+                        class="font-tech text-base font-bold text-slate-900 uppercase border-b border-slate-200 mb-3 pb-1 flex items-center gap-2">
+                        <span
+                            class="bg-slate-900 text-white w-4 h-4 flex items-center justify-center text-[9px] rounded-sm">08</span>
+                        International Data Transfers
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="legal-clause">
+                            <h4>8.1 Standard Contractual Clauses (SCCs)</h4>
+                            <p>For users in the EEA/UK, any transfer of data to the US (e.g., for AI features) is
+                                safeguarded by the EU Standard Contractual Clauses (Module 2: Controller to Processor),
+                                ensuring adequate protection levels.</p>
+                        </div>
+                        <div class="legal-clause">
+                            <h4>8.2 User Consent</h4>
+                            <p>By voluntarily utilizing the AI summarization features, you explicitly consent to the
+                                transmission of selected text data to jurisdictions outside your country of residence,
+                                acknowledging the "Data Privacy Framework" mechanisms.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 09 TERMS OF SERVICE (Responsive Grid) -->
+                <section class="mb-6">
+                    <h3
+                        class="font-tech text-base font-bold text-slate-900 uppercase border-b border-slate-200 mb-3 pb-1 flex items-center gap-2">
+                        <span
+                            class="bg-slate-900 text-white w-4 h-4 flex items-center justify-center text-[9px] rounded-sm">09</span>
+                        Terms of Service (EULA)
+                    </h3>
+                    <div class="legal-clause">
+                        <h4>9.1 License Grant & Restrictions</h4>
+                        <p>Subject to these terms, we grant you a non-exclusive, non-transferable, revocable license to
+                            use Shadow PDF. You agree not to use the service for processing illegal content, malware
+                            distribution, or attempting to reverse-engineer the WASM binaries.</p>
+                    </div>
+                    <div class="legal-clause">
+                        <h4>9.2 Disclaimer of Warranties</h4>
+                        <p>THE SERVICE IS PROVIDED "AS IS". WE DISCLAIM ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING
+                            MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE. WE DO NOT GUARANTEE THAT THE SERVICE
+                            WILL BE UNINTERRUPTED OR ERROR-FREE.</p>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="legal-clause">
+                            <h4>9.3 Force Majeure</h4>
+                            <p>We are not liable for failure to perform due to causes beyond reasonable control,
+                                including internet outages, strikes, or acts of God.</p>
+                        </div>
+                        <div class="legal-clause">
+                            <h4>9.4 Governing Law</h4>
+                            <p>These terms are governed by the laws of India. Any disputes shall be resolved in the
+                                courts of Bangalore, Karnataka.</p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+                        <div class="legal-clause">
+                            <h4>9.5 Severability</h4>
+                            <p>If any provision of these Terms is found to be unenforceable or invalid, that provision
+                                will be limited or eliminated to the minimum extent necessary.</p>
+                        </div>
+                        <div class="legal-clause">
+                            <h4>9.6 Entire Agreement</h4>
+                            <p>These Terms constitute the entire agreement between you and Shadow PDF regarding the use
+                                of the Service, superseding any prior agreements.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 10 DOCUMENT CONTROL -->
+                <section class="mb-6">
+                    <h3
+                        class="font-tech text-base font-bold text-slate-900 uppercase border-b border-slate-200 mb-3 pb-1 flex items-center gap-2">
+                        <span
+                            class="bg-slate-900 text-white w-4 h-4 flex items-center justify-center text-[9px] rounded-sm">10</span>
+                        Document Version Control
+                    </h3>
+                    <div class="overflow-x-auto">
+                        <table class="matrix-table w-full">
+                            <thead>
+                                <tr>
+                                    <th>Version</th>
+                                    <th>Date</th>
+                                    <th>Author</th>
+                                    <th>Change Notes</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>1.0.0</td>
+                                    <td>2025-01-01</td>
+                                    <td>Shashank A N</td>
+                                    <td>Initial Release</td>
+                                </tr>
+                                <tr>
+                                    <td>1.0.2</td>
+                                    <td>2025-06-15</td>
+                                    <td>Compliance Team</td>
+                                    <td>Added AI Subprocessor Clauses</td>
+                                </tr>
+                                <tr>
+                                    <td>1.0.4</td>
+                                    <td>2026-01-08</td>
+                                    <td>Security Team</td>
+                                    <td>Updated Incident Response Protocol</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- VERIFICATION -->
+                <div class="mt-auto border-2 border-dashed border-slate-300 p-3 rounded bg-slate-50">
+                    <div class="flex flex-col md:flex-row items-center justify-between gap-4 md:gap-0">
+                        <div class="text-center md:text-left">
+                            <h4 class="font-tech font-bold text-sm text-slate-900 uppercase">Final Verification</h4>
+                            <div class="text-[9px] text-slate-500 mt-1">
+                                This document certifies that the software architecture described herein meets the stated
+                                privacy protocols as of the build date.
+                            </div>
+                        </div>
+                        <div class="text-center md:text-right">
+                            <div class="font-font-signature text-xl text-slate-800 mb-1"
+                                style="font-family: cursive; transform: rotate(-5deg);">Shashank A N</div>
+                            <div
+                                class="text-[7px] font-mono text-emerald-600 uppercase tracking-widest border-t border-emerald-600 pt-1 mt-1">
+                                Digitally Signed // E7-A1
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FOOTER P3 -->
+                <div class="absolute bottom-0 left-0 w-full px-[15mm] pb-6">
+                    <div class="border-t border-slate-900 pt-1 flex justify-between items-end">
+                        <div>
+                            <div class="barcode mb-1 w-24"></div>
+                            <div class="text-[7px] font-mono tracking-widest">SEC_HASH_22913</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-[8px] font-tech font-bold uppercase">Shadow Protocol Industries</div>
+                            <div class="text-[7px] font-mono text-slate-400">Page 03 of 03</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div> <!-- End Report Content -->
+
+    <!-- JS Handling for Download -->
+    <script>
+        function downloadPDF() {
+            const element = document.getElementById('report-content');
+            const btn = document.getElementById('downloadBtn');
+            const originalContent = btn.innerHTML;
+
+            document.body.classList.add('pdf-mode');
+
+            btn.innerHTML = '<i class="fas fa-circle-notch fa-spin fa-lg"></i> <span class="font-bold ml-2">PROCESSING...</span>';
+            btn.classList.add('opacity-75', 'cursor-not-allowed');
+
+            const opt = {
+                margin: 0,
+                filename: 'Shadow_Security_Report.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: {
+                    scale: 2,
+                    useCORS: true,
+                    scrollY: 0,
+                    letterRendering: true,
+                    windowHeight: 297 * 3, // Force 3 pages height (891mm)
+                    windowWidth: 1024 // Force Desktop width for responsive layout
+                },
+                jsPDF: {
+                    unit: 'mm',
+                    format: 'a4',
+                    orientation: 'portrait'
+                },
+                pagebreak: { mode: ['css', 'legacy'] }
+            };
+
+            html2pdf().set(opt).from(element).save().then(() => {
+                document.body.classList.remove('pdf-mode');
+                btn.innerHTML = originalContent;
+                btn.classList.remove('opacity-75', 'cursor-not-allowed');
+            }).catch(err => {
+                console.error(err);
+                document.body.classList.remove('pdf-mode');
+                btn.innerHTML = '<i class="fas fa-exclamation-triangle"></i> ERROR';
+                setTimeout(() => {
+                    btn.innerHTML = originalContent;
+                    btn.classList.remove('opacity-75', 'cursor-not-allowed');
+                }, 3000);
+            });
+        }
+    </script>
+</body>
+
+</html>

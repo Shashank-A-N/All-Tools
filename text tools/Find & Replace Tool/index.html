@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shadow Text - Find & Replace</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;500;600;700&display=swap"
+        rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link rel="stylesheet" href="../../styles.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        mono: ['Courier New', 'monospace'],
+                        sans: ['Rajdhani', 'sans-serif'],
+                        orbitron: ['Orbitron', 'sans-serif']
+                    },
+                    colors: {
+                        cyber: {
+                            accent: '#2dd4bf', // Teal-400
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body
+    class="min-h-screen flex flex-col font-sans overflow-x-hidden bg-slate-900 text-white selection:bg-teal-500 selection:text-black">
+
+    <!-- 3D Background -->
+    <div id="bg-3d-container"></div>
+
+    <!-- Navigation -->
+    <nav
+        class="sticky top-0 z-50 glass-effect border-b border-white/5 px-4 md:px-6 py-3 flex items-center justify-between backdrop-blur-md">
+        <a href="../index.html" class="flex items-center gap-3 text-slate-300 hover:text-white transition-colors group">
+            <div
+                class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center border border-white/10 group-hover:border-teal-500/50 transition-all">
+                <i class="fas fa-chevron-left text-xs group-hover:-translate-x-0.5 transition-transform"></i>
+            </div>
+            <span class="font-orbitron font-bold tracking-wider hidden md:block">BACK</span>
+        </a>
+
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded bg-teal-500/20 flex items-center justify-center text-teal-400">
+                <i class="fas fa-search-dollar"></i>
+            </div>
+            <h1 class="text-lg md:text-xl font-orbitron font-bold tracking-widest text-white">SHADOW<span
+                    class="text-teal-400">REPLACE</span></h1>
+        </div>
+
+        <div class="w-8"></div>
+    </nav>
+
+    <!-- Main Content -->
+    <main
+        class="flex-grow container mx-auto px-4 py-8 relative z-10 flex flex-col gap-6 h-[calc(100vh-80px)] min-h-[600px]">
+
+        <!-- Controls Bar -->
+        <div
+            class="glass p-4 rounded-xl border border-white/5 flex flex-col md:flex-row gap-4 items-center shadow-lg bg-slate-900/60 sticky top-0 z-10">
+            <div class="flex-1 w-full relative">
+                <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"></i>
+                <input type="text" id="findText" oninput="replace()" placeholder="Find..."
+                    class="w-full bg-slate-950/50 border border-white/10 rounded-lg pl-10 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-teal-400/50 transition-all">
+            </div>
+
+            <i class="fas fa-arrow-right text-slate-600 hidden md:block"></i>
+            <i class="fas fa-arrow-down text-slate-600 md:hidden"></i>
+
+            <div class="flex-1 w-full relative">
+                <i class="fas fa-pen absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"></i>
+                <input type="text" id="replaceText" oninput="replace()" placeholder="Replace with..."
+                    class="w-full bg-slate-950/50 border border-white/10 rounded-lg pl-10 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-teal-400/50 transition-all">
+            </div>
+
+            <div class="flex items-center gap-2">
+                <label
+                    class="flex items-center gap-2 cursor-pointer bg-slate-950/30 px-3 py-2 rounded-lg border border-white/5 hover:bg-slate-900 transition h-full select-none">
+                    <input type="checkbox" id="matchCase" onchange="replace()"
+                        class="w-4 h-4 rounded border-slate-600 text-teal-500 focus:ring-offset-0 focus:ring-0 bg-transparent">
+                    <span class="text-xs font-bold text-slate-400">Aa</span>
+                </label>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 flex-grow">
+            <!-- Input Panel -->
+            <div class="flex flex-col glass rounded-2xl border border-white/5 shadow-xl overflow-hidden h-full">
+                <div class="px-6 py-3 border-b border-white/5 bg-slate-900/50">
+                    <span class="text-xs font-bold text-slate-400 tracking-widest uppercase">Original Text</span>
+                </div>
+                <textarea id="textInput" oninput="replace()"
+                    class="flex-1 w-full bg-transparent p-6 text-sm md:text-base font-mono text-slate-300 focus:outline-none resize-none custom-scrollbar placeholder-slate-700"
+                    placeholder="Enter formatted text here..."></textarea>
+            </div>
+
+            <!-- Output Panel -->
+            <div class="flex flex-col glass rounded-2xl border border-white/5 shadow-xl overflow-hidden h-full">
+                <div
+                    class="px-6 py-3 border-b border-white/5 bg-slate-900/50 flex justify-between items-center bg-teal-900/10">
+                    <span class="text-xs font-bold text-teal-400 tracking-widest uppercase">Result</span>
+                    <button onclick="copy('textOutput')"
+                        class="text-[10px] text-teal-400 hover:text-white transition-colors uppercase font-bold tracking-wider"><i
+                            class="fas fa-copy mr-1"></i>Copy</button>
+                </div>
+                <textarea id="textOutput" readonly
+                    class="flex-1 w-full bg-slate-950/30 p-6 text-sm md:text-base font-mono text-teal-300 focus:outline-none resize-none custom-scrollbar placeholder-teal-900/30"
+                    placeholder="Replacement result..."></textarea>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Shared Script -->
+    <script type="module" src="../../shared/bg-particles.js"></script>
+
+    <script>
+        function replace() {
+            const text = document.getElementById('textInput').value;
+            const find = document.getElementById('findText').value;
+            const replace = document.getElementById('replaceText').value;
+            const matchCase = document.getElementById('matchCase').checked;
+
+            if (!find) {
+                document.getElementById('textOutput').value = text;
+                return;
+            }
+
+            try {
+                const flags = matchCase ? 'g' : 'gi';
+                // Escape special regex chars in find string
+                const safeFind = find.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                const regex = new RegExp(safeFind, flags);
+
+                const result = text.replace(regex, replace);
+                document.getElementById('textOutput').value = result;
+            } catch (e) {
+                // Handling invalid regex if we allowed regex input, but here we escape it.
+            }
+        }
+
+        function copy(id) {
+            const el = document.getElementById(id);
+            el.select();
+            document.execCommand('copy');
+            const btn = document.querySelector(`button[onclick="copy('${id}')"]`);
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-check mr-1"></i>COPIED';
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+            }, 1500);
+        }
+    </script>
+</body>
+
+</html>

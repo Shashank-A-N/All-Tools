@@ -1,0 +1,1197 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VideoVault - Secure Transfer</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore-compat.js"></script>
+
+    <style>
+        /* Custom Animations & Base Styles */
+        body {
+            background-color: #0f172a;
+            /* slate-900 */
+            background-image: radial-gradient(at 0% 0%, hsla(253, 16%, 7%, 1) 0, transparent 50%),
+                radial-gradient(at 50% 0%, hsla(225, 39%, 30%, 1) 0, transparent 50%),
+                radial-gradient(at 100% 0%, hsla(339, 49%, 30%, 1) 0, transparent 50%);
+            color: #e2e8f0;
+            /* slate-200 */
+            font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            min-height: 100vh;
+        }
+
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .input-glass {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(71, 85, 105, 0.5);
+            transition: all 0.3s ease;
+        }
+
+        .input-glass:focus-within {
+            background: rgba(15, 23, 42, 0.8);
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+            opacity: 0;
+        }
+
+        .scale-in {
+            animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+
+        .slide-up {
+            animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes scaleIn {
+            from {
+                transform: scale(0.95);
+                opacity: 0;
+            }
+
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .drag-active {
+            border-color: #3b82f6 !important;
+            background-color: rgba(59, 130, 246, 0.1) !important;
+            transform: scale(1.02);
+        }
+
+        /* Utility for hiding sections */
+        .hidden-section {
+            display: none !important;
+        }
+
+        /* Stripes animation for progress bar */
+        .progress-stripes {
+            background-image: linear-gradient(45deg, rgba(255, 255, 255, .15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, .15) 50%, rgba(255, 255, 255, .15) 75%, transparent 75%, transparent);
+            background-size: 1rem 1rem;
+            animation: progress-stripes 1s linear infinite;
+        }
+
+        @keyframes progress-stripes {
+            from {
+                background-position: 1rem 0;
+            }
+
+            to {
+                background-position: 0 0;
+            }
+        }
+    </style>
+</head>
+
+<body class="flex flex-col selection:bg-blue-500/30 overflow-x-hidden text-[16px]">
+
+    <!-- Navbar -->
+    <nav class="border-b border-white/5 bg-slate-900/50 backdrop-blur-md sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+            <div onclick="navigateTo('home')"
+                class="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity select-none group">
+                <div
+                    class="bg-gradient-to-tr from-blue-600 to-indigo-600 p-2 rounded-lg shadow-lg shadow-blue-500/20 group-hover:shadow-blue-500/40 transition-shadow">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z">
+                        </path>
+                    </svg>
+                </div>
+                <span class="font-bold text-base sm:text-lg tracking-tight text-white">Video<span
+                        class="text-blue-400">Vault</span> <span
+                        class="text-[10px] uppercase font-bold tracking-wider bg-white/5 text-slate-400 px-1.5 py-0.5 rounded border border-white/10 ml-1">HD</span></span>
+            </div>
+            <div
+                class="text-[10px] sm:text-xs font-mono text-slate-500 flex items-center gap-2 bg-slate-800/50 px-3 py-1.5 rounded-full border border-white/5">
+                <span id="connection-dot"
+                    class="w-2 h-2 rounded-full bg-slate-500 transition-colors duration-500"></span>
+                <span id="connection-status" class="hidden sm:inline">CONNECTING...</span>
+                <span class="sm:hidden">SECURE</span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-6 sm:py-8 flex-grow relative max-w-6xl">
+
+        <!-- Loading Overlay -->
+        <div id="loading-screen" class="absolute inset-0 flex items-center justify-center z-40">
+            <div class="animate-pulse flex flex-col items-center gap-4 text-blue-400">
+                <div class="relative">
+                    <div class="w-16 h-16 border-4 border-blue-500/30 rounded-full"></div>
+                    <div class="w-16 h-16 border-4 border-t-blue-500 rounded-full absolute top-0 animate-spin"></div>
+                </div>
+                <span class="font-mono text-sm tracking-widest uppercase">Initializing</span>
+            </div>
+        </div>
+
+        <!-- HOME VIEW -->
+        <section id="view-home"
+            class="hidden-section fade-in flex flex-col items-center justify-center min-h-[60vh] sm:min-h-[70vh] gap-10 sm:gap-16">
+            <div class="text-center space-y-4 sm:space-y-6 max-w-2xl relative mt-4 sm:mt-0">
+                <!-- Decorative background blur -->
+                <div
+                    class="absolute -top-20 -left-20 w-48 h-48 sm:w-64 sm:h-64 bg-blue-500/20 rounded-full blur-[80px] sm:blur-[100px] -z-10">
+                </div>
+                <div
+                    class="absolute -bottom-20 -right-20 w-48 h-48 sm:w-64 sm:h-64 bg-purple-500/20 rounded-full blur-[80px] sm:blur-[100px] -z-10">
+                </div>
+
+                <!-- Fluid Typography using Clamp for H1 -->
+                <h1 class="font-black text-transparent bg-clip-text bg-gradient-to-br from-white via-blue-100 to-slate-400 leading-[1.1] pb-2"
+                    style="font-size: clamp(2.5rem, 10vw, 5rem);">
+                    Secure Video<br>Transfer
+                </h1>
+
+                <!-- Fluid Typography for Paragraph -->
+                <p class="text-slate-400 font-light leading-relaxed px-4"
+                    style="font-size: clamp(0.9rem, 4vw, 1.25rem);">
+                    Military-grade encryption for your video streams. <br class="hidden sm:block">
+                    <span class="text-blue-400 font-medium">Chunked storage</span> enables unlimited HD quality.
+                </p>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-4 sm:gap-6 w-full max-w-4xl px-2 sm:px-4">
+                <!-- Encode Card -->
+                <div onclick="navigateTo('encode')"
+                    class="glass-panel group cursor-pointer p-6 sm:p-8 rounded-3xl transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:shadow-blue-500/20 hover:border-blue-500/30">
+                    <div class="flex items-start justify-between mb-6 sm:mb-8">
+                        <div
+                            class="h-14 w-14 sm:h-16 sm:w-16 bg-blue-500/10 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 border border-blue-500/20">
+                            <svg class="w-7 h-7 sm:w-8 sm:h-8 text-blue-400" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+                            </svg>
+                        </div>
+                        <div
+                            class="h-8 w-8 rounded-full border border-white/10 flex items-center justify-center group-hover:bg-blue-500 group-hover:border-blue-500 transition-colors">
+                            <svg class="w-4 h-4 text-slate-400 group-hover:text-white" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7">
+                                </path>
+                            </svg>
+                        </div>
+                    </div>
+                    <h3
+                        class="text-xl sm:text-2xl font-bold text-white mb-2 group-hover:text-blue-400 transition-colors">
+                        Encode & Upload</h3>
+                    <p class="text-sm sm:text-base text-slate-400 leading-relaxed">
+                        Drag & drop videos to encrypt them into secure chunks. Generate a private link instantly.
+                    </p>
+                </div>
+
+                <!-- Decode Card -->
+                <div onclick="navigateTo('decode')"
+                    class="glass-panel group cursor-pointer p-6 sm:p-8 rounded-3xl transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:shadow-emerald-500/20 hover:border-emerald-500/30">
+                    <div class="flex items-start justify-between mb-6 sm:mb-8">
+                        <div
+                            class="h-14 w-14 sm:h-16 sm:w-16 bg-emerald-500/10 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 border border-emerald-500/20">
+                            <svg class="w-7 h-7 sm:w-8 sm:h-8 text-emerald-400" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                            </svg>
+                        </div>
+                        <div
+                            class="h-8 w-8 rounded-full border border-white/10 flex items-center justify-center group-hover:bg-emerald-500 group-hover:border-emerald-500 transition-colors">
+                            <svg class="w-4 h-4 text-slate-400 group-hover:text-white" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7">
+                                </path>
+                            </svg>
+                        </div>
+                    </div>
+                    <h3
+                        class="text-xl sm:text-2xl font-bold text-white mb-2 group-hover:text-emerald-400 transition-colors">
+                        Decode & Watch</h3>
+                    <p class="text-sm sm:text-base text-slate-400 leading-relaxed">
+                        Received a link? Paste the ID and your PIN to reassemble and stream the video locally.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ENCODE VIEW -->
+        <section id="view-encode" class="hidden-section slide-up space-y-6">
+            <div class="flex items-center gap-4 mb-6 sm:mb-8">
+                <button onclick="navigateTo('home')"
+                    class="p-2.5 bg-slate-800/50 border border-white/10 hover:bg-slate-700 rounded-xl transition-all text-slate-400 hover:text-white group">
+                    <svg class="w-5 h-5 group-hover:-translate-x-1 transition-transform" fill="none"
+                        stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7">
+                        </path>
+                    </svg>
+                </button>
+                <h2 class="text-2xl sm:text-3xl font-bold text-white">Encode Video</h2>
+            </div>
+
+            <div class="grid lg:grid-cols-2 gap-6 sm:gap-8">
+                <!-- Input Card -->
+                <div class="glass-panel rounded-3xl p-5 sm:p-8 shadow-xl w-full h-fit">
+                    <div class="flex items-center gap-3 mb-6 sm:mb-8">
+                        <span
+                            class="flex items-center justify-center w-8 h-8 rounded-full bg-blue-500 text-white font-bold text-sm">1</span>
+                        <h2 class="text-lg sm:text-xl font-bold text-slate-100">Select & Secure</h2>
+                    </div>
+
+                    <div class="space-y-5 sm:space-y-6">
+                        <!-- Modern File Drop Zone -->
+                        <div id="drop-zone" class="relative group">
+                            <input type="file" accept="video/*"
+                                class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20" id="video-upload"
+                                onchange="handleFileSelect(this)">
+
+                            <div id="drop-zone-content"
+                                class="border-2 border-dashed border-slate-600 rounded-2xl p-6 sm:p-10 text-center transition-all duration-300 bg-slate-800/20 group-hover:border-blue-500 group-hover:bg-slate-800/50 flex flex-col items-center justify-center min-h-[160px] sm:min-h-[200px]">
+                                <div
+                                    class="w-14 h-14 sm:w-16 sm:h-16 bg-slate-700/50 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                                    <svg class="w-7 h-7 sm:w-8 sm:h-8 text-slate-400 group-hover:text-blue-400 transition-colors"
+                                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12">
+                                        </path>
+                                    </svg>
+                                </div>
+                                <h3 class="text-base sm:text-lg font-bold text-slate-200 mb-1">Drag video here</h3>
+                                <p class="text-xs sm:text-sm text-slate-500">or click to browse</p>
+                                <p
+                                    class="text-[10px] sm:text-xs text-slate-600 mt-4 px-3 py-1 bg-slate-800 rounded-full border border-white/5">
+                                    Supports HD (Max ~100MB)</p>
+                            </div>
+
+                            <!-- Selected File View (Hidden initially) -->
+                            <div id="file-selected-view"
+                                class="hidden border border-blue-500/30 bg-blue-500/10 rounded-2xl p-4 flex items-center justify-between">
+                                <div class="flex items-center gap-3 sm:gap-4 overflow-hidden">
+                                    <div
+                                        class="w-10 h-10 sm:w-12 sm:h-12 bg-blue-500/20 rounded-xl flex flex-shrink-0 items-center justify-center">
+                                        <svg class="w-5 h-5 sm:w-6 sm:h-6 text-blue-400" fill="none"
+                                            stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z">
+                                            </path>
+                                        </svg>
+                                    </div>
+                                    <div class="min-w-0">
+                                        <p id="selected-filename"
+                                            class="font-bold text-white truncate text-sm sm:text-base">video.mp4</p>
+                                        <p id="selected-filesize" class="text-xs text-blue-300">0 MB</p>
+                                    </div>
+                                </div>
+                                <button onclick="clearFile(event)"
+                                    class="p-2 hover:bg-white/10 rounded-lg text-slate-400 hover:text-white transition-colors z-30 relative flex-shrink-0">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Password Input -->
+                        <div class="space-y-2">
+                            <label class="text-sm font-semibold text-slate-400 ml-1">Encryption PIN / Password</label>
+                            <div
+                                class="input-glass rounded-xl relative group focus-within:ring-2 focus-within:ring-blue-500/50">
+                                <div
+                                    class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 transition-colors group-focus-within:text-blue-400">
+                                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z">
+                                        </path>
+                                    </svg>
+                                </div>
+                                <input type="password" id="encode-password" placeholder="Create a secret key..."
+                                    class="w-full bg-transparent border-none py-4 pl-12 pr-24 text-white focus:ring-0 placeholder-slate-600 text-sm sm:text-base">
+
+                                <div class="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                                    <button onclick="toggleVisibility('encode-password')"
+                                        class="p-2 text-slate-500 hover:text-white hover:bg-white/10 rounded-lg transition-all"
+                                        title="Show/Hide">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                        </svg>
+                                    </button>
+                                    <button onclick="generateKey('encode-password')"
+                                        class="flex items-center gap-1 px-2 sm:px-3 py-1.5 text-xs font-bold text-blue-300 hover:text-white bg-blue-500/20 hover:bg-blue-500 rounded-lg transition-all"
+                                        title="Generate Secure Key">
+                                        <span class="hidden sm:inline">GEN</span>
+                                        <svg class="w-4 h-4 sm:hidden" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z">
+                                            </path>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Strength Meter -->
+                            <div class="space-y-1 px-1">
+                                <div class="flex h-1 w-full bg-slate-800 rounded-full overflow-hidden">
+                                    <div id="strength-bar" class="w-0 transition-all duration-500 ease-out"></div>
+                                </div>
+                                <div class="flex justify-between text-[10px] uppercase tracking-wider font-bold">
+                                    <span id="strength-text" class="text-slate-600">Enter PIN</span>
+                                    <span class="text-slate-500">No Recovery</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action Button -->
+                        <button id="btn-process" onclick="startProcessing()" disabled
+                            class="w-full group relative overflow-hidden flex items-center justify-center px-6 py-4 rounded-xl font-bold text-white transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed transform active:scale-[0.98]">
+                            <div
+                                class="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-600 group-hover:from-blue-500 group-hover:to-indigo-500 transition-colors">
+                            </div>
+                            <div
+                                class="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20">
+                            </div>
+                            <span class="relative flex items-center gap-2">
+                                <svg class="w-6 h-6 sm:w-5 sm:h-5" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z">
+                                    </path>
+                                </svg>
+                                <span class="hidden sm:inline">Lock & Encode</span>
+                            </span>
+                        </button>
+
+                        <!-- Error Box -->
+                        <div id="encode-error"
+                            class="hidden p-4 bg-rose-500/10 border border-rose-500/20 text-rose-300 rounded-xl text-sm flex items-start gap-3">
+                            <svg class="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <span id="encode-error-text">Error message here</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Status Card -->
+                <div class="glass-panel rounded-3xl p-5 sm:p-8 shadow-xl w-full h-fit">
+                    <div class="flex items-center gap-3 mb-6 sm:mb-8">
+                        <span
+                            class="flex items-center justify-center w-8 h-8 rounded-full bg-slate-700 text-slate-300 font-bold text-sm">2</span>
+                        <h2 class="text-lg sm:text-xl font-bold text-slate-100">Engine Status</h2>
+                    </div>
+
+                    <div class="flex flex-col items-center justify-center min-h-[200px] sm:min-h-[250px] gap-6">
+                        <!-- Idle State -->
+                        <div id="status-idle" class="text-center space-y-4">
+                            <div
+                                class="w-16 h-16 sm:w-20 sm:h-20 bg-slate-800 rounded-full flex items-center justify-center mx-auto border border-white/5">
+                                <svg class="w-8 h-8 sm:w-10 sm:h-10 text-slate-600" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z">
+                                    </path>
+                                </svg>
+                            </div>
+                            <p class="text-sm sm:text-base text-slate-500 font-medium">Ready to process</p>
+                        </div>
+
+                        <!-- Progress State -->
+                        <div id="status-progress" class="hidden w-full space-y-6">
+                            <div class="flex justify-between items-end">
+                                <span id="progress-text"
+                                    class="text-blue-400 font-bold text-xs sm:text-sm tracking-wide animate-pulse">INITIALIZING...</span>
+                                <span id="progress-percent" class="text-2xl sm:text-3xl font-black text-white">0%</span>
+                            </div>
+                            <div class="h-3 bg-slate-800 rounded-full overflow-hidden border border-white/5">
+                                <div id="progress-bar"
+                                    class="h-full bg-gradient-to-r from-blue-500 to-indigo-500 progress-stripes transition-all duration-300 ease-out"
+                                    style="width: 0%"></div>
+                            </div>
+
+                            <!-- Hidden Processing Engine Preview -->
+                            <div
+                                class="mt-4 border border-slate-700/50 rounded-xl overflow-hidden relative bg-black/50 aspect-video">
+                                <p
+                                    class="absolute top-2 left-2 text-[10px] uppercase font-bold tracking-wider bg-black/70 px-2 py-1 rounded text-white z-10 border border-white/10">
+                                    Engine Preview</p>
+                                <video id="process-video" class="w-full hidden" playsinline muted></video>
+                                <canvas id="process-canvas" class="w-full h-full object-contain opacity-50"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Done State -->
+                        <div id="status-done" class="hidden w-full space-y-6 scale-in">
+                            <div
+                                class="bg-emerald-500/10 border border-emerald-500/20 p-4 sm:p-6 rounded-2xl flex items-start gap-4">
+                                <div class="bg-emerald-500 rounded-full p-1 mt-1"><svg class="w-4 h-4 text-white"
+                                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
+                                            d="M5 13l4 4L19 7"></path>
+                                    </svg></div>
+                                <div>
+                                    <h4 class="font-bold text-emerald-400 text-base sm:text-lg">Secure & Stored</h4>
+                                    <p class="text-xs sm:text-sm text-emerald-200/60 mt-1">Your video has been
+                                        encrypted, chunked, and stored in the vault.</p>
+                                </div>
+                            </div>
+
+                            <div class="space-y-2">
+                                <label class="text-xs font-bold uppercase tracking-wider text-slate-500 ml-1">Secure
+                                    Share Link</label>
+                                <div class="flex gap-2">
+                                    <div class="input-glass rounded-xl flex-grow flex items-center px-4 py-3">
+                                        <input id="result-link" readonly
+                                            class="w-full bg-transparent border-none text-sm text-blue-300 font-mono focus:ring-0 p-0 truncate">
+                                    </div>
+                                    <button onclick="copyLink()"
+                                        class="bg-slate-700 hover:bg-slate-600 text-white px-4 sm:px-5 rounded-xl font-bold transition-all border border-white/10 flex items-center gap-2">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3">
+                                            </path>
+                                        </svg>
+                                        <span class="hidden sm:inline">Copy</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- DECODE VIEW -->
+        <section id="view-decode" class="hidden-section slide-up space-y-6 max-w-4xl mx-auto">
+            <div class="flex items-center gap-4 mb-6 sm:mb-8">
+                <button onclick="navigateTo('home')"
+                    class="p-2.5 bg-slate-800/50 border border-white/10 hover:bg-slate-700 rounded-xl transition-all text-slate-400 hover:text-white group">
+                    <svg class="w-5 h-5 group-hover:-translate-x-1 transition-transform" fill="none"
+                        stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7">
+                        </path>
+                    </svg>
+                </button>
+                <h2 class="text-2xl sm:text-3xl font-bold text-white">Decode Stream</h2>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-6 sm:gap-8">
+                <!-- Auth Card -->
+                <div class="glass-panel rounded-3xl p-5 sm:p-8 shadow-xl w-full h-fit">
+                    <div class="flex items-center gap-3 mb-6 sm:mb-8">
+                        <div class="p-2 bg-emerald-500/10 rounded-lg border border-emerald-500/20">
+                            <svg class="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.2-2.858.567-4.181m-3.23 12.166L8 12.29a1 1 0 011.007-.036l2.166 1.082a1 1 0 00.865 0l2.167-1.083a1 1 0 011.006.035l3.231 1.614">
+                                </path>
+                            </svg>
+                        </div>
+                        <h2 class="text-lg sm:text-xl font-bold text-slate-100">Vault Access</h2>
+                    </div>
+
+                    <div class="space-y-6">
+                        <div class="space-y-2">
+                            <label class="text-sm font-semibold text-slate-400 ml-1">Video ID</label>
+                            <div
+                                class="input-glass rounded-xl px-4 py-3 focus-within:ring-2 focus-within:ring-emerald-500/50">
+                                <input type="text" id="decode-id" placeholder="Paste ID or Link..."
+                                    class="w-full bg-transparent border-none text-white focus:ring-0 placeholder-slate-600 font-mono text-sm">
+                            </div>
+                        </div>
+
+                        <div class="space-y-2">
+                            <label class="text-sm font-semibold text-slate-400 ml-1">Decryption Key</label>
+                            <div
+                                class="input-glass rounded-xl relative group focus-within:ring-2 focus-within:ring-emerald-500/50">
+                                <div
+                                    class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 transition-colors group-focus-within:text-emerald-400">
+                                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z">
+                                        </path>
+                                    </svg>
+                                </div>
+                                <input type="password" id="decode-password" placeholder="Enter PIN..."
+                                    class="w-full bg-transparent border-none py-4 pl-12 pr-12 text-white focus:ring-0 placeholder-slate-600 text-sm sm:text-base">
+
+                                <button onclick="toggleVisibility('decode-password')"
+                                    class="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-slate-500 hover:text-white hover:bg-white/10 rounded-lg transition-all"
+                                    title="Show/Hide">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <button id="btn-decrypt" onclick="startDecrypt()"
+                            class="w-full group relative overflow-hidden flex items-center justify-center px-6 py-4 rounded-xl font-bold text-white transition-all duration-300 transform active:scale-[0.98]">
+                            <div
+                                class="absolute inset-0 bg-gradient-to-r from-emerald-600 to-teal-600 group-hover:from-emerald-500 group-hover:to-teal-500 transition-colors">
+                            </div>
+                            <span class="relative flex items-center gap-2">
+                                <svg class="w-6 h-6 sm:w-5 sm:h-5" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z">
+                                    </path>
+                                </svg>
+                                <span class="hidden sm:inline">Unlock & Play</span>
+                            </span>
+                        </button>
+
+                        <div id="decode-error"
+                            class="hidden p-4 bg-rose-500/10 border border-rose-500/20 text-rose-300 rounded-xl text-sm flex items-start gap-3">
+                            <svg class="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
+                                </path>
+                            </svg>
+                            <span id="decode-error-text">Error message</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Video Output -->
+                <div class="flex flex-col justify-center">
+                    <div id="video-placeholder"
+                        class="h-48 sm:h-64 border-2 border-dashed border-slate-700/50 rounded-3xl flex flex-col items-center justify-center text-slate-600 bg-slate-800/20">
+                        <svg class="w-12 h-12 sm:w-16 sm:h-16 mb-4 opacity-50" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z">
+                            </path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <p class="font-medium text-sm sm:text-base">Video Output Preview</p>
+                    </div>
+
+                    <div id="video-container"
+                        class="hidden bg-black rounded-3xl overflow-hidden shadow-2xl shadow-emerald-500/20 border border-emerald-500/30 scale-in ring-1 ring-white/10">
+                        <div
+                            class="bg-slate-900/90 backdrop-blur px-4 py-3 flex items-center justify-between border-b border-white/10">
+                            <div class="flex items-center gap-3">
+                                <div class="flex gap-1.5">
+                                    <div class="w-3 h-3 rounded-full bg-rose-500/80"></div>
+                                    <div class="w-3 h-3 rounded-full bg-yellow-500/80"></div>
+                                    <div class="w-3 h-3 rounded-full bg-emerald-500/80"></div>
+                                </div>
+                                <span
+                                    class="text-xs text-slate-400 font-mono tracking-wide hidden sm:inline">decrypted_stream.webm</span>
+                            </div>
+
+                            <a id="download-btn"
+                                class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-emerald-500/20 border border-white/10 hover:border-emerald-500/30 transition-all group cursor-pointer text-xs font-bold text-slate-300 hover:text-emerald-400"
+                                download="videovault_decrypted.webm">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                                </svg>
+                                <span class="hidden sm:inline">DOWNLOAD</span>
+                            </a>
+                        </div>
+                        <video id="final-video" controls autoplay class="w-full aspect-video bg-black"></video>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Application Logic -->
+    <script>
+        // --- 1. CONFIGURATION ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyD2ZX5yWw0vxoLHbPoN7KHk1sgbw0rEODs",
+            authDomain: "video-share-7d93e.firebaseapp.com",
+            projectId: "video-share-7d93e",
+            storageBucket: "video-share-7d93e.firebasestorage.app",
+            messagingSenderId: "297782571664",
+            appId: "1:297782571664:web:8b1f625d90586e672e5e15",
+            measurementId: "G-RJCXRCSD2Y"
+        };
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // Global State
+        let currentUser = null;
+        let selectedFile = null;
+
+        // --- 2. CRYPTO UTILS ---
+        const deriveKey = async (password, salt) => {
+            const enc = new TextEncoder();
+            const keyMaterial = await window.crypto.subtle.importKey(
+                "raw", enc.encode(password), { name: "PBKDF2" }, false, ["deriveKey"]
+            );
+            return window.crypto.subtle.deriveKey(
+                { name: "PBKDF2", salt: salt, iterations: 100000, hash: "SHA-256" },
+                keyMaterial, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]
+            );
+        };
+
+        const encryptData = async (dataBuffer, password) => {
+            const salt = window.crypto.getRandomValues(new Uint8Array(16));
+            const iv = window.crypto.getRandomValues(new Uint8Array(12));
+            const key = await deriveKey(password, salt);
+            const encryptedContent = await window.crypto.subtle.encrypt(
+                { name: "AES-GCM", iv: iv }, key, dataBuffer
+            );
+            return { encrypted: new Uint8Array(encryptedContent), salt: salt, iv: iv };
+        };
+
+        const decryptData = async (encryptedData, salt, iv, password) => {
+            try {
+                const key = await deriveKey(password, salt);
+                const decryptedContent = await window.crypto.subtle.decrypt(
+                    { name: "AES-GCM", iv: iv }, key, encryptedData
+                );
+                return new Uint8Array(decryptedContent);
+            } catch (e) {
+                throw new Error("Decryption failed. Wrong password?");
+            }
+        };
+
+        const bufferToBase64 = (buffer) => {
+            let binary = '';
+            const bytes = new Uint8Array(buffer);
+            for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
+            return window.btoa(binary);
+        };
+
+        const base64ToBuffer = (base64) => {
+            const binary_string = window.atob(base64);
+            const bytes = new Uint8Array(binary_string.length);
+            for (let i = 0; i < binary_string.length; i++) bytes[i] = binary_string.charCodeAt(i);
+            return bytes.buffer;
+        };
+
+        // --- 3. UI NAVIGATION ---
+        function navigateTo(viewName) {
+            // Hide all views
+            ['view-home', 'view-encode', 'view-decode'].forEach(id => {
+                document.getElementById(id).classList.add('hidden-section');
+                document.getElementById(id).classList.remove('slide-up');
+            });
+
+            // Show target
+            const target = document.getElementById(`view-${viewName}`);
+            target.classList.remove('hidden-section');
+            void target.offsetWidth; // Trigger reflow for animation
+            target.classList.add('slide-up');
+
+            // URL clean up if going home
+            if (viewName === 'home') {
+                window.history.replaceState({}, '', window.location.pathname);
+            }
+        }
+
+        // --- 4. AUTH & INIT ---
+        const initAuth = async () => {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await auth.signInWithCustomToken(__initial_auth_token);
+                } else {
+                    await auth.signInAnonymously();
+                }
+            } catch (error) {
+                console.warn("Auth fallback:", error);
+                await auth.signInAnonymously();
+            }
+        };
+
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                currentUser = user;
+                document.getElementById('loading-screen').classList.add('hidden-section');
+
+                // Update Connection UI
+                const dot = document.getElementById('connection-dot');
+                dot.classList.remove('bg-slate-500');
+                dot.classList.add('bg-emerald-500', 'shadow-[0_0_10px_rgba(16,185,129,0.5)]');
+                document.getElementById('connection-status').innerText = 'SECURE CONNECTED';
+                document.getElementById('connection-status').className = 'hidden sm:inline text-xs font-bold text-emerald-400 tracking-wider';
+
+                // Check URL params
+                const params = new URLSearchParams(window.location.search);
+                const videoId = params.get('video');
+                if (videoId) {
+                    document.getElementById('decode-id').value = videoId;
+                    navigateTo('decode');
+                } else {
+                    navigateTo('home');
+                }
+            }
+        });
+
+        initAuth();
+
+        // --- 5. PASSWORD UPGRADES ---
+        function toggleVisibility(inputId) {
+            const input = document.getElementById(inputId);
+            const type = input.type === 'password' ? 'text' : 'password';
+            input.type = type;
+        }
+
+        function generateKey(inputId) {
+            const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
+            let password = "";
+            for (let i = 0; i < 16; i++) {
+                password += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            const input = document.getElementById(inputId);
+            input.value = password;
+            input.type = 'text'; // Show it so they can copy
+            input.focus();
+
+            if (inputId === 'encode-password') {
+                checkEncodeForm();
+                updateStrength(password);
+            }
+        }
+
+        document.getElementById('encode-password').addEventListener('input', (e) => {
+            checkEncodeForm();
+            updateStrength(e.target.value);
+        });
+
+        function updateStrength(password) {
+            const bar = document.getElementById('strength-bar');
+            const text = document.getElementById('strength-text');
+
+            if (!password) {
+                bar.style.width = '0%';
+                bar.className = 'bg-slate-700 h-full transition-all duration-300';
+                text.innerText = 'ENTER PIN';
+                text.className = 'text-slate-600';
+                return;
+            }
+
+            let strength = 0;
+            if (password.length > 6) strength += 1;
+            if (password.length > 10) strength += 1;
+            if (/[A-Z]/.test(password)) strength += 1;
+            if (/[0-9]/.test(password)) strength += 1;
+            if (/[^A-Za-z0-9]/.test(password)) strength += 1;
+
+            if (strength <= 2) {
+                bar.style.width = '30%';
+                bar.className = 'bg-rose-500 h-full shadow-[0_0_10px_rgba(244,63,94,0.5)]';
+                text.innerText = 'WEAK';
+                text.className = 'text-rose-400';
+            } else if (strength <= 4) {
+                bar.style.width = '60%';
+                bar.className = 'bg-yellow-500 h-full shadow-[0_0_10px_rgba(234,179,8,0.5)]';
+                text.innerText = 'MEDIUM';
+                text.className = 'text-yellow-400';
+            } else {
+                bar.style.width = '100%';
+                bar.className = 'bg-emerald-500 h-full shadow-[0_0_10px_rgba(16,185,129,0.5)]';
+                text.innerText = 'STRONG';
+                text.className = 'text-emerald-400';
+            }
+        }
+
+        // --- DRAG AND DROP LOGIC ---
+        const dropZone = document.getElementById('drop-zone');
+
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, highlight, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, unhighlight, false);
+        });
+
+        function highlight(e) {
+            document.getElementById('drop-zone-content').classList.add('drag-active');
+        }
+
+        function unhighlight(e) {
+            document.getElementById('drop-zone-content').classList.remove('drag-active');
+        }
+
+        dropZone.addEventListener('drop', handleDrop, false);
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            handleFileSelect({ files: files });
+        }
+
+
+        // --- 6. ENCODING LOGIC ---
+        function handleFileSelect(input) {
+            const file = input.files[0];
+            if (!file) return;
+            // Limit 100MB
+            if (file.size > 100 * 1024 * 1024) {
+                alert("File too large. Max 100MB.");
+                if (input.value) input.value = "";
+                return;
+            }
+            selectedFile = file;
+
+            // UI Update
+            document.getElementById('drop-zone-content').classList.add('hidden');
+            document.getElementById('file-selected-view').classList.remove('hidden');
+            document.getElementById('selected-filename').innerText = file.name;
+            document.getElementById('selected-filesize').innerText = (file.size / (1024 * 1024)).toFixed(2) + " MB";
+
+            checkEncodeForm();
+        }
+
+        function clearFile(e) {
+            e.stopPropagation();
+            e.preventDefault();
+            selectedFile = null;
+            document.getElementById('video-upload').value = "";
+            document.getElementById('file-selected-view').classList.add('hidden');
+            document.getElementById('drop-zone-content').classList.remove('hidden');
+            checkEncodeForm();
+        }
+
+        function checkEncodeForm() {
+            const pwd = document.getElementById('encode-password').value;
+            const btn = document.getElementById('btn-process');
+            btn.disabled = !(selectedFile && pwd);
+        }
+
+        async function startProcessing() {
+            if (!selectedFile) return;
+            const password = document.getElementById('encode-password').value;
+
+            // UI Reset
+            document.getElementById('encode-error').classList.add('hidden');
+            document.getElementById('status-idle').classList.add('hidden');
+            document.getElementById('status-done').classList.add('hidden');
+            document.getElementById('status-progress').classList.remove('hidden');
+            document.getElementById('btn-process').disabled = true;
+            document.getElementById('btn-process').innerHTML = `<svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> PROCESSING...`;
+
+            const updateStatus = (msg, percent) => {
+                document.getElementById('progress-text').innerText = msg.toUpperCase();
+                document.getElementById('progress-percent').innerText = Math.round(percent) + '%';
+                document.getElementById('progress-bar').style.width = percent + '%';
+            };
+
+            try {
+                updateStatus("Analyzing Video...", 5);
+
+                const video = document.getElementById('process-video');
+                const canvas = document.getElementById('process-canvas');
+                const ctx = canvas.getContext('2d');
+
+                // Load Video
+                video.src = URL.createObjectURL(selectedFile);
+                await new Promise(r => video.onloadedmetadata = r);
+                const duration = video.duration;
+
+                // --- HIGH QUALITY SETTINGS ---
+                const width = 1280; // 720p HD
+                const height = 720;
+                const targetBitrate = 2500000; // 2.5 Mbps
+
+                console.log(`HD Encoding: ${width}x${height} @ 2.5Mbps`);
+
+                canvas.width = width;
+                canvas.height = height;
+
+                const stream = canvas.captureStream(30); // 30 FPS
+
+                let mimeType = 'video/webm;codecs=vp9';
+                if (!MediaRecorder.isTypeSupported(mimeType)) {
+                    mimeType = 'video/webm;codecs=vp8';
+                }
+
+                const recorder = new MediaRecorder(stream, {
+                    mimeType: mimeType,
+                    bitsPerSecond: targetBitrate
+                });
+
+                const chunks = [];
+                recorder.ondataavailable = e => chunks.push(e.data);
+
+                const recordPromise = new Promise(resolve => {
+                    recorder.onstop = () => resolve(new Blob(chunks, { type: 'video/webm' }));
+                });
+
+                recorder.start();
+
+                // Playback
+                video.playbackRate = 1.0;
+                video.muted = true;
+                await video.play();
+
+                // Draw Loop
+                const draw = () => {
+                    if (video.paused || video.ended) return;
+
+                    // Fit to canvas
+                    ctx.fillStyle = "#000";
+                    ctx.fillRect(0, 0, width, height);
+                    const scale = Math.min(width / video.videoWidth, height / video.videoHeight);
+                    const x = (width / 2) - (video.videoWidth / 2) * scale;
+                    const y = (height / 2) - (video.videoHeight / 2) * scale;
+                    ctx.drawImage(video, x, y, video.videoWidth * scale, video.videoHeight * scale);
+
+                    // Time Stamp
+                    ctx.fillStyle = "rgba(0,0,0,0.5)";
+                    ctx.fillRect(0, 0, 90, 20);
+                    ctx.fillStyle = "#fff";
+                    ctx.font = "12px monospace";
+                    ctx.fillText(new Date().toISOString().split('T')[1].split('.')[0], 5, 14);
+
+                    const pct = Math.min(80, (video.currentTime / duration) * 100);
+                    updateStatus(`Encoding HD...`, pct);
+                    requestAnimationFrame(draw);
+                };
+                draw();
+
+                await new Promise(r => video.onended = r);
+                recorder.stop();
+                const compressedBlob = await recordPromise;
+
+                // Encryption
+                updateStatus("Encrypting...", 85);
+                const buffer = await compressedBlob.arrayBuffer();
+                const encryptedData = await encryptData(buffer, password);
+
+                const fullBase64 = bufferToBase64(encryptedData.encrypted);
+                const saltBase64 = bufferToBase64(encryptedData.salt);
+                const ivBase64 = bufferToBase64(encryptedData.iv);
+
+                // --- CHUNKING LOGIC ---
+                const CHUNK_SIZE = 900000;
+                const totalChunks = Math.ceil(fullBase64.length / CHUNK_SIZE);
+
+                updateStatus(`Uploading...`, 90);
+
+                // 1. Create Main Metadata Document
+                const mainDocPayload = {
+                    originalName: selectedFile.name,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    iv: ivBase64,
+                    salt: saltBase64,
+                    chunkCount: totalChunks,
+                    type: 'chunked_video'
+                };
+
+                // Add to 'videos' collection
+                const mainDocRef = await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('videos').add(mainDocPayload);
+                const mainDocId = mainDocRef.id;
+
+                // 2. Upload Chunks
+                for (let i = 0; i < totalChunks; i++) {
+                    const start = i * CHUNK_SIZE;
+                    const end = Math.min(fullBase64.length, start + CHUNK_SIZE);
+                    const chunkData = fullBase64.substring(start, end);
+
+                    updateStatus(`Uploading Chunk ${i + 1}/${totalChunks}...`, 90 + ((i / totalChunks) * 10));
+
+                    const chunkPayload = {
+                        parentId: mainDocId,
+                        index: i,
+                        data: chunkData
+                    };
+
+                    await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('video_chunks').add(chunkPayload);
+                }
+
+                // Finish
+                updateStatus("Complete", 100);
+                const link = `${window.location.origin}${window.location.pathname}?video=${mainDocId}`;
+                document.getElementById('result-link').value = link;
+
+                document.getElementById('status-progress').classList.add('hidden');
+                document.getElementById('status-done').classList.remove('hidden');
+                document.getElementById('btn-process').innerHTML = `
+                    <span class="relative flex items-center gap-2">
+                        <svg class="w-6 h-6 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                        <span class="hidden sm:inline">Lock & Encode</span>
+                    </span>`;
+
+            } catch (err) {
+                console.error(err);
+                document.getElementById('status-progress').classList.add('hidden');
+                document.getElementById('encode-error').classList.remove('hidden');
+                document.getElementById('encode-error-text').innerText = err.message || "Encoding Failed";
+                document.getElementById('btn-process').innerText = "Process & Encrypt";
+                document.getElementById('btn-process').disabled = false;
+            }
+        }
+
+        function copyLink() {
+            const copyText = document.getElementById("result-link");
+            copyText.select();
+            document.execCommand("copy");
+            const btn = event.currentTarget;
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = `<span class="text-emerald-400 font-bold">Copied!</span>`;
+            setTimeout(() => btn.innerHTML = originalHTML, 2000);
+        }
+
+        // --- 7. DECODING LOGIC (CHUNKED) ---
+        async function startDecrypt() {
+            let id = document.getElementById('decode-id').value.trim();
+
+            // ID extraction logic
+            if (id.includes('video=') || id.includes('http')) {
+                try {
+                    const match = id.match(/[?&]video=([^&]+)/);
+                    if (match && match[1]) {
+                        id = match[1];
+                    } else if (id.startsWith('http')) {
+                        const url = new URL(id);
+                        const paramId = url.searchParams.get('video');
+                        if (paramId) id = paramId;
+                    }
+                } catch (e) {
+                    console.warn("Could not parse ID from URL");
+                }
+            }
+
+            const password = document.getElementById('decode-password').value;
+            const btn = document.getElementById('btn-decrypt');
+
+            if (!id || !password) return;
+
+            // Reset UI
+            document.getElementById('decode-error').classList.add('hidden');
+            document.getElementById('video-placeholder').classList.remove('hidden');
+            document.getElementById('video-container').classList.add('hidden');
+            document.getElementById('final-video').src = "";
+
+            btn.disabled = true;
+            btn.innerHTML = `<svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> FETCHING...`;
+
+            try {
+                // 1. Fetch Main Metadata Doc
+                const docRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('videos').doc(id);
+                const docSnap = await docRef.get();
+
+                if (!docSnap.exists) throw new Error("Video not found. Check ID.");
+
+                const meta = docSnap.data();
+                let fullEncryptedBase64 = "";
+
+                if (meta.chunkCount && meta.chunkCount > 0) {
+                    btn.innerHTML = `<svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> DOWNLOADING CHUNKS (0/${meta.chunkCount})...`;
+
+                    const chunksSnapshot = await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('video_chunks')
+                        .where('parentId', '==', id)
+                        .get();
+
+                    if (chunksSnapshot.empty) throw new Error("Video chunks missing.");
+
+                    const chunks = chunksSnapshot.docs.map(d => d.data());
+                    chunks.sort((a, b) => a.index - b.index);
+
+                    if (chunks.length !== meta.chunkCount) {
+                        console.warn(`Expected ${meta.chunkCount} chunks, got ${chunks.length}. Stream might be incomplete.`);
+                    }
+
+                    fullEncryptedBase64 = chunks.map(c => c.data).join('');
+
+                } else {
+                    fullEncryptedBase64 = meta.data;
+                }
+
+                btn.innerHTML = `<svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> DECRYPTING STREAM...`;
+
+                const encryptedBuffer = base64ToBuffer(fullEncryptedBase64);
+                const saltBuffer = base64ToBuffer(meta.salt);
+                const ivBuffer = base64ToBuffer(meta.iv);
+
+                const decryptedBuffer = await decryptData(encryptedBuffer, saltBuffer, ivBuffer, password);
+
+                const blob = new Blob([decryptedBuffer], { type: 'video/webm' });
+                const url = URL.createObjectURL(blob);
+
+                // Update Video Source
+                document.getElementById('final-video').src = url;
+
+                // Update Download Link
+                const downloadBtn = document.getElementById('download-btn');
+                downloadBtn.href = url;
+                downloadBtn.download = `videovault_${id}.webm`;
+
+                // Show Container
+                document.getElementById('video-placeholder').classList.add('hidden');
+                document.getElementById('video-container').classList.remove('hidden');
+
+                btn.disabled = false;
+                btn.innerHTML = `
+                    <span class="relative flex items-center gap-2">
+                        <svg class="w-6 h-6 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"></path></svg>
+                        <span class="hidden sm:inline">Unlock & Play</span>
+                    </span>`;
+
+            } catch (err) {
+                console.error(err);
+                document.getElementById('decode-error').classList.remove('hidden');
+                document.getElementById('decode-error-text').innerText = err.message;
+                btn.disabled = false;
+                btn.innerHTML = `
+                    <span class="relative flex items-center gap-2">
+                        <svg class="w-6 h-6 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"></path></svg>
+                        <span class="hidden sm:inline">Unlock & Play</span>
+                    </span>`;
+            }
+        }
+    </script>
+</body>
+
+</html>

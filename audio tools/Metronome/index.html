@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Metronome - AudioForge</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        cyber: {
+                            bg: '#05050a',
+                            panel: 'rgba(21, 21, 30, 0.6)',
+                            primary: '#06b6d4',
+                            secondary: '#d946ef',
+                            text: '#e2e8f0',
+                            muted: '#64748b'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    boxShadow: {
+                        'neon': '0 0 10px rgba(6, 182, 212, 0.5)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background: radial-gradient(circle at 50% 0%, #1e1b4b 0%, #05050a 100%);
+            color: white;
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .dot {
+            transition: all 0.1s;
+        }
+
+        .dot.active {
+            background: #d946ef;
+            box-shadow: 0 0 15px #d946ef;
+            transform: scale(1.2);
+        }
+    </style>
+</head>
+
+<body class="min-h-screen flex flex-col font-sans overflow-hidden">
+
+    <header class="h-16 glass z-50 flex items-center justify-between px-6 border-b border-white/5 shrink-0">
+        <div class="flex items-center gap-3">
+            <div
+                class="w-8 h-8 rounded bg-gradient-to-br from-cyber-primary to-cyber-secondary flex items-center justify-center">
+                <i class="fas fa-clock text-white text-sm"></i>
+            </div>
+            <h1 class="text-xl font-bold tracking-tight">AudioForge <span
+                    class="text-cyber-primary font-light">Metronome</span></h1>
+        </div>
+        <a href="../index.html" class="text-xs text-cyber-muted hover:text-white transition-colors">
+            <i class="fas fa-arrow-left mr-1"></i> Back to Tools
+        </a>
+    </header>
+
+    <main class="flex-1 flex flex-col items-center justify-center p-6 relative">
+        <div class="glass w-full max-w-lg rounded-2xl p-8 flex flex-col gap-8 shadow-2xl items-center">
+
+            <div class="w-full flex justify-between items-center bg-black/30 p-4 rounded-xl border border-white/5">
+                <button
+                    class="w-12 h-12 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-cyber-primary text-xl transition"
+                    onclick="changeBpm(-1)">
+                    <i class="fas fa-minus"></i>
+                </button>
+
+                <div class="text-center">
+                    <div class="text-8xl font-mono font-bold text-white tracking-tighter leading-none" id="bpm-display">
+                        120</div>
+                    <div class="text-cyber-muted text-sm uppercase tracking-widest mt-1">BPM</div>
+                </div>
+
+                <button
+                    class="w-12 h-12 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-cyber-primary text-xl transition"
+                    onclick="changeBpm(1)">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </div>
+
+            <input type="range" min="40" max="220" value="120" id="bpm-slider"
+                class="w-full accent-cyber-primary h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+
+            <div class="flex gap-4">
+                <div class="dot w-4 h-4 rounded-full bg-gray-600"></div>
+                <div class="dot w-4 h-4 rounded-full bg-gray-600"></div>
+                <div class="dot w-4 h-4 rounded-full bg-gray-600"></div>
+                <div class="dot w-4 h-4 rounded-full bg-gray-600"></div>
+            </div>
+
+            <button id="toggle-btn"
+                class="w-full py-5 rounded-xl bg-cyber-primary text-black font-bold text-xl hover:bg-cyan-400 transition-all shadow-neon flex items-center justify-center gap-3">
+                <i class="fas fa-play"></i> Start
+            </button>
+        </div>
+    </main>
+
+    <script>
+        let audioCtx;
+        let isPlaying = false;
+        let bpm = 120;
+        let nextNoteTime = 0.0;
+        let timerID = null;
+        let lookahead = 25.0;
+        let scheduleAheadTime = 0.1;
+        let currentNote = 0;
+        const notesInQueue = [];
+
+        const bpmDisplay = document.getElementById('bpm-display');
+        const bpmSlider = document.getElementById('bpm-slider');
+        const toggleBtn = document.getElementById('toggle-btn');
+        const dots = document.querySelectorAll('.dot');
+
+        bpmSlider.addEventListener('input', (e) => {
+            bpm = parseInt(e.target.value);
+            bpmDisplay.textContent = bpm;
+        });
+
+        function changeBpm(amount) {
+            bpm += amount;
+            if (bpm < 40) bpm = 40;
+            if (bpm > 220) bpm = 220;
+            bpmDisplay.textContent = bpm;
+            bpmSlider.value = bpm;
+        }
+
+        toggleBtn.addEventListener('click', () => {
+            if (isPlaying) stopMetronome();
+            else startMetronome();
+        });
+
+        function nextNote() {
+            const secondsPerBeat = 60.0 / bpm;
+            nextNoteTime += secondsPerBeat;
+            currentNote++;
+            if (currentNote === 4) currentNote = 0;
+        }
+
+        function scheduleNote(beatNumber, time) {
+            // Push to queue for viz
+            notesInQueue.push({ note: beatNumber, time: time });
+
+            // Create oscillator
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            if (beatNumber === 0) {
+                osc.frequency.value = 880.0; // High click for beat 1
+            } else {
+                osc.frequency.value = 440.0; // Low click
+            }
+
+            osc.start(time);
+            osc.stop(time + 0.05);
+
+            // Envelope
+            gain.gain.setValueAtTime(1, time);
+            gain.gain.exponentialRampToValueAtTime(0.001, time + 0.05);
+        }
+
+        function scheduler() {
+            while (nextNoteTime < audioCtx.currentTime + scheduleAheadTime) {
+                scheduleNote(currentNote, nextNoteTime);
+                nextNote();
+            }
+            timerID = window.setTimeout(scheduler, lookahead);
+        }
+
+        function startMetronome() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+
+            currentNote = 0;
+            nextNoteTime = audioCtx.currentTime + 0.05;
+            isPlaying = true;
+            scheduler();
+
+            // UI
+            toggleBtn.innerHTML = '<i class="fas fa-stop"></i> Stop';
+            toggleBtn.classList.replace('bg-cyber-primary', 'bg-red-500');
+            toggleBtn.classList.replace('hover:bg-cyan-400', 'hover:bg-red-600');
+            toggleBtn.classList.remove('shadow-neon');
+
+            drawViz();
+        }
+
+        function stopMetronome() {
+            isPlaying = false;
+            window.clearTimeout(timerID);
+
+            toggleBtn.innerHTML = '<i class="fas fa-play"></i> Start';
+            toggleBtn.classList.replace('bg-red-500', 'bg-cyber-primary');
+            toggleBtn.classList.replace('hover:bg-red-600', 'hover:bg-cyan-400');
+            toggleBtn.classList.add('shadow-neon');
+
+            dots.forEach(d => d.classList.remove('active'));
+        }
+
+        function drawViz() {
+            if (!isPlaying) return;
+
+            const drawNote = () => {
+                const currentTime = audioCtx.currentTime;
+
+                while (notesInQueue.length && notesInQueue[0].time < currentTime) {
+                    const current = notesInQueue[0];
+                    notesInQueue.splice(0, 1);
+
+                    // Light up dot
+                    dots.forEach(d => d.classList.remove('active'));
+                    dots[current.note].classList.add('active');
+                }
+
+                if (isPlaying) requestAnimationFrame(drawNote);
+            };
+            drawNote();
+        }
+
+    </script>
+</body>
+
+</html>

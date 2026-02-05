@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TextForge - Text Transformation Suite</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        slate: {
+                            850: '#151e2e',
+                            950: '#020617',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    screens: {
+                        'xxs': '370px',
+                        'xs': '400px',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            /* Smaller scrollbar for mobile feel */
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        textarea {
+            font-variant-ligatures: none;
+        }
+
+        .tool-section {
+            display: none;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .tool-section.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(5px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .nav-btn.active {
+            background-color: #1e293b;
+            color: #60a5fa;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            border: 1px solid #334155;
+        }
+    </style>
+</head>
+
+<body
+    class="flex flex-col h-screen bg-slate-950 text-slate-200 font-sans selection:bg-blue-500/30 overflow-hidden text-xs md:text-sm">
+
+    <!-- Navbar -->
+    <header
+        class="flex items-center h-12 md:h-16 px-3 md:px-6 bg-slate-900 border-b border-slate-800 flex-shrink-0 z-10">
+        <div class="flex items-center gap-2 mr-4 md:mr-8">
+            <div class="bg-gradient-to-tr from-blue-600 to-indigo-600 p-1.5 md:p-2 rounded-lg">
+                <i data-lucide="file-json" class="text-white w-4 h-4 md:w-5 md:h-5"></i>
+            </div>
+            <span class="font-bold text-sm md:text-lg tracking-tight text-white hidden xs:block">TextForge</span>
+        </div>
+
+        <nav class="flex items-center gap-1 md:gap-2 overflow-x-auto no-scrollbar mask-gradient" id="nav-container">
+            <button onclick="switchTool('find-replace')"
+                class="nav-btn active flex items-center gap-1.5 md:gap-2 px-2 py-1.5 md:px-3 md:py-2 rounded-lg text-[10px] sm:text-xs md:text-sm font-medium transition-all whitespace-nowrap text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
+                data-target="find-replace">
+                <i data-lucide="search" class="w-3 h-3 md:w-4 md:h-4"></i> <span class="hidden xxs:inline">Find</span>
+            </button>
+            <button onclick="switchTool('case-converter')"
+                class="nav-btn flex items-center gap-1.5 md:gap-2 px-2 py-1.5 md:px-3 md:py-2 rounded-lg text-[10px] sm:text-xs md:text-sm font-medium transition-all whitespace-nowrap text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
+                data-target="case-converter">
+                <i data-lucide="type" class="w-3 h-3 md:w-4 md:h-4"></i> <span class="hidden xxs:inline">Case</span>
+            </button>
+            <button onclick="switchTool('minifier')"
+                class="nav-btn flex items-center gap-1.5 md:gap-2 px-2 py-1.5 md:px-3 md:py-2 rounded-lg text-[10px] sm:text-xs md:text-sm font-medium transition-all whitespace-nowrap text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
+                data-target="minifier">
+                <i data-lucide="minimize-2" class="w-3 h-3 md:w-4 md:h-4"></i> <span
+                    class="hidden xxs:inline">Minify</span>
+            </button>
+            <button onclick="switchTool('redactor')"
+                class="nav-btn flex items-center gap-1.5 md:gap-2 px-2 py-1.5 md:px-3 md:py-2 rounded-lg text-[10px] sm:text-xs md:text-sm font-medium transition-all whitespace-nowrap text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
+                data-target="redactor">
+                <i data-lucide="shield-alert" class="w-3 h-3 md:w-4 md:h-4"></i> <span
+                    class="hidden xxs:inline">Redact</span>
+            </button>
+            <button onclick="switchTool('sorter')"
+                class="nav-btn flex items-center gap-1.5 md:gap-2 px-2 py-1.5 md:px-3 md:py-2 rounded-lg text-[10px] sm:text-xs md:text-sm font-medium transition-all whitespace-nowrap text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
+                data-target="sorter">
+                <i data-lucide="list-ordered" class="w-3 h-3 md:w-4 md:h-4"></i> <span
+                    class="hidden xxs:inline">Sort</span>
+            </button>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 overflow-hidden p-2 md:p-6 max-w-7xl mx-auto w-full">
+        <div
+            class="bg-slate-900/50 border border-slate-800 rounded-xl md:rounded-2xl p-3 md:p-6 h-full shadow-2xl overflow-y-auto relative">
+
+            <!-- TOOL: Find & Replace -->
+            <div id="tool-find-replace" class="tool-section active flex-col h-full">
+                <div class="mb-3 md:mb-6 pb-3 md:pb-6 border-b border-slate-800">
+                    <div class="flex items-center gap-2 md:gap-3 mb-1 md:mb-2">
+                        <div class="p-1.5 md:p-2 bg-blue-500/10 rounded-lg text-blue-400">
+                            <i data-lucide="search" class="w-4 h-4 md:w-6 md:h-6"></i>
+                        </div>
+                        <h2 class="text-base sm:text-lg md:text-2xl font-bold text-white">Batch Find & Replace</h2>
+                    </div>
+                    <p class="text-[10px] sm:text-xs md:text-base text-slate-400 ml-8 md:ml-11 max-w-2xl leading-tight">
+                        Search for plain text or Regex patterns across your text and replace them instantly.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-2 md:gap-4 mb-3 md:mb-4">
+                    <div class="md:col-span-2 space-y-1 md:space-y-2">
+                        <label class="text-[10px] md:text-xs text-slate-500 font-semibold uppercase">Find</label>
+                        <input id="fr-find" type="text" placeholder="Search term..."
+                            class="w-full bg-slate-800 border border-slate-700 rounded p-1.5 md:p-2 text-[10px] sm:text-xs md:text-sm text-slate-200 outline-none focus:border-blue-500 transition-colors">
+                    </div>
+                    <div class="md:col-span-2 space-y-1 md:space-y-2">
+                        <label class="text-[10px] md:text-xs text-slate-500 font-semibold uppercase">Replace
+                            With</label>
+                        <input id="fr-replace" type="text" placeholder="Replacement..."
+                            class="w-full bg-slate-800 border border-slate-700 rounded p-1.5 md:p-2 text-[10px] sm:text-xs md:text-sm text-slate-200 outline-none focus:border-blue-500 transition-colors">
+                    </div>
+                </div>
+
+                <div
+                    class="flex flex-wrap items-center gap-3 md:gap-4 mb-3 md:mb-4 text-[10px] md:text-sm text-slate-300">
+                    <label class="flex items-center gap-1.5 md:gap-2 cursor-pointer select-none">
+                        <input id="fr-regex" type="checkbox"
+                            class="w-3 h-3 md:w-4 md:h-4 rounded bg-slate-700 border-slate-600 text-blue-500 focus:ring-offset-slate-900">
+                        Use Regex
+                    </label>
+                    <label class="flex items-center gap-1.5 md:gap-2 cursor-pointer select-none">
+                        <input id="fr-case" type="checkbox"
+                            class="w-3 h-3 md:w-4 md:h-4 rounded bg-slate-700 border-slate-600 text-blue-500 focus:ring-offset-slate-900">
+                        Case Sensitive
+                    </label>
+                    <div
+                        class="ml-auto px-2 py-0.5 md:px-3 md:py-1 bg-blue-900/20 text-blue-300 rounded-full text-[10px] md:text-xs">
+                        <span id="fr-count">0</span> matches
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4 flex-1 min-h-0">
+                    <div class="flex flex-col h-full">
+                        <label
+                            class="text-[10px] md:text-xs font-semibold uppercase text-slate-500 mb-1 md:mb-2 tracking-wider">Original
+                            Text</label>
+                        <textarea id="fr-input"
+                            class="flex-1 w-full bg-slate-900 border border-slate-700 rounded-lg p-2 md:p-4 font-mono text-[10px] sm:text-xs md:text-sm leading-relaxed text-slate-200 resize-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none transition-all"
+                            placeholder="Paste your text here..."></textarea>
+                    </div>
+                    <div class="flex flex-col h-full">
+                        <label
+                            class="text-[10px] md:text-xs font-semibold uppercase text-slate-500 mb-1 md:mb-2 tracking-wider">Result</label>
+                        <textarea id="fr-output" readonly
+                            class="flex-1 w-full bg-slate-900/50 border border-slate-700 rounded-lg p-2 md:p-4 font-mono text-[10px] sm:text-xs md:text-sm leading-relaxed text-slate-400 resize-none outline-none"
+                            placeholder="Output will appear here..."></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TOOL: Case Converter -->
+            <div id="tool-case-converter" class="tool-section flex-col h-full">
+                <div class="mb-3 md:mb-6 pb-3 md:pb-6 border-b border-slate-800">
+                    <div class="flex items-center gap-2 md:gap-3 mb-1 md:mb-2">
+                        <div class="p-1.5 md:p-2 bg-blue-500/10 rounded-lg text-blue-400">
+                            <i data-lucide="type" class="w-4 h-4 md:w-6 md:h-6"></i>
+                        </div>
+                        <h2 class="text-base sm:text-lg md:text-2xl font-bold text-white">Case Converter</h2>
+                    </div>
+                    <p class="text-[10px] sm:text-xs md:text-base text-slate-400 ml-8 md:ml-11 max-w-2xl leading-tight">
+                        Convert variables, titles, or text blocks into standard developer naming conventions.</p>
+                </div>
+
+                <div class="grid grid-cols-2 xs:grid-cols-3 md:grid-cols-6 gap-2 mb-4 md:mb-6">
+                    <button onclick="convertCase('camel')"
+                        class="px-2 py-1.5 md:px-4 md:py-2 rounded-md font-medium text-[10px] sm:text-xs md:text-sm border border-slate-600 hover:border-slate-500 text-slate-300 hover:bg-slate-800 transition-colors">camelCase</button>
+                    <button onclick="convertCase('pascal')"
+                        class="px-2 py-1.5 md:px-4 md:py-2 rounded-md font-medium text-[10px] sm:text-xs md:text-sm border border-slate-600 hover:border-slate-500 text-slate-300 hover:bg-slate-800 transition-colors">PascalCase</button>
+                    <button onclick="convertCase('snake')"
+                        class="px-2 py-1.5 md:px-4 md:py-2 rounded-md font-medium text-[10px] sm:text-xs md:text-sm border border-slate-600 hover:border-slate-500 text-slate-300 hover:bg-slate-800 transition-colors">snake_case</button>
+                    <button onclick="convertCase('kebab')"
+                        class="px-2 py-1.5 md:px-4 md:py-2 rounded-md font-medium text-[10px] sm:text-xs md:text-sm border border-slate-600 hover:border-slate-500 text-slate-300 hover:bg-slate-800 transition-colors">kebab-case</button>
+                    <button onclick="convertCase('constant')"
+                        class="px-2 py-1.5 md:px-4 md:py-2 rounded-md font-medium text-[10px] sm:text-xs md:text-sm border border-slate-600 hover:border-slate-500 text-slate-300 hover:bg-slate-800 transition-colors">CONSTANT</button>
+                    <button onclick="convertCase('sentence')"
+                        class="px-2 py-1.5 md:px-4 md:py-2 rounded-md font-medium text-[10px] sm:text-xs md:text-sm border border-slate-600 hover:border-slate-500 text-slate-300 hover:bg-slate-800 transition-colors">Sentence</button>
+                </div>
+
+                <div class="flex-1 min-h-0">
+                    <div class="flex flex-col h-full">
+                        <label
+                            class="text-[10px] md:text-xs font-semibold uppercase text-slate-500 mb-1 md:mb-2 tracking-wider">Text
+                            to Convert</label>
+                        <textarea id="cc-input"
+                            class="flex-1 w-full bg-slate-900 border border-slate-700 rounded-lg p-2 md:p-4 font-mono text-[10px] sm:text-xs md:text-sm leading-relaxed text-slate-200 resize-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none transition-all"
+                            placeholder="Enter text (e.g., 'hello world' or 'user_id') and click a button above..."></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TOOL: Minifier -->
+            <div id="tool-minifier" class="tool-section flex-col h-full">
+                <div class="mb-3 md:mb-6 pb-3 md:pb-6 border-b border-slate-800">
+                    <div class="flex items-center gap-2 md:gap-3 mb-1 md:mb-2">
+                        <div class="p-1.5 md:p-2 bg-blue-500/10 rounded-lg text-blue-400">
+                            <i data-lucide="minimize-2" class="w-4 h-4 md:w-6 md:h-6"></i>
+                        </div>
+                        <h2 class="text-base sm:text-lg md:text-2xl font-bold text-white">Obfuscator & Minifier</h2>
+                    </div>
+                    <p class="text-[10px] sm:text-xs md:text-base text-slate-400 ml-8 md:ml-11 max-w-2xl leading-tight">
+                        Shrink file sizes by removing whitespace and comments. Includes JSON validation.</p>
+                </div>
+
+                <div class="flex items-center gap-2 md:gap-4 mb-3 md:mb-4 overflow-x-auto no-scrollbar">
+                    <div class="flex bg-slate-800 p-0.5 md:p-1 rounded-lg flex-shrink-0" id="min-mode-selector">
+                        <button onclick="setMinMode('json')"
+                            class="min-mode-btn active px-3 py-1 md:px-4 md:py-1.5 rounded-md text-[10px] md:text-sm font-medium transition-colors bg-blue-600 text-white shadow-sm"
+                            data-mode="json">JSON</button>
+                        <button onclick="setMinMode('css')"
+                            class="min-mode-btn px-3 py-1 md:px-4 md:py-1.5 rounded-md text-[10px] md:text-sm font-medium transition-colors text-slate-400 hover:text-slate-200"
+                            data-mode="css">CSS</button>
+                        <button onclick="setMinMode('text')"
+                            class="min-mode-btn px-3 py-1 md:px-4 md:py-1.5 rounded-md text-[10px] md:text-sm font-medium transition-colors text-slate-400 hover:text-slate-200"
+                            data-mode="text">TEXT</button>
+                    </div>
+                    <button id="btn-prettify" onclick="prettifyJson()"
+                        class="px-3 py-1.5 md:px-4 md:py-2 rounded-md font-medium text-[10px] md:text-sm bg-slate-700 hover:bg-slate-600 text-slate-100 transition-colors whitespace-nowrap">Prettify
+                        JSON</button>
+                </div>
+
+                <div id="min-error"
+                    class="hidden bg-red-900/20 border border-red-900/50 text-red-200 px-3 py-2 md:px-4 md:py-3 rounded-lg mb-3 md:mb-4 flex items-center gap-2 text-[10px] md:text-sm">
+                    <i data-lucide="alert-circle" class="w-3 h-3 md:w-4 md:h-4"></i>
+                    <span id="min-error-text">Error message</span>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4 flex-1 min-h-0">
+                    <div class="flex flex-col h-full">
+                        <label
+                            class="text-[10px] md:text-xs font-semibold uppercase text-slate-500 mb-1 md:mb-2 tracking-wider">Input
+                            Code</label>
+                        <textarea id="min-input"
+                            class="flex-1 w-full bg-slate-900 border border-slate-700 rounded-lg p-2 md:p-4 font-mono text-[10px] sm:text-xs md:text-sm leading-relaxed text-slate-200 resize-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none transition-all"
+                            placeholder="Paste your code here..."></textarea>
+                    </div>
+                    <div class="flex flex-col h-full">
+                        <label
+                            class="text-[10px] md:text-xs font-semibold uppercase text-slate-500 mb-1 md:mb-2 tracking-wider">Minified
+                            Output</label>
+                        <textarea id="min-output" readonly
+                            class="flex-1 w-full bg-slate-900/50 border border-slate-700 rounded-lg p-2 md:p-4 font-mono text-[10px] sm:text-xs md:text-sm leading-relaxed text-slate-400 resize-none outline-none"
+                            placeholder="Result..."></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TOOL: Redactor -->
+            <div id="tool-redactor" class="tool-section flex-col h-full">
+                <div class="mb-3 md:mb-6 pb-3 md:pb-6 border-b border-slate-800">
+                    <div class="flex items-center gap-2 md:gap-3 mb-1 md:mb-2">
+                        <div class="p-1.5 md:p-2 bg-blue-500/10 rounded-lg text-blue-400">
+                            <i data-lucide="shield-alert" class="w-4 h-4 md:w-6 md:h-6"></i>
+                        </div>
+                        <h2 class="text-base sm:text-lg md:text-2xl font-bold text-white">Personal Info Redactor</h2>
+                    </div>
+                    <p class="text-[10px] sm:text-xs md:text-base text-slate-400 ml-8 md:ml-11 max-w-2xl leading-tight">
+                        Automatically detect and mask sensitive information (PII) before sharing logs or data.</p>
+                </div>
+
+                <div class="flex flex-wrap gap-2 md:gap-3 mb-4 md:mb-6" id="redactor-toggles">
+                    <div class="text-[10px] md:text-sm font-semibold text-slate-400 mr-1 md:mr-2 flex items-center">
+                        Redact:</div>
+                    <!-- Toggles generated by JS or static -->
+                    <button onclick="toggleRedactor('email')" id="btn-redact-email"
+                        class="px-2 py-1 md:px-3 md:py-1.5 rounded-full text-[10px] md:text-xs font-medium border transition-all bg-blue-500/20 border-blue-500/50 text-blue-300">EMAIL</button>
+                    <button onclick="toggleRedactor('phone')" id="btn-redact-phone"
+                        class="px-2 py-1 md:px-3 md:py-1.5 rounded-full text-[10px] md:text-xs font-medium border transition-all bg-blue-500/20 border-blue-500/50 text-blue-300">PHONE</button>
+                    <button onclick="toggleRedactor('creditCard')" id="btn-redact-creditCard"
+                        class="px-2 py-1 md:px-3 md:py-1.5 rounded-full text-[10px] md:text-xs font-medium border transition-all bg-blue-500/20 border-blue-500/50 text-blue-300">CREDIT
+                        CARD</button>
+                    <button onclick="toggleRedactor('ip')" id="btn-redact-ip"
+                        class="px-2 py-1 md:px-3 md:py-1.5 rounded-full text-[10px] md:text-xs font-medium border transition-all bg-slate-800 border-slate-700 text-slate-500">IP
+                        ADDRESS</button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4 flex-1 min-h-0">
+                    <div class="flex flex-col h-full">
+                        <label
+                            class="text-[10px] md:text-xs font-semibold uppercase text-slate-500 mb-1 md:mb-2 tracking-wider">Sensitive
+                            Data</label>
+                        <textarea id="red-input"
+                            class="flex-1 w-full bg-slate-900 border border-slate-700 rounded-lg p-2 md:p-4 font-mono text-[10px] sm:text-xs md:text-sm leading-relaxed text-slate-200 resize-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none transition-all"
+                            placeholder="Paste text containing emails, phones, or CC numbers..."></textarea>
+                    </div>
+                    <div class="flex flex-col h-full">
+                        <label
+                            class="text-[10px] md:text-xs font-semibold uppercase text-slate-500 mb-1 md:mb-2 tracking-wider">Safe
+                            Output</label>
+                        <textarea id="red-output" readonly
+                            class="flex-1 w-full bg-slate-900/50 border border-slate-700 rounded-lg p-2 md:p-4 font-mono text-[10px] sm:text-xs md:text-sm leading-relaxed text-slate-400 resize-none outline-none"
+                            placeholder="Redacted text will appear here..."></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TOOL: Sorter -->
+            <div id="tool-sorter" class="tool-section flex-col h-full">
+                <div class="mb-3 md:mb-6 pb-3 md:pb-6 border-b border-slate-800">
+                    <div class="flex items-center gap-2 md:gap-3 mb-1 md:mb-2">
+                        <div class="p-1.5 md:p-2 bg-blue-500/10 rounded-lg text-blue-400">
+                            <i data-lucide="list-ordered" class="w-4 h-4 md:w-6 md:h-6"></i>
+                        </div>
+                        <h2 class="text-base sm:text-lg md:text-2xl font-bold text-white">Line Sorter & Deduplicator
+                        </h2>
+                    </div>
+                    <p class="text-[10px] sm:text-xs md:text-base text-slate-400 ml-8 md:ml-11 max-w-2xl leading-tight">
+                        Organize lists, remove duplicates, or randomize items.</p>
+                </div>
+
+                <div class="flex flex-wrap gap-1.5 md:gap-2 mb-3 md:mb-4">
+                    <button onclick="sortProcess('az')"
+                        class="px-2 py-1.5 md:px-4 md:py-2 rounded-md font-medium text-[10px] sm:text-xs md:text-sm bg-slate-700 hover:bg-slate-600 text-slate-100 transition-colors">A
+                        → Z</button>
+                    <button onclick="sortProcess('za')"
+                        class="px-2 py-1.5 md:px-4 md:py-2 rounded-md font-medium text-[10px] sm:text-xs md:text-sm bg-slate-700 hover:bg-slate-600 text-slate-100 transition-colors">Z
+                        → A</button>
+                    <button onclick="sortProcess('unique')"
+                        class="px-2 py-1.5 md:px-4 md:py-2 rounded-md font-medium text-[10px] sm:text-xs md:text-sm bg-slate-700 hover:bg-slate-600 text-slate-100 transition-colors">Remove
+                        Duplicates</button>
+                    <button onclick="sortProcess('unique-sort')"
+                        class="px-2 py-1.5 md:px-4 md:py-2 rounded-md font-medium text-[10px] sm:text-xs md:text-sm bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-900/20 transition-colors">Dedup
+                        & Sort</button>
+                    <button onclick="sortProcess('shuffle')"
+                        class="px-2 py-1.5 md:px-4 md:py-2 rounded-md font-medium text-[10px] sm:text-xs md:text-sm border border-slate-600 hover:border-slate-500 text-slate-300 hover:bg-slate-800 transition-colors">Shuffle</button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4 flex-1 min-h-0">
+                    <div class="flex flex-col h-full">
+                        <label
+                            class="text-[10px] md:text-xs font-semibold uppercase text-slate-500 mb-1 md:mb-2 tracking-wider">Unsorted
+                            List</label>
+                        <textarea id="sort-input"
+                            class="flex-1 w-full bg-slate-900 border border-slate-700 rounded-lg p-2 md:p-4 font-mono text-[10px] sm:text-xs md:text-sm leading-relaxed text-slate-200 resize-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none transition-all"
+                            placeholder="One item per line..."></textarea>
+                    </div>
+                    <div class="flex flex-col h-full">
+                        <label
+                            class="text-[10px] md:text-xs font-semibold uppercase text-slate-500 mb-1 md:mb-2 tracking-wider">Sorted
+                            List</label>
+                        <textarea id="sort-output"
+                            class="flex-1 w-full bg-slate-900 border border-slate-700 rounded-lg p-2 md:p-4 font-mono text-[10px] sm:text-xs md:text-sm leading-relaxed text-slate-200 resize-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 outline-none transition-all"
+                            placeholder="Result..."></textarea>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        // --- Initialization ---
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+
+            // Attach input listeners
+            document.getElementById('fr-input').addEventListener('input', runFindReplace);
+            document.getElementById('fr-find').addEventListener('input', runFindReplace);
+            document.getElementById('fr-replace').addEventListener('input', runFindReplace);
+            document.getElementById('fr-regex').addEventListener('change', runFindReplace);
+            document.getElementById('fr-case').addEventListener('change', runFindReplace);
+
+            document.getElementById('min-input').addEventListener('input', runMinifier);
+            document.getElementById('red-input').addEventListener('input', runRedactor);
+        });
+
+        // --- Navigation Logic ---
+        function switchTool(toolId) {
+            // Update Nav Buttons
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                if (btn.dataset.target === toolId) {
+                    btn.classList.add('active', 'text-blue-400', 'bg-slate-800', 'border-slate-700');
+                    btn.classList.remove('text-slate-400');
+                } else {
+                    btn.classList.remove('active', 'text-blue-400', 'bg-slate-800', 'border-slate-700');
+                    btn.classList.add('text-slate-400');
+                }
+            });
+
+            // Update Sections
+            document.querySelectorAll('.tool-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            document.getElementById(`tool-${toolId}`).classList.add('active');
+        }
+
+        // --- Find & Replace ---
+        function runFindReplace() {
+            const input = document.getElementById('fr-input').value;
+            const find = document.getElementById('fr-find').value;
+            const replace = document.getElementById('fr-replace').value;
+            const useRegex = document.getElementById('fr-regex').checked;
+            const caseSensitive = document.getElementById('fr-case').checked;
+            const outputEl = document.getElementById('fr-output');
+            const countEl = document.getElementById('fr-count');
+
+            if (!find) {
+                countEl.textContent = '0';
+                outputEl.value = input;
+                return;
+            }
+
+            try {
+                let flags = 'g';
+                if (!caseSensitive) flags += 'i';
+
+                let searchPattern;
+                if (useRegex) {
+                    searchPattern = new RegExp(find, flags);
+                } else {
+                    // Escape special chars
+                    const escaped = find.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                    searchPattern = new RegExp(escaped, flags);
+                }
+
+                const matches = input.match(searchPattern);
+                countEl.textContent = matches ? matches.length : 0;
+                outputEl.value = input.replace(searchPattern, replace);
+            } catch (e) {
+                // Invalid Regex
+                outputEl.value = input;
+            }
+        }
+
+        // --- Case Converter ---
+        function convertCase(type) {
+            const inputEl = document.getElementById('cc-input');
+            const text = inputEl.value;
+            if (!text) return;
+
+            const words = text.replace(/([a-z])([A-Z])/g, '$1 $2')
+                .replace(/[_-]/g, ' ')
+                .toLowerCase()
+                .split(/\s+/)
+                .filter(w => w.length > 0);
+
+            let result = '';
+            switch (type) {
+                case 'camel':
+                    result = words.map((w, i) => i === 0 ? w : w.charAt(0).toUpperCase() + w.slice(1)).join('');
+                    break;
+                case 'snake':
+                    result = words.join('_');
+                    break;
+                case 'kebab':
+                    result = words.join('-');
+                    break;
+                case 'pascal':
+                    result = words.map(w => w.charAt(0).toUpperCase() + w.slice(1)).join('');
+                    break;
+                case 'constant':
+                    result = words.join('_').toUpperCase();
+                    break;
+                case 'sentence':
+                    const s = words.join(' ');
+                    result = s.charAt(0).toUpperCase() + s.slice(1);
+                    break;
+            }
+            inputEl.value = result;
+        }
+
+        // --- Minifier ---
+        let minMode = 'json';
+
+        function setMinMode(mode) {
+            minMode = mode;
+            document.querySelectorAll('.min-mode-btn').forEach(btn => {
+                if (btn.dataset.mode === mode) {
+                    btn.classList.add('bg-blue-600', 'text-white', 'shadow-sm');
+                    btn.classList.remove('text-slate-400');
+                } else {
+                    btn.classList.remove('bg-blue-600', 'text-white', 'shadow-sm');
+                    btn.classList.add('text-slate-400');
+                }
+            });
+
+            // Toggle Prettify Button
+            const pretBtn = document.getElementById('btn-prettify');
+            if (mode === 'json') pretBtn.classList.remove('hidden');
+            else pretBtn.classList.add('hidden');
+
+            // Reset Error
+            document.getElementById('min-error').classList.add('hidden');
+
+            // Re-run
+            runMinifier();
+        }
+
+        function runMinifier() {
+            const input = document.getElementById('min-input').value;
+            const outputEl = document.getElementById('min-output');
+            const errorEl = document.getElementById('min-error');
+            const errorText = document.getElementById('min-error-text');
+
+            errorEl.classList.add('hidden');
+
+            if (!input.trim()) {
+                outputEl.value = '';
+                return;
+            }
+
+            try {
+                if (minMode === 'json') {
+                    const parsed = JSON.parse(input);
+                    outputEl.value = JSON.stringify(parsed);
+                } else if (minMode === 'css') {
+                    outputEl.value = input
+                        .replace(/\/\*[\s\S]*?\*\//g, '')
+                        .replace(/\s+/g, ' ')
+                        .replace(/\s*([{}:;,])\s*/g, '$1')
+                        .replace(/;}/g, '}')
+                        .trim();
+                } else {
+                    outputEl.value = input.replace(/\s+/g, ' ').trim();
+                }
+            } catch (e) {
+                errorText.textContent = e.message;
+                errorEl.classList.remove('hidden');
+            }
+        }
+
+        function prettifyJson() {
+            const inputEl = document.getElementById('min-input');
+            const errorEl = document.getElementById('min-error');
+            const errorText = document.getElementById('min-error-text');
+
+            errorEl.classList.add('hidden');
+            if (!inputEl.value.trim()) return;
+
+            try {
+                const parsed = JSON.parse(inputEl.value);
+                inputEl.value = JSON.stringify(parsed, null, 2);
+                runMinifier(); // Update output as well (or clear it? Usually we prettify the input to edit)
+            } catch (e) {
+                errorText.textContent = e.message;
+                errorEl.classList.remove('hidden');
+            }
+        }
+
+        // --- Redactor ---
+        const redactSettings = {
+            email: true,
+            phone: true,
+            creditCard: true,
+            ip: false
+        };
+
+        function toggleRedactor(key) {
+            redactSettings[key] = !redactSettings[key];
+            const btn = document.getElementById(`btn-redact-${key}`);
+
+            if (redactSettings[key]) {
+                btn.className = "px-2 py-1 md:px-3 md:py-1.5 rounded-full text-[10px] md:text-xs font-medium border transition-all bg-blue-500/20 border-blue-500/50 text-blue-300";
+            } else {
+                btn.className = "px-2 py-1 md:px-3 md:py-1.5 rounded-full text-[10px] md:text-xs font-medium border transition-all bg-slate-800 border-slate-700 text-slate-500";
+            }
+            runRedactor();
+        }
+
+        function runRedactor() {
+            const input = document.getElementById('red-input').value;
+            let result = input;
+
+            if (redactSettings.email) {
+                result = result.replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, '[EMAIL_REDACTED]');
+            }
+            if (redactSettings.phone) {
+                result = result.replace(/\b(?:\+?(\d{1,3}))?[-. (]*(\d{3})[-. )]*(\d{3})[-. ]*(\d{4})\b/g, '[PHONE_REDACTED]');
+            }
+            if (redactSettings.creditCard) {
+                result = result.replace(/\b(?:\d[ -]*?){13,16}\b/g, '[CARD_REDACTED]');
+            }
+            if (redactSettings.ip) {
+                result = result.replace(/\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/g, '[IP_REDACTED]');
+            }
+
+            document.getElementById('red-output').value = result;
+        }
+
+        // --- Sorter ---
+        function sortProcess(type) {
+            const inputEl = document.getElementById('sort-input');
+            const outputEl = document.getElementById('sort-output');
+
+            if (!inputEl.value) return;
+
+            let lines = inputEl.value.split(/\n/);
+            lines = lines.filter(l => l.trim().length > 0);
+
+            switch (type) {
+                case 'az':
+                    lines.sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+                    break;
+                case 'za':
+                    lines.sort((a, b) => b.localeCompare(a, undefined, { numeric: true }));
+                    break;
+                case 'unique':
+                    lines = [...new Set(lines)];
+                    break;
+                case 'unique-sort':
+                    lines = [...new Set(lines)].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+                    break;
+                case 'shuffle':
+                    lines.sort(() => Math.random() - 0.5);
+                    break;
+            }
+
+            outputEl.value = lines.join('\n');
+        }
+
+    </script>
+</body>
+
+</html>

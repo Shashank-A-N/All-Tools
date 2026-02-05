@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shadow Video - Video Reverse</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;500;600;700&display=swap"
+        rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link rel="stylesheet" href="../../styles.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Rajdhani', 'sans-serif'],
+                        orbitron: ['Orbitron', 'sans-serif']
+                    },
+                    colors: {
+                        cyber: {
+                            primary: '#fbbf24', // Amber
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body
+    class="min-h-screen flex flex-col font-sans overflow-x-hidden bg-slate-900 text-white selection:bg-amber-500 selection:text-black">
+
+    <!-- 3D Background -->
+    <div id="bg-3d-container"></div>
+
+    <!-- Navigation -->
+    <nav
+        class="sticky top-0 z-50 glass-effect border-b border-white/5 px-4 md:px-6 py-3 flex items-center justify-between backdrop-blur-md">
+        <a href="../index.html" class="flex items-center gap-3 text-slate-300 hover:text-white transition-colors group">
+            <div
+                class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center border border-white/10 group-hover:border-amber-500/50 transition-all">
+                <i class="fas fa-chevron-left text-xs group-hover:-translate-x-0.5 transition-transform"></i>
+            </div>
+            <span class="font-orbitron font-bold tracking-wider hidden md:block">BACK</span>
+        </a>
+
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded bg-amber-500/20 flex items-center justify-center text-amber-500">
+                <i class="fas fa-history"></i>
+            </div>
+            <h1 class="text-lg md:text-xl font-orbitron font-bold tracking-widest text-white">SHADOW<span
+                    class="text-amber-500">REWIND</span></h1>
+        </div>
+
+        <div class="w-8"></div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="flex-grow container mx-auto px-4 py-8 relative z-10 flex flex-col items-center gap-6">
+
+        <!-- Upload -->
+        <div id="uploadArea"
+            class="w-full max-w-2xl p-12 glass rounded-3xl border-2 border-dashed border-white/10 hover:border-amber-500/50 transition-all flex flex-col items-center justify-center cursor-pointer group"
+            onclick="document.getElementById('fileInput').click()"
+            ondragover="event.preventDefault(); this.classList.add('border-amber-500')"
+            ondragleave="this.classList.remove('border-amber-500')">
+            <input type="file" id="fileInput" accept="video/*" class="hidden" onchange="handleFile(this.files[0])">
+            <div
+                class="w-20 h-20 rounded-2xl bg-amber-500/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                <i class="fas fa-backward text-4xl text-amber-500"></i>
+            </div>
+            <h3 class="text-2xl font-orbitron font-bold text-white mb-2">Upload Video</h3>
+            <p class="text-slate-400 text-sm">Drag & drop or click to browse</p>
+        </div>
+
+        <!-- Editor -->
+        <div id="editorArea" class="w-full max-w-4xl hidden flex-col gap-6 animate-fade-in-up">
+
+            <div
+                class="flex flex-col items-center justify-center p-12 glass rounded-2xl border border-white/5 text-center">
+                <i class="fas fa-cogs text-5xl text-amber-500 mb-6 animate-spin-slow"></i>
+                <h2 class="text-2xl font-orbitron text-white mb-4">Processing Difficulty</h2>
+                <p class="text-slate-400 max-w-lg mx-auto mb-8">
+                    Reversing a video entirely in the browser (Client-Side) is extremely memory intensive and unstable
+                    for large files without WebAssembly (FFmpeg.wasm).
+                    <br><br>
+                    To ensure stability, we recommend using the desktop version or cloud tools for reversing large
+                    videos.
+                </p>
+
+                <!-- Simulation / Logic for small clips -->
+                <div class="flex flex-col gap-4 w-full max-w-md">
+                    <p class="text-xs font-bold text-amber-400 uppercase tracking-widest mb-1">Experimental Mode (Small
+                        Clips Only)</p>
+                    <video id="videoPreview" class="hidden"></video>
+                    <canvas id="canvas" class="hidden"></canvas>
+
+                    <button onclick="reverseSmallClip()" id="revBtn"
+                        class="w-full py-4 bg-amber-600 hover:bg-amber-500 text-black font-bold rounded-xl shadow-lg transition-all">
+                        ATTEMPT REVERSE (Max 10s)
+                    </button>
+
+                    <div id="progress" class="hidden w-full h-2 bg-slate-800 rounded-full overflow-hidden mt-4">
+                        <div id="bar" class="w-0 h-full bg-amber-500 transition-all"></div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <script type="module" src="../../shared/bg-particles.js"></script>
+    <script>
+        const uploadArea = document.getElementById('uploadArea');
+        const editorArea = document.getElementById('editorArea');
+        const video = document.getElementById('videoPreview');
+        const canvas = document.getElementById('canvas');
+        const revBtn = document.getElementById('revBtn');
+        const bar = document.getElementById('bar');
+
+        function handleFile(file) {
+            if (!file) return;
+            const url = URL.createObjectURL(file);
+            video.src = url;
+            uploadArea.classList.add('hidden');
+            editorArea.classList.remove('hidden');
+            editorArea.classList.add('flex');
+        }
+
+        async function reverseSmallClip() {
+            revBtn.disabled = true;
+            revBtn.textContent = "CAPTURING FRAMES...";
+            document.getElementById('progress').classList.remove('hidden');
+
+            const duration = video.duration;
+            if (duration > 15) {
+                alert("Video too long for browser-based reverse. Please verify clip is under 15s.");
+                revBtn.disabled = false;
+                revBtn.textContent = "ATTEMPT REVERSE (Max 10s)";
+                return;
+            }
+
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            const frames = [];
+
+            const fps = 15; // Reduce FPS for memory safety
+            const interval = 1 / fps;
+            let currentTime = 0;
+
+            // Capture Loop
+            // Using seek logic
+            const capture = async () => {
+                while (currentTime < duration) {
+                    video.currentTime = currentTime;
+                    await new Promise(r => video.addEventListener('seeked', r, { once: true }));
+
+                    ctx.drawImage(video, 0, 0);
+                    // Store as ImageBitmap to save memory? No, Blob is better but async. 
+                    // Let's store blob
+                    const blob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', 0.7));
+                    frames.push(blob);
+
+                    currentTime += interval;
+                    bar.style.width = (currentTime / duration * 50) + '%';
+                }
+
+                startEncoding();
+            };
+
+            const startEncoding = async () => {
+                revBtn.textContent = "ENCODING REVERSE...";
+
+                // Create stream from canvas
+                const stream = canvas.captureStream(fps);
+                const recorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp9' });
+                const chunks = [];
+
+                recorder.ondataavailable = e => chunks.push(e.data);
+                recorder.onstop = () => {
+                    const finalBlob = new Blob(chunks, { type: 'video/webm' });
+                    const url = URL.createObjectURL(finalBlob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'reversed_shadow.webm';
+                    a.click();
+                    revBtn.textContent = "DONE! DOWNLOADING...";
+                };
+
+                recorder.start();
+
+                // Draw frames in reverse
+                for (let i = frames.length - 1; i >= 0; i--) {
+                    const img = await createImageBitmap(frames[i]);
+                    ctx.drawImage(img, 0, 0);
+                    // wait for frame time
+                    await new Promise(r => setTimeout(r, 1000 / fps));
+
+                    const p = 50 + (((frames.length - i) / frames.length) * 50);
+                    bar.style.width = p + '%';
+                }
+
+                recorder.stop();
+            };
+
+            capture();
+        }
+    </script>
+</body>
+
+</html>

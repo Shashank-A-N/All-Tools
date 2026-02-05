@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redact Pro - Secure Image Redaction</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        gray: {
+                            850: '#1f2937',
+                            900: '#111827',
+                            950: '#0b0f19',
+                        },
+                        accent: {
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #0b0f19;
+            color: #e5e7eb;
+            overflow: hidden;
+            /* Prevent scrolling of the app shell */
+        }
+
+        .tool-btn {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .tool-btn.active {
+            background-color: #4f46e5;
+            color: white;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.3);
+        }
+
+        .canvas-container {
+            background-image:
+                linear-gradient(45deg, #1f2937 25%, transparent 25%),
+                linear-gradient(-45deg, #1f2937 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, #1f2937 75%),
+                linear-gradient(-45deg, transparent 75%, #1f2937 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #111827;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #374151;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #4b5563;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .loading-spinner {
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            border-top: 3px solid #6366f1;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body class="h-screen flex flex-col font-sans antialiased selection:bg-accent-500 selection:text-white">
+
+    <!-- Header -->
+    <header class="h-14 bg-gray-900 border-b border-gray-800 flex items-center justify-between px-6 z-20 shadow-sm">
+        <div class="flex items-center space-x-3">
+            <div
+                class="w-8 h-8 bg-gradient-to-br from-accent-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg">
+                <i class="fa-solid fa-shield-halved text-white text-sm"></i>
+            </div>
+            <h1 class="font-semibold text-lg tracking-tight text-white">Redact<span class="text-accent-500">Pro</span>
+            </h1>
+        </div>
+
+        <div class="flex items-center space-x-4" id="header-actions" style="display: none;">
+            <div class="text-xs text-gray-400 font-mono bg-gray-800 px-3 py-1 rounded-full" id="file-info">img_2024.png
+            </div>
+            <button onclick="app.downloadImage()"
+                class="flex items-center space-x-2 bg-white text-gray-900 hover:bg-gray-100 px-4 py-1.5 rounded-md text-sm font-medium transition-colors shadow-sm">
+                <i class="fa-solid fa-download"></i>
+                <span>Export</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Upload View (Initial State) -->
+    <div id="upload-view" class="flex-1 flex flex-col items-center justify-center p-6 relative">
+        <div class="absolute inset-0 overflow-hidden pointer-events-none">
+            <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-accent-600/10 rounded-full blur-3xl"></div>
+            <div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl"></div>
+        </div>
+
+        <div class="w-full max-w-xl bg-gray-900/50 border-2 border-dashed border-gray-700 hover:border-accent-500/50 rounded-2xl p-12 text-center transition-all duration-300 group backdrop-blur-sm"
+            ondragover="app.handleDragOver(event)" ondrop="app.handleDrop(event)"
+            ondragleave="app.handleDragLeave(event)" id="drop-zone">
+
+            <div
+                class="w-20 h-20 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300 shadow-xl">
+                <i
+                    class="fa-solid fa-cloud-arrow-up text-3xl text-gray-400 group-hover:text-accent-500 transition-colors"></i>
+            </div>
+
+            <h2 class="text-2xl font-bold text-white mb-2">Upload an Image</h2>
+            <p class="text-gray-400 mb-8">Drag and drop directly here, or click to browse.</p>
+
+            <input type="file" id="file-input" class="hidden" accept="image/*" onchange="app.handleFileSelect(event)">
+            <button onclick="document.getElementById('file-input').click()"
+                class="bg-accent-600 hover:bg-accent-500 text-white px-8 py-3 rounded-lg font-medium transition-all shadow-lg hover:shadow-accent-500/25">
+                Select from Device
+            </button>
+            <p class="mt-6 text-xs text-gray-500">Secure client-side processing. Your images never leave your browser.
+            </p>
+        </div>
+    </div>
+
+    <!-- Editor View (Hidden initially) -->
+    <div id="editor-view" class="flex-1 flex h-[calc(100vh-3.5rem)] hidden opacity-0 transition-opacity duration-500">
+
+        <!-- Left Toolbar -->
+        <div class="w-20 bg-gray-900 border-r border-gray-800 flex flex-col items-center py-6 space-y-6 z-10">
+
+            <!-- Tools Group -->
+            <div class="flex flex-col space-y-3 w-full px-3">
+                <div class="text-[10px] uppercase text-gray-500 font-bold text-center mb-1 tracking-wider">Tools</div>
+
+                <button onclick="app.setTool('blackout')"
+                    class="tool-btn group w-full aspect-square rounded-xl bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white flex flex-col items-center justify-center relative active"
+                    id="btn-blackout" title="Blackout (B)">
+                    <i class="fa-solid fa-square-full text-lg mb-1"></i>
+                    <span class="text-[9px]">Cover</span>
+                </button>
+
+                <button onclick="app.setTool('pixelate')"
+                    class="tool-btn group w-full aspect-square rounded-xl bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white flex flex-col items-center justify-center relative"
+                    id="btn-pixelate" title="Pixelate (P)">
+                    <i class="fa-solid fa-chess-board text-lg mb-1"></i>
+                    <span class="text-[9px]">Pixelate</span>
+                </button>
+
+                <button onclick="app.setTool('blur')"
+                    class="tool-btn group w-full aspect-square rounded-xl bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white flex flex-col items-center justify-center relative"
+                    id="btn-blur" title="Blur (U)">
+                    <i class="fa-solid fa-droplet text-lg mb-1"></i>
+                    <span class="text-[9px]">Blur</span>
+                </button>
+            </div>
+
+            <div class="w-8 h-px bg-gray-800 my-2"></div>
+
+            <!-- Actions Group -->
+            <div class="flex flex-col space-y-3 w-full px-3">
+                <div class="text-[10px] uppercase text-gray-500 font-bold text-center mb-1 tracking-wider">History</div>
+
+                <button onclick="app.undo()"
+                    class="tool-btn w-full aspect-square rounded-xl bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white flex flex-col items-center justify-center disabled:opacity-30 disabled:hover:bg-gray-800 disabled:cursor-not-allowed"
+                    id="btn-undo" title="Undo (Ctrl+Z)" disabled>
+                    <i class="fa-solid fa-rotate-left text-lg"></i>
+                </button>
+
+                <button onclick="app.reset()"
+                    class="tool-btn w-full aspect-square rounded-xl bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-red-400 hover:bg-red-400/10 flex flex-col items-center justify-center"
+                    title="Reset Image">
+                    <i class="fa-solid fa-trash text-lg"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Canvas Area -->
+        <div class="flex-1 bg-gray-950 relative overflow-auto flex items-center justify-center canvas-container"
+            id="canvas-wrapper">
+            <canvas id="canvas" class="shadow-2xl cursor-crosshair transition-shadow duration-300"></canvas>
+
+            <!-- Floating Zoom Controls -->
+            <div
+                class="absolute bottom-6 right-6 bg-gray-900 border border-gray-700 rounded-lg shadow-xl flex items-center p-1 space-x-1">
+                <button onclick="app.zoom(-0.1)"
+                    class="p-2 hover:bg-gray-700 rounded text-gray-400 hover:text-white transition-colors">
+                    <i class="fa-solid fa-minus text-xs"></i>
+                </button>
+                <span class="text-xs font-mono w-12 text-center text-gray-300" id="zoom-level">100%</span>
+                <button onclick="app.zoom(0.1)"
+                    class="p-2 hover:bg-gray-700 rounded text-gray-400 hover:text-white transition-colors">
+                    <i class="fa-solid fa-plus text-xs"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Properties Panel (Right) -->
+        <div class="w-64 bg-gray-900 border-l border-gray-800 p-5 hidden lg:block">
+            <h3 class="text-sm font-semibold text-gray-300 mb-6 uppercase tracking-wider">Tool Properties</h3>
+
+            <div id="pixelate-settings" class="hidden settings-group fade-in">
+                <label class="block text-xs text-gray-500 mb-2">Block Size</label>
+                <input type="range" min="4" max="50" value="15"
+                    class="w-full h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-accent-500"
+                    id="pixel-size" oninput="app.updateSettings()">
+                <div class="flex justify-between text-xs text-gray-400 mt-2">
+                    <span>Fine</span>
+                    <span id="pixel-val">15px</span>
+                    <span>Coarse</span>
+                </div>
+            </div>
+
+            <div id="blur-settings" class="hidden settings-group fade-in">
+                <label class="block text-xs text-gray-500 mb-2">Blur Intensity</label>
+                <input type="range" min="1" max="20" value="5"
+                    class="w-full h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-accent-500"
+                    id="blur-intensity" oninput="app.updateSettings()">
+                <div class="flex justify-between text-xs text-gray-400 mt-2">
+                    <span>Light</span>
+                    <span id="blur-val">5</span>
+                    <span>Heavy</span>
+                </div>
+            </div>
+
+            <div id="blackout-settings" class="settings-group fade-in">
+                <label class="block text-xs text-gray-500 mb-2">Fill Color</label>
+                <div class="flex space-x-2">
+                    <button onclick="app.setColor('#000000')"
+                        class="w-8 h-8 rounded-full bg-black border-2 border-white ring-2 ring-accent-500"></button>
+                    <button onclick="app.setColor('#ffffff')"
+                        class="w-8 h-8 rounded-full bg-white border border-gray-600 hover:scale-110 transition-transform"></button>
+                    <div
+                        class="relative w-8 h-8 rounded-full overflow-hidden border border-gray-600 hover:scale-110 transition-transform">
+                        <input type="color" onchange="app.setColor(this.value)"
+                            class="absolute -top-2 -left-2 w-16 h-16 cursor-pointer opacity-0">
+                        <div class="w-full h-full bg-gradient-to-br from-red-500 to-blue-500"></div>
+                    </div>
+                </div>
+                <p class="text-xs text-gray-500 mt-4 leading-relaxed">
+                    Select an area on the canvas to immediately apply the blackout effect. Use Undo to correct mistakes.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast"
+        class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-gray-900 border border-gray-700 shadow-2xl text-white px-4 py-3 rounded-lg flex items-center space-x-3 transform translate-y-20 opacity-0 transition-all duration-300 z-50">
+        <i class="fa-solid fa-circle-check text-green-500"></i>
+        <span id="toast-msg" class="text-sm">Action successful</span>
+    </div>
+
+    <script>
+        class RedactApp {
+            constructor() {
+                this.canvas = document.getElementById('canvas');
+                this.ctx = this.canvas.getContext('2d', { willReadFrequently: true });
+                this.wrapper = document.getElementById('canvas-wrapper');
+
+                // State
+                this.img = null;
+                this.history = [];
+                this.historyIndex = -1;
+                this.currentTool = 'blackout';
+                this.isDrawing = false;
+                this.startX = 0;
+                this.startY = 0;
+                this.scale = 1;
+                this.fillColor = '#000000';
+
+                // Settings
+                this.pixelSize = 15;
+                this.blurIntensity = 5;
+
+                // Bindings
+                this.resizeObserver = new ResizeObserver(() => this.fitCanvas());
+                this.resizeObserver.observe(this.wrapper);
+
+                this.setupCanvasEvents();
+                this.setupKeyboard();
+            }
+
+            // --- File Handling ---
+
+            handleFileSelect(e) {
+                const file = e.target.files[0];
+                if (file) this.loadImage(file);
+            }
+
+            handleDragOver(e) {
+                e.preventDefault();
+                document.getElementById('drop-zone').classList.add('border-accent-500', 'bg-gray-800/80');
+            }
+
+            handleDragLeave(e) {
+                e.preventDefault();
+                document.getElementById('drop-zone').classList.remove('border-accent-500', 'bg-gray-800/80');
+            }
+
+            handleDrop(e) {
+                e.preventDefault();
+                document.getElementById('drop-zone').classList.remove('border-accent-500', 'bg-gray-800/80');
+                if (e.dataTransfer.files.length > 0) {
+                    this.loadImage(e.dataTransfer.files[0]);
+                }
+            }
+
+            loadImage(file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    this.img = new Image();
+                    this.img.onload = () => {
+                        this.initCanvas();
+                        this.showEditor(file.name);
+                    };
+                    this.img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+
+            initCanvas() {
+                // Set canvas size to match image resolution
+                this.canvas.width = this.img.width;
+                this.canvas.height = this.img.height;
+
+                // Initial draw
+                this.ctx.drawImage(this.img, 0, 0);
+
+                // Clear history
+                this.history = [];
+                this.historyIndex = -1;
+                this.saveState();
+
+                // Fit to screen
+                this.fitCanvas(true);
+            }
+
+            fitCanvas(initial = false) {
+                if (!this.img) return;
+
+                if (initial) {
+                    const padding = 60;
+                    const wRatio = (this.wrapper.clientWidth - padding) / this.img.width;
+                    const hRatio = (this.wrapper.clientHeight - padding) / this.img.height;
+                    this.scale = Math.min(wRatio, hRatio, 1); // Max scale 1 initially
+                    if (this.scale <= 0) this.scale = 0.1;
+                }
+
+                this.updateTransform();
+            }
+
+            updateTransform() {
+                this.canvas.style.transform = `scale(${this.scale})`;
+                // Adjust margins so scrolling works when zoomed in
+                // This is a bit tricky with CSS transform scale, handled by container flex centering usually
+                document.getElementById('zoom-level').textContent = Math.round(this.scale * 100) + '%';
+            }
+
+            showEditor(filename) {
+                document.getElementById('upload-view').style.display = 'none';
+
+                const editor = document.getElementById('editor-view');
+                editor.classList.remove('hidden');
+                // Trigger reflow for animation
+                void editor.offsetWidth;
+                editor.classList.remove('opacity-0');
+
+                document.getElementById('header-actions').style.display = 'flex';
+                document.getElementById('file-info').textContent = filename.length > 20 ? filename.substring(0, 15) + '...' : filename;
+            }
+
+            // --- Drawing Logic ---
+
+            setupCanvasEvents() {
+                this.canvas.addEventListener('mousedown', this.startDraw.bind(this));
+                this.canvas.addEventListener('mousemove', this.draw.bind(this));
+                window.addEventListener('mouseup', this.stopDraw.bind(this)); // Window to catch release outside
+            }
+
+            getMousePos(e) {
+                const rect = this.canvas.getBoundingClientRect();
+                return {
+                    x: (e.clientX - rect.left) / this.scale,
+                    y: (e.clientY - rect.top) / this.scale
+                };
+            }
+
+            startDraw(e) {
+                this.isDrawing = true;
+                const pos = this.getMousePos(e);
+                this.startX = pos.x;
+                this.startY = pos.y;
+
+                // Save temp state for live preview without committing to history
+                this.tempSnapshot = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+            }
+
+            draw(e) {
+                if (!this.isDrawing) return;
+
+                const pos = this.getMousePos(e);
+                const width = pos.x - this.startX;
+                const height = pos.y - this.startY;
+
+                // Restore to state before drag started
+                this.ctx.putImageData(this.tempSnapshot, 0, 0);
+
+                // Draw Selection Preview
+                this.ctx.setLineDash([5, 5]);
+                this.ctx.strokeStyle = '#fff';
+                this.ctx.lineWidth = 2 / this.scale;
+                this.ctx.strokeRect(this.startX, this.startY, width, height);
+
+                this.ctx.setLineDash([5, 5]);
+                this.ctx.strokeStyle = '#000';
+                this.ctx.lineDashOffset = 5;
+                this.ctx.strokeRect(this.startX, this.startY, width, height);
+                this.ctx.setLineDash([]); // Reset
+            }
+
+            stopDraw(e) {
+                if (!this.isDrawing) return;
+                this.isDrawing = false;
+
+                // Restore clean state to apply effect
+                this.ctx.putImageData(this.tempSnapshot, 0, 0);
+
+                const pos = this.getMousePos(e);
+                let w = pos.x - this.startX;
+                let h = pos.y - this.startY;
+
+                // Handle negative width/height
+                let x = this.startX;
+                let y = this.startY;
+                if (w < 0) { x += w; w = Math.abs(w); }
+                if (h < 0) { y += h; h = Math.abs(h); }
+
+                // Ignore tiny clicks
+                if (w < 2 || h < 2) return;
+
+                this.applyEffect(x, y, w, h);
+                this.saveState();
+            }
+
+            applyEffect(x, y, w, h) {
+                // Ensure bounds
+                x = Math.max(0, x);
+                y = Math.max(0, y);
+                w = Math.min(w, this.canvas.width - x);
+                h = Math.min(h, this.canvas.height - y);
+
+                if (this.currentTool === 'blackout') {
+                    this.ctx.fillStyle = this.fillColor;
+                    this.ctx.fillRect(x, y, w, h);
+                }
+                else if (this.currentTool === 'pixelate') {
+                    this.pixelateArea(x, y, w, h);
+                }
+                else if (this.currentTool === 'blur') {
+                    this.blurArea(x, y, w, h);
+                }
+            }
+
+            pixelateArea(x, y, w, h) {
+                const size = parseInt(this.pixelSize);
+                // Get data for the region
+                const imgData = this.ctx.getImageData(x, y, w, h);
+                const data = imgData.data;
+
+                // Create a temporary canvas to process
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = w;
+                tempCanvas.height = h;
+                const tempCtx = tempCanvas.getContext('2d');
+                tempCtx.putImageData(imgData, 0, 0);
+
+                // Disable smoothing for pixel look
+                tempCtx.imageSmoothingEnabled = false;
+
+                // 1. Draw small
+                const scaledW = Math.max(1, Math.floor(w / size));
+                const scaledH = Math.max(1, Math.floor(h / size));
+
+                // Off-screen canvas for scaling
+                const offCanvas = document.createElement('canvas');
+                offCanvas.width = scaledW;
+                offCanvas.height = scaledH;
+                const offCtx = offCanvas.getContext('2d');
+                offCtx.imageSmoothingEnabled = false;
+
+                // Draw down
+                offCtx.drawImage(tempCanvas, 0, 0, w, h, 0, 0, scaledW, scaledH);
+
+                // Draw back up to temp
+                tempCtx.drawImage(offCanvas, 0, 0, scaledW, scaledH, 0, 0, w, h);
+
+                // Put back on main
+                this.ctx.drawImage(tempCanvas, x, y);
+            }
+
+            blurArea(x, y, w, h) {
+                // StackBlur or Gaussian is expensive in JS.
+                // Efficient approach: Downscale then Upscale with linear interpolation.
+                // This destroys detail effectively for redaction.
+
+                const intensity = parseInt(this.blurIntensity);
+                const scaleFactor = 1 / (intensity * 1.5); // More intensity = smaller intermediate
+
+                const tempCanvas = document.createElement('canvas');
+                const tempCtx = tempCanvas.getContext('2d');
+
+                // Crop
+                tempCanvas.width = w;
+                tempCanvas.height = h;
+                tempCtx.drawImage(this.canvas, x, y, w, h, 0, 0, w, h);
+
+                // Downscale
+                const smallW = Math.max(1, Math.floor(w * scaleFactor));
+                const smallH = Math.max(1, Math.floor(h * scaleFactor));
+
+                const smallCanvas = document.createElement('canvas');
+                smallCanvas.width = smallW;
+                smallCanvas.height = smallH;
+                const smallCtx = smallCanvas.getContext('2d');
+
+                // Use default smoothing (linear)
+                smallCtx.drawImage(tempCanvas, 0, 0, smallW, smallH);
+
+                // Upscale back
+                tempCtx.clearRect(0, 0, w, h);
+                tempCtx.drawImage(smallCanvas, 0, 0, smallW, smallH, 0, 0, w, h);
+
+                // Simple Box Blur pass on top to smooth pixel edges from upscaling
+                // Not strictly necessary but looks better
+
+                this.ctx.drawImage(tempCanvas, x, y);
+            }
+
+            // --- History ---
+
+            saveState() {
+                // If we are in the middle of history (undid some steps), remove the future
+                if (this.historyIndex < this.history.length - 1) {
+                    this.history = this.history.slice(0, this.historyIndex + 1);
+                }
+
+                // Limit history size to prevent memory crash (e.g., 20 steps)
+                if (this.history.length > 20) {
+                    this.history.shift();
+                    this.historyIndex--;
+                }
+
+                this.history.push(this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height));
+                this.historyIndex++;
+
+                this.updateUI();
+            }
+
+            undo() {
+                if (this.historyIndex > 0) {
+                    this.historyIndex--;
+                    this.ctx.putImageData(this.history[this.historyIndex], 0, 0);
+                    this.showToast('Undone');
+                    this.updateUI();
+                }
+            }
+
+            reset() {
+                if (confirm('Clear all changes?')) {
+                    this.historyIndex = 0;
+                    this.ctx.putImageData(this.history[0], 0, 0);
+                    this.history = [this.history[0]];
+                    this.updateUI();
+                }
+            }
+
+            // --- UI Helpers ---
+
+            setTool(name) {
+                this.currentTool = name;
+
+                // Update UI buttons
+                document.querySelectorAll('.tool-btn').forEach(btn => btn.classList.remove('active'));
+                const btn = document.getElementById(`btn-${name}`);
+                if (btn) btn.classList.add('active');
+
+                // Toggle Property Panels
+                document.querySelectorAll('.settings-group').forEach(el => el.classList.add('hidden'));
+
+                if (name === 'pixelate') document.getElementById('pixelate-settings').classList.remove('hidden');
+                if (name === 'blur') document.getElementById('blur-settings').classList.remove('hidden');
+                if (name === 'blackout') document.getElementById('blackout-settings').classList.remove('hidden');
+            }
+
+            setColor(hex) {
+                this.fillColor = hex;
+                // Update UI ring to show active
+                // (Simplified for this single file demo)
+            }
+
+            zoom(delta) {
+                this.scale += delta;
+                if (this.scale < 0.1) this.scale = 0.1;
+                if (this.scale > 3) this.scale = 3;
+                this.updateTransform();
+            }
+
+            updateSettings() {
+                this.pixelSize = document.getElementById('pixel-size').value;
+                document.getElementById('pixel-val').textContent = this.pixelSize + 'px';
+
+                this.blurIntensity = document.getElementById('blur-intensity').value;
+                document.getElementById('blur-val').textContent = this.blurIntensity;
+            }
+
+            updateUI() {
+                const undoBtn = document.getElementById('btn-undo');
+                undoBtn.disabled = this.historyIndex <= 0;
+            }
+
+            downloadImage() {
+                const link = document.createElement('a');
+                link.download = 'redacted-image.png';
+                link.href = this.canvas.toDataURL('image/png');
+                link.click();
+                this.showToast('Image downloaded');
+            }
+
+            showToast(msg) {
+                const toast = document.getElementById('toast');
+                const text = document.getElementById('toast-msg');
+                text.textContent = msg;
+                toast.classList.remove('opacity-0', 'translate-y-20');
+
+                setTimeout(() => {
+                    toast.classList.add('opacity-0', 'translate-y-20');
+                }, 2000);
+            }
+
+            setupKeyboard() {
+                window.addEventListener('keydown', (e) => {
+                    if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+                        e.preventDefault();
+                        this.undo();
+                    }
+                    if (e.key === 'b') this.setTool('blackout');
+                    if (e.key === 'p') this.setTool('pixelate');
+                    if (e.key === 'u') this.setTool('blur');
+                });
+            }
+        }
+
+        // Initialize
+        const app = new RedactApp();
+
+    </script>
+</body>
+
+</html>

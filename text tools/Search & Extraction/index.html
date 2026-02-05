@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DevText Suite</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        .highlight {
+            background-color: rgba(234, 179, 8, 0.3);
+            color: #ca8a04;
+            font-weight: bold;
+            padding: 0 4px;
+            border-radius: 4px;
+            border: 1px solid rgba(234, 179, 8, 0.4);
+        }
+
+        /* Extreme Font Scaling for Mobile */
+        html {
+            font-size: 14px;
+        }
+
+        /* Base size */
+        @media (max-width: 768px) {
+            html {
+                font-size: 12px;
+            }
+
+            .mobile-tight {
+                padding: 0.5rem !important;
+            }
+
+            .mobile-text-tiny {
+                font-size: 11px !important;
+                line-height: 1.4 !important;
+            }
+        }
+
+        /* Animations */
+        @keyframes slideUpFade {
+            from {
+                opacity: 0;
+                transform: translateY(15px) scale(0.98);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .animate-enter {
+            animation: slideUpFade 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .transition-transform-colors {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+    </style>
+</head>
+
+<body
+    class="bg-slate-100 text-slate-800 font-sans h-screen flex flex-col overflow-hidden selection:bg-blue-100 selection:text-blue-900">
+
+    <!-- Header -->
+    <header
+        class="bg-slate-900 text-white p-3 md:p-4 shadow-xl flex items-center justify-between z-20 shrink-0 h-14 md:h-auto bg-gradient-to-r from-slate-900 to-slate-800">
+        <div class="flex items-center gap-3">
+            <div class="bg-blue-600/20 p-1.5 md:p-2 rounded-xl ring-1 ring-white/10 shadow-inner backdrop-blur-sm">
+                <i data-lucide="terminal" class="text-blue-400 w-5 h-5 md:w-6 md:h-6 drop-shadow-md"></i>
+            </div>
+            <!-- Hidden on mobile -->
+            <div class="hidden md:block">
+                <h1
+                    class="text-xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">
+                    DevText Suite</h1>
+                <p class="text-xs text-slate-400 font-medium tracking-wide">SEARCH • EXTRACT • VALIDATE • SYNC</p>
+            </div>
+        </div>
+        <div
+            class="text-[10px] md:text-xs font-mono text-slate-500 bg-slate-800/50 px-2 py-1 rounded-full border border-white/5">
+            <span class="hidden md:inline">Vanilla JS Edition</span>
+            <span class="md:hidden">v2.0 UI</span>
+        </div>
+    </header>
+
+    <!-- Main Layout Wrapper -->
+    <div class="flex flex-1 overflow-hidden flex-col md:flex-row relative">
+
+        <!-- Navigation -->
+        <nav
+            class="w-full h-16 md:w-20 lg:w-64 md:h-full bg-white border-t md:border-t-0 md:border-r border-slate-200 shrink-0 order-last md:order-first z-30 shadow-[0_-4px_20px_-5px_rgba(0,0,0,0.1)] md:shadow-xl relative">
+            <div
+                class="h-full w-full flex md:flex-col justify-around md:justify-start items-center md:items-stretch p-1 md:p-4 md:space-y-3">
+
+                <button onclick="switchTab('grep')" id="nav-grep"
+                    class="nav-btn group flex-1 md:flex-none flex flex-col md:flex-row items-center justify-center md:justify-start gap-1 md:gap-3 p-2 md:p-3 rounded-xl transition-all duration-300 relative overflow-hidden">
+                    <div
+                        class="absolute inset-0 bg-blue-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl">
+                    </div>
+                    <i data-lucide="search"
+                        class="relative z-10 w-5 h-5 md:w-5 md:h-5 shrink-0 transition-transform duration-300 group-hover:scale-110 group-active:scale-95"></i>
+                    <div class="relative z-10 hidden lg:block overflow-hidden text-left">
+                        <div class="font-bold text-sm truncate">Grep Search</div>
+                        <div class="text-[10px] opacity-70 truncate font-medium">Find patterns</div>
+                    </div>
+                    <div
+                        class="active-indicator absolute bottom-0 md:bottom-auto md:left-0 w-full h-1 md:w-1 md:h-full bg-blue-500 rounded-full transform scale-0 transition-transform duration-300 origin-center">
+                    </div>
+                </button>
+
+                <button onclick="switchTab('extractor')" id="nav-extractor"
+                    class="nav-btn group flex-1 md:flex-none flex flex-col md:flex-row items-center justify-center md:justify-start gap-1 md:gap-3 p-2 md:p-3 rounded-xl transition-all duration-300 relative overflow-hidden text-slate-500 hover:text-slate-800">
+                    <div
+                        class="absolute inset-0 bg-slate-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl">
+                    </div>
+                    <i data-lucide="mail"
+                        class="relative z-10 w-5 h-5 md:w-5 md:h-5 shrink-0 transition-transform duration-300 group-hover:scale-110 group-active:scale-95"></i>
+                    <div class="relative z-10 hidden lg:block overflow-hidden text-left">
+                        <div class="font-bold text-sm truncate">Data Extractor</div>
+                        <div class="text-[10px] opacity-70 truncate font-medium">Emails & URLs</div>
+                    </div>
+                    <div
+                        class="active-indicator absolute bottom-0 md:bottom-auto md:left-0 w-full h-1 md:w-1 md:h-full bg-blue-500 rounded-full transform scale-0 transition-transform duration-300 origin-center">
+                    </div>
+                </button>
+
+                <button onclick="switchTab('validator')" id="nav-validator"
+                    class="nav-btn group flex-1 md:flex-none flex flex-col md:flex-row items-center justify-center md:justify-start gap-1 md:gap-3 p-2 md:p-3 rounded-xl transition-all duration-300 relative overflow-hidden text-slate-500 hover:text-slate-800">
+                    <div
+                        class="absolute inset-0 bg-slate-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl">
+                    </div>
+                    <i data-lucide="file-json"
+                        class="relative z-10 w-5 h-5 md:w-5 md:h-5 shrink-0 transition-transform duration-300 group-hover:scale-110 group-active:scale-95"></i>
+                    <div class="relative z-10 hidden lg:block overflow-hidden text-left">
+                        <div class="font-bold text-sm truncate">JSON Validator</div>
+                        <div class="text-[10px] opacity-70 truncate font-medium">Check schema</div>
+                    </div>
+                    <div
+                        class="active-indicator absolute bottom-0 md:bottom-auto md:left-0 w-full h-1 md:w-1 md:h-full bg-blue-500 rounded-full transform scale-0 transition-transform duration-300 origin-center">
+                    </div>
+                </button>
+
+                <button onclick="switchTab('syncer')" id="nav-syncer"
+                    class="nav-btn group flex-1 md:flex-none flex flex-col md:flex-row items-center justify-center md:justify-start gap-1 md:gap-3 p-2 md:p-3 rounded-xl transition-all duration-300 relative overflow-hidden text-slate-500 hover:text-slate-800">
+                    <div
+                        class="absolute inset-0 bg-slate-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl">
+                    </div>
+                    <i data-lucide="clock"
+                        class="relative z-10 w-5 h-5 md:w-5 md:h-5 shrink-0 transition-transform duration-300 group-hover:scale-110 group-active:scale-95"></i>
+                    <div class="relative z-10 hidden lg:block overflow-hidden text-left">
+                        <div class="font-bold text-sm truncate">Subtitle Syncer</div>
+                        <div class="text-[10px] opacity-70 truncate font-medium">Shift timestamps</div>
+                    </div>
+                    <div
+                        class="active-indicator absolute bottom-0 md:bottom-auto md:left-0 w-full h-1 md:w-1 md:h-full bg-blue-500 rounded-full transform scale-0 transition-transform duration-300 origin-center">
+                    </div>
+                </button>
+
+            </div>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 overflow-auto bg-slate-100 p-3 md:p-8 relative w-full scroll-smooth">
+            <div class="max-w-6xl mx-auto h-full flex flex-col pb-20 md:pb-0">
+
+                <!-- TOOL 1: GREP -->
+                <div id="view-grep" class="view-section h-full flex flex-col gap-3 md:gap-6 animate-enter">
+                    <div class="flex items-center justify-between shrink-0">
+                        <div>
+                            <h2 class="text-xl md:text-3xl font-extrabold text-slate-800 tracking-tight">Grep Search
+                            </h2>
+                            <p class="text-[10px] md:text-sm text-slate-500 font-medium">Advanced pattern matching with
+                                line numbers</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <input type="file" id="grep-file" class="hidden" onchange="loadFile(this, 'grep-input')">
+                            <button onclick="document.getElementById('grep-file').click()"
+                                class="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-lg shadow-sm hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 active:scale-95 transition-all duration-200">
+                                <i data-lucide="upload" class="w-3.5 h-3.5 text-blue-500"></i> <span
+                                    class="hidden md:inline">Load File</span><span class="md:hidden">Load</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 h-full min-h-0">
+                        <div class="flex flex-col gap-2 h-full min-h-0 transition-all duration-300 hover:scale-[1.002]">
+                            <textarea id="grep-input"
+                                class="mobile-text-tiny flex-1 w-full p-4 font-mono text-xs md:text-sm bg-white border border-slate-200 rounded-2xl shadow-sm focus:shadow-lg focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400 focus:scale-[1.01] transition-all duration-300 resize-none outline-none"
+                                placeholder="Paste your text source here..." oninput="runGrep()"></textarea>
+                        </div>
+
+                        <div class="flex flex-col gap-3 md:gap-4 h-full min-h-0">
+                            <div
+                                class="bg-white p-3 md:p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all duration-300 space-y-3 shrink-0">
+                                <div class="relative group">
+                                    <i data-lucide="search"
+                                        class="absolute left-3 md:left-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 md:w-5 md:h-5 transition-colors group-focus-within:text-blue-500"></i>
+                                    <input type="text" id="grep-query"
+                                        class="mobile-text-tiny w-full pl-9 md:pl-12 pr-4 py-2.5 md:py-3 text-xs md:text-sm border border-slate-200 bg-slate-50 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all duration-200 font-medium"
+                                        placeholder="Search query..." oninput="runGrep()">
+                                </div>
+                                <div class="flex gap-4 text-[10px] md:text-sm pt-1">
+                                    <label class="flex items-center gap-2 cursor-pointer select-none group">
+                                        <div class="relative">
+                                            <input type="checkbox" id="grep-regex" class="peer sr-only"
+                                                onchange="runGrep()">
+                                            <div
+                                                class="w-9 h-5 bg-slate-200 rounded-full peer peer-focus:ring-2 peer-focus:ring-blue-300 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600">
+                                            </div>
+                                        </div>
+                                        <span
+                                            class="group-hover:text-blue-600 transition-colors font-medium">Regex</span>
+                                    </label>
+                                    <label class="flex items-center gap-2 cursor-pointer select-none group">
+                                        <div class="relative">
+                                            <input type="checkbox" id="grep-case" class="peer sr-only"
+                                                onchange="runGrep()">
+                                            <div
+                                                class="w-9 h-5 bg-slate-200 rounded-full peer peer-focus:ring-2 peer-focus:ring-blue-300 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600">
+                                            </div>
+                                        </div>
+                                        <span class="group-hover:text-blue-600 transition-colors font-medium">Match
+                                            Case</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div
+                                class="flex-1 min-h-0 bg-slate-900 rounded-2xl overflow-hidden flex flex-col shadow-lg border border-slate-800 transition-transform duration-300 hover:shadow-2xl">
+                                <div
+                                    class="flex items-center justify-between px-4 py-2 bg-slate-800 border-b border-slate-700 shrink-0">
+                                    <span id="grep-count"
+                                        class="text-[10px] md:text-xs font-mono font-bold text-blue-400 bg-blue-400/10 px-2 py-0.5 rounded-full">0
+                                        matches</span>
+                                    <button onclick="copyGrepResults()"
+                                        class="text-[10px] md:text-xs text-slate-300 hover:text-white flex items-center gap-1.5 transition-colors px-2 py-1 hover:bg-white/10 rounded">
+                                        <i data-lucide="copy" class="w-3 h-3"></i> Copy All
+                                    </button>
+                                </div>
+                                <div id="grep-output"
+                                    class="mobile-text-tiny flex-1 overflow-auto p-4 font-mono text-xs md:text-sm text-slate-300 leading-relaxed custom-scrollbar">
+                                    <div class="h-full flex flex-col items-center justify-center text-slate-600 gap-2">
+                                        <i data-lucide="search-x" class="w-8 h-8 opacity-50"></i>
+                                        <span class="italic">Results will appear here...</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TOOL 2: EXTRACTOR -->
+                <div id="view-extractor" class="view-section hidden h-full flex flex-col gap-3 md:gap-6">
+                    <div class="flex items-center justify-between shrink-0">
+                        <div>
+                            <h2 class="text-xl md:text-3xl font-extrabold text-slate-800 tracking-tight">Data Extractor
+                            </h2>
+                            <p class="text-[10px] md:text-sm text-slate-500 font-medium">Scrape unique Emails & URLs</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <input type="file" id="ext-file" class="hidden" onchange="loadFile(this, 'ext-input')">
+                            <button onclick="document.getElementById('ext-file').click()"
+                                class="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-lg shadow-sm hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 active:scale-95 transition-all duration-200">
+                                <i data-lucide="upload" class="w-3.5 h-3.5 text-blue-500"></i> <span
+                                    class="hidden md:inline">Load File</span><span class="md:hidden">Load</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-6 h-full min-h-0">
+                        <div class="flex flex-col gap-2 h-full min-h-0 group">
+                            <textarea id="ext-input"
+                                class="mobile-text-tiny flex-1 p-4 font-mono text-xs md:text-sm bg-white border border-slate-200 rounded-2xl shadow-sm group-hover:shadow-md focus:shadow-lg focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400 transition-all duration-300 resize-none outline-none"
+                                placeholder="Paste messy text dump here..."></textarea>
+                            <button onclick="runExtractor()"
+                                class="mt-2 w-full py-3 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white text-xs md:text-sm font-bold rounded-xl shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2">
+                                <span>Run Extraction</span> <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+
+                        <div class="flex flex-col gap-3 md:gap-4 h-full min-h-0">
+                            <!-- Emails -->
+                            <div
+                                class="flex-1 min-h-0 flex flex-col bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300">
+                                <div
+                                    class="px-4 py-3 bg-slate-50/80 backdrop-blur border-b border-slate-100 flex justify-between items-center shrink-0">
+                                    <div class="flex items-center gap-2 text-slate-700">
+                                        <div class="bg-blue-100 p-1 rounded-md"><i data-lucide="mail"
+                                                class="w-3.5 h-3.5 md:w-4 md:h-4 text-blue-600"></i></div>
+                                        <h3 class="font-bold text-xs md:text-sm">Emails <span id="email-count"
+                                                class="text-slate-400 font-medium ml-1 text-[10px] md:text-xs bg-slate-100 px-1.5 rounded-full border border-slate-200">(0)</span>
+                                        </h3>
+                                    </div>
+                                    <button onclick="copyToClipboard('ext-emails')"
+                                        class="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"><i
+                                            data-lucide="copy" class="w-4 h-4"></i></button>
+                                </div>
+                                <textarea id="ext-emails" readonly
+                                    class="mobile-text-tiny flex-1 p-3 bg-transparent resize-none border-none focus:ring-0 text-xs md:text-sm font-mono text-slate-600 leading-relaxed"></textarea>
+                            </div>
+
+                            <!-- URLs -->
+                            <div
+                                class="flex-1 min-h-0 flex flex-col bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300">
+                                <div
+                                    class="px-4 py-3 bg-slate-50/80 backdrop-blur border-b border-slate-100 flex justify-between items-center shrink-0">
+                                    <div class="flex items-center gap-2 text-slate-700">
+                                        <div class="bg-purple-100 p-1 rounded-md"><i data-lucide="link"
+                                                class="w-3.5 h-3.5 md:w-4 md:h-4 text-purple-600"></i></div>
+                                        <h3 class="font-bold text-xs md:text-sm">URLs <span id="url-count"
+                                                class="text-slate-400 font-medium ml-1 text-[10px] md:text-xs bg-slate-100 px-1.5 rounded-full border border-slate-200">(0)</span>
+                                        </h3>
+                                    </div>
+                                    <button onclick="copyToClipboard('ext-urls')"
+                                        class="p-1.5 text-slate-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"><i
+                                            data-lucide="copy" class="w-4 h-4"></i></button>
+                                </div>
+                                <textarea id="ext-urls" readonly
+                                    class="mobile-text-tiny flex-1 p-3 bg-transparent resize-none border-none focus:ring-0 text-xs md:text-sm font-mono text-slate-600 leading-relaxed"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TOOL 3: VALIDATOR -->
+                <div id="view-validator" class="view-section hidden h-full flex flex-col gap-3 md:gap-6">
+                    <div class="flex items-center justify-between shrink-0">
+                        <div>
+                            <h2 class="text-xl md:text-3xl font-extrabold text-slate-800 tracking-tight">JSON Validator
+                            </h2>
+                            <p class="text-[10px] md:text-sm text-slate-500 font-medium">Verify structure & keys</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="loadSampleJson()"
+                                class="text-[10px] md:text-xs text-blue-600 font-bold hover:text-blue-700 px-2 py-1 rounded hover:bg-blue-50 transition-colors">Load
+                                Sample</button>
+                            <input type="file" id="val-file" class="hidden" onchange="loadFile(this, 'val-input')">
+                            <button onclick="document.getElementById('val-file').click()"
+                                class="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-lg shadow-sm hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 active:scale-95 transition-all duration-200">
+                                <i data-lucide="upload" class="w-3.5 h-3.5 text-blue-500"></i> <span
+                                    class="hidden md:inline">Load File</span><span class="md:hidden">Load</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-6 h-full min-h-0">
+                        <div class="flex flex-col gap-3 md:gap-4 h-full min-h-0">
+                            <div class="flex flex-col gap-2 flex-1 min-h-0">
+                                <label
+                                    class="text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Input
+                                    JSON</label>
+                                <textarea id="val-input"
+                                    class="mobile-text-tiny flex-1 p-4 font-mono text-xs md:text-sm bg-white border border-slate-200 rounded-2xl shadow-sm focus:shadow-lg focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400 transition-all duration-300 resize-none outline-none"
+                                    placeholder="{ ... }"></textarea>
+                            </div>
+
+                            <div class="bg-white p-3 md:p-4 rounded-2xl border border-slate-200 shadow-sm shrink-0">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <div class="bg-slate-100 p-1 rounded"><i data-lucide="settings"
+                                            class="w-3.5 h-3.5 md:w-4 md:h-4 text-slate-500"></i></div>
+                                    <label class="text-[10px] md:text-sm font-bold text-slate-700">Required Keys
+                                        Validation</label>
+                                </div>
+                                <input type="text" id="val-rules"
+                                    class="mobile-text-tiny w-full px-4 py-2 border border-slate-200 rounded-xl text-xs md:text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-slate-50 focus:bg-white transition-all"
+                                    placeholder="comma, separated, keys, e.g. id, name">
+                            </div>
+
+                            <button onclick="runValidator()"
+                                class="w-full py-3 bg-slate-800 hover:bg-slate-900 text-white text-xs md:text-sm font-bold rounded-xl shadow-lg shadow-slate-900/20 hover:shadow-slate-900/40 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-200">
+                                Validate Configuration
+                            </button>
+                        </div>
+
+                        <div class="flex flex-col gap-2 h-full min-h-0">
+                            <div class="flex justify-between items-center ml-1">
+                                <label
+                                    class="text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-wider">Validation
+                                    Result</label>
+                                <button onclick="copyToClipboard('val-output-text')" id="val-copy-btn"
+                                    class="hidden flex items-center gap-1 px-3 py-1 text-[10px] md:text-xs font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100 hover:shadow-sm transition-all">
+                                    <i data-lucide="check" class="w-3 h-3"></i> Copy
+                                </button>
+                            </div>
+                            <div id="val-output-container"
+                                class="mobile-text-tiny flex-1 rounded-2xl border-2 border-dashed border-slate-300 p-4 font-mono text-xs md:text-sm overflow-auto bg-slate-50/50 text-slate-400 flex items-center justify-center transition-colors duration-300">
+                                <div class="text-center">
+                                    <i data-lucide="activity" class="w-8 h-8 mx-auto mb-2 opacity-20"></i>
+                                    <span>Waiting for input...</span>
+                                </div>
+                            </div>
+                            <textarea id="val-output-text" class="hidden"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TOOL 4: SYNCER -->
+                <div id="view-syncer" class="view-section hidden h-full flex flex-col gap-3 md:gap-6">
+                    <div class="flex items-center justify-between shrink-0">
+                        <div>
+                            <h2 class="text-xl md:text-3xl font-extrabold text-slate-800 tracking-tight">Subtitle Syncer
+                            </h2>
+                            <p class="text-[10px] md:text-sm text-slate-500 font-medium">Shift SRT timestamps</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <input type="file" id="sync-file" class="hidden" onchange="loadFile(this, 'sync-input')">
+                            <button onclick="document.getElementById('sync-file').click()"
+                                class="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-lg shadow-sm hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 active:scale-95 transition-all duration-200">
+                                <i data-lucide="upload" class="w-3.5 h-3.5 text-blue-500"></i> <span
+                                    class="hidden md:inline">Load File</span><span class="md:hidden">Load</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-6 h-full min-h-0">
+                        <div class="md:col-span-1 flex flex-col gap-2 h-full min-h-0">
+                            <label
+                                class="text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Original
+                                .srt</label>
+                            <textarea id="sync-input"
+                                class="mobile-text-tiny flex-1 p-4 font-mono text-[10px] md:text-xs bg-white border border-slate-200 rounded-2xl shadow-sm focus:shadow-md focus:ring-2 focus:ring-blue-500/50 outline-none resize-none transition-all"
+                                placeholder="1&#10;00:00:01,000 --> 00:00:04,000&#10;Hello"></textarea>
+                        </div>
+
+                        <div
+                            class="md:col-span-1 flex flex-col justify-center gap-4 md:gap-6 p-4 md:p-6 bg-white border border-slate-200 rounded-2xl h-fit self-center shadow-lg shadow-slate-100 relative overflow-hidden">
+                            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-400 to-purple-500">
+                            </div>
+                            <div class="text-center">
+                                <label class="block text-xs md:text-sm font-bold text-slate-800 mb-1">Time
+                                    Offset</label>
+                                <p class="text-[10px] text-slate-400 mb-4 font-mono">milliseconds (ms)</p>
+
+                                <div
+                                    class="flex items-center gap-2 max-w-[240px] mx-auto bg-slate-50 p-1 rounded-xl border border-slate-200">
+                                    <button onclick="adjustSyncOffset(-1000)"
+                                        class="p-2 md:p-3 bg-white shadow-sm rounded-lg hover:bg-slate-50 hover:text-red-500 transition-colors active:scale-90"><i
+                                            data-lucide="minus" class="w-3 h-3"></i></button>
+                                    <input type="number" id="sync-offset"
+                                        class="mobile-text-tiny w-full text-center py-2 bg-transparent font-mono text-sm font-bold text-slate-700 outline-none"
+                                        value="0">
+                                    <button onclick="adjustSyncOffset(1000)"
+                                        class="p-2 md:p-3 bg-white shadow-sm rounded-lg hover:bg-slate-50 hover:text-green-500 transition-colors active:scale-90"><i
+                                            data-lucide="plus" class="w-3 h-3"></i></button>
+                                </div>
+                                <div class="flex justify-between px-6 mt-2 text-[10px] text-slate-400 font-medium">
+                                    <span>Earlier</span>
+                                    <span>Later</span>
+                                </div>
+                            </div>
+                            <button onclick="runSyncer()"
+                                class="w-full py-3 bg-slate-800 hover:bg-slate-900 text-white text-xs md:text-sm font-bold rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2">
+                                <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Shift Timestamps
+                            </button>
+                        </div>
+
+                        <div class="md:col-span-1 flex flex-col gap-2 h-full min-h-0">
+                            <div class="flex justify-between items-center ml-1">
+                                <label
+                                    class="text-[10px] md:text-xs font-bold text-slate-500 uppercase tracking-wider">Result</label>
+                                <button onclick="copyToClipboard('sync-output')"
+                                    class="flex items-center gap-1 px-2 py-1 text-[10px] md:text-xs font-bold text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors">
+                                    Copy
+                                </button>
+                            </div>
+                            <textarea id="sync-output" readonly
+                                class="mobile-text-tiny flex-1 p-4 font-mono text-[10px] md:text-xs bg-slate-50 border border-slate-200 rounded-2xl resize-none text-slate-600 outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
+                                placeholder="Synced subtitles will appear here..."></textarea>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Enhanced Toast Notification -->
+            <div id="toast"
+                class="fixed bottom-24 md:bottom-8 right-1/2 translate-x-1/2 md:translate-x-0 md:right-8 px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4 transition-all duration-500 translate-y-24 opacity-0 pointer-events-none bg-slate-900/90 backdrop-blur-md text-white z-50 min-w-[300px] border border-white/10">
+                <div id="toast-icon-bg" class="p-2 bg-emerald-500/20 rounded-full shrink-0">
+                    <i id="toast-icon" data-lucide="check" class="w-5 h-5 text-emerald-400"></i>
+                </div>
+                <div class="flex flex-col">
+                    <span id="toast-title"
+                        class="text-xs font-bold text-slate-400 uppercase tracking-wider">Success</span>
+                    <span id="toast-message" class="text-sm font-medium">Operation completed</span>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Initialize Icons
+        lucide.createIcons();
+
+        // --- Navigation Logic ---
+        function switchTab(tabId) {
+            // Update Navigation Styles
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                // Remove active classes
+                btn.classList.remove('text-blue-700', 'bg-blue-50/50');
+                btn.querySelector('.active-indicator').classList.add('scale-0');
+                btn.classList.add('text-slate-500');
+            });
+
+            const activeBtn = document.getElementById(`nav-${tabId}`);
+            activeBtn.classList.remove('text-slate-500');
+            activeBtn.classList.add('text-blue-700', 'bg-blue-50/50');
+            activeBtn.querySelector('.active-indicator').classList.remove('scale-0');
+
+            // Animation Handling
+            const newView = document.getElementById(`view-${tabId}`);
+
+            // Hide all views
+            document.querySelectorAll('.view-section').forEach(el => {
+                el.classList.add('hidden');
+                el.classList.remove('animate-enter'); // Reset animation
+            });
+
+            // Show new view and trigger animation
+            newView.classList.remove('hidden');
+            // Trigger reflow
+            void newView.offsetWidth;
+            newView.classList.add('animate-enter');
+        }
+
+        // Set initial active state
+        switchTab('grep');
+
+        // --- Shared Logic ---
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toast-message');
+            const toastTitle = document.getElementById('toast-title');
+            const icon = document.getElementById('toast-icon');
+            const iconBg = document.getElementById('toast-icon-bg');
+
+            toastMsg.innerText = message;
+
+            if (type === 'error') {
+                toastTitle.innerText = 'Error';
+                toastTitle.className = 'text-xs font-bold text-red-400 uppercase tracking-wider';
+                icon.innerHTML = '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>'; // X icon manually
+                icon.className = 'w-5 h-5 text-red-400';
+                iconBg.className = 'p-2 bg-red-500/20 rounded-full shrink-0';
+            } else {
+                toastTitle.innerText = 'Success';
+                toastTitle.className = 'text-xs font-bold text-emerald-400 uppercase tracking-wider';
+                icon.innerHTML = '<path d="M20 6 9 17l-5-5"/>'; // Check icon
+                icon.className = 'w-5 h-5 text-emerald-400';
+                iconBg.className = 'p-2 bg-emerald-500/20 rounded-full shrink-0';
+            }
+
+            // Show
+            toast.classList.remove('translate-y-24', 'opacity-0', 'pointer-events-none');
+
+            // Hide after delay
+            setTimeout(() => {
+                toast.classList.add('translate-y-24', 'opacity-0', 'pointer-events-none');
+            }, 3000);
+        }
+
+        function loadFile(input, targetId) {
+            const file = input.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const target = document.getElementById(targetId);
+                target.value = e.target.result;
+                target.dispatchEvent(new Event('input'));
+                showToast(`Loaded ${file.name}`);
+            };
+            reader.readAsText(file);
+            input.value = '';
+        }
+
+        function copyToClipboard(elementId) {
+            const el = document.getElementById(elementId);
+            if (!el || !el.value) return;
+            el.select();
+            el.setSelectionRange(0, 99999);
+            navigator.clipboard.writeText(el.value).then(() => {
+                showToast('Copied to clipboard');
+            });
+        }
+
+        // --- Tool 1: Grep ---
+        let grepResults = [];
+        function runGrep() {
+            const content = document.getElementById('grep-input').value;
+            const query = document.getElementById('grep-query').value;
+            const isRegex = document.getElementById('grep-regex').checked;
+            const caseSensitive = document.getElementById('grep-case').checked;
+            const outputDiv = document.getElementById('grep-output');
+            const countSpan = document.getElementById('grep-count');
+
+            grepResults = [];
+            outputDiv.innerHTML = '';
+
+            if (!content || !query) {
+                outputDiv.innerHTML = '<div class="h-full flex flex-col items-center justify-center text-slate-600 gap-2 opacity-50"><i data-lucide="search" class="w-8 h-8"></i><span class="italic text-xs">Start typing to search...</span></div>';
+                countSpan.innerText = '0 matches';
+                lucide.createIcons();
+                return;
+            }
+
+            const lines = content.split('\n');
+            let matchCount = 0;
+
+            try {
+                let regex;
+                if (isRegex) {
+                    regex = new RegExp(query, caseSensitive ? 'g' : 'gi');
+                } else {
+                    const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                    regex = new RegExp(escaped, caseSensitive ? 'g' : 'gi');
+                }
+
+                lines.forEach((line, index) => {
+                    regex.lastIndex = 0;
+                    if (regex.test(line)) {
+                        matchCount++;
+                        grepResults.push(`${index + 1}: ${line}`);
+                        let htmlLine = '';
+                        let lastIndex = 0;
+                        regex.lastIndex = 0;
+                        let match;
+                        while ((match = regex.exec(line)) !== null) {
+                            htmlLine += escapeHtml(line.slice(lastIndex, match.index));
+                            htmlLine += `<span class="highlight">${escapeHtml(match[0])}</span>`;
+                            lastIndex = regex.lastIndex;
+                        }
+                        htmlLine += escapeHtml(line.slice(lastIndex));
+                        const row = document.createElement('div');
+                        row.className = 'flex gap-3 mb-1.5 group hover:bg-white/5 rounded p-1 transition-colors';
+                        row.innerHTML = `<span class="text-slate-500 font-mono select-none w-8 text-right shrink-0 opacity-50">${index + 1}</span><span class="text-slate-300 break-all font-medium">${htmlLine}</span>`;
+                        outputDiv.appendChild(row);
+                    }
+                });
+                if (matchCount === 0) {
+                    outputDiv.innerHTML = '<div class="h-full flex flex-col items-center justify-center text-slate-500 gap-2"><i data-lucide="search-x" class="w-8 h-8 opacity-50"></i><span class="italic">No matches found.</span></div>';
+                    lucide.createIcons();
+                }
+            } catch (e) {
+                outputDiv.innerHTML = `<div class="text-red-400 p-4 border border-red-900/50 bg-red-900/20 rounded-lg">Error: ${e.message}</div>`;
+            }
+            countSpan.innerText = `${matchCount} matches`;
+        }
+        function copyGrepResults() {
+            if (grepResults.length === 0) return;
+            navigator.clipboard.writeText(grepResults.join('\n')).then(() => showToast('Copied all matches'));
+        }
+        function escapeHtml(text) {
+            if (!text) return '';
+            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+
+        // --- Tool 2: Extractor ---
+        function runExtractor() {
+            const input = document.getElementById('ext-input').value;
+            const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
+            const urlRegex = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/g;
+            const emails = [...new Set(input.match(emailRegex) || [])].sort();
+            const urls = [...new Set(input.match(urlRegex) || [])].sort();
+            document.getElementById('ext-emails').value = emails.join('\n');
+            document.getElementById('ext-urls').value = urls.join('\n');
+            document.getElementById('email-count').innerText = `(${emails.length})`;
+            document.getElementById('url-count').innerText = `(${urls.length})`;
+            if (emails.length === 0 && urls.length === 0) showToast('No data found', 'error');
+            else showToast(`Found ${emails.length} emails, ${urls.length} URLs`);
+        }
+
+        // --- Tool 3: Validator ---
+        function loadSampleJson() {
+            document.getElementById('val-input').value = JSON.stringify({ "server": "dev", "port": 8080, "debug": true }, null, 2);
+            showToast('Sample Loaded');
+        }
+        function runValidator() {
+            const input = document.getElementById('val-input').value;
+            const requiredKeysStr = document.getElementById('val-rules').value;
+            const container = document.getElementById('val-output-container');
+            const copyBtn = document.getElementById('val-copy-btn');
+            const hiddenText = document.getElementById('val-output-text');
+
+            if (!input.trim()) {
+                container.innerHTML = '<div class="text-center"><i data-lucide="activity" class="w-8 h-8 mx-auto mb-2 opacity-20"></i><span>Waiting...</span></div>';
+                container.className = 'mobile-text-tiny flex-1 rounded-2xl border-2 border-dashed border-slate-300 p-4 font-mono text-xs md:text-sm overflow-auto bg-slate-50/50 text-slate-400 flex items-center justify-center';
+                copyBtn.classList.add('hidden');
+                lucide.createIcons();
+                return;
+            }
+            try {
+                const parsed = JSON.parse(input);
+                const errors = [];
+                if (requiredKeysStr.trim()) {
+                    const keysToCheck = requiredKeysStr.split(',').map(k => k.trim()).filter(k => k);
+                    const missing = [];
+                    if (!Array.isArray(parsed)) {
+                        keysToCheck.forEach(key => { if (!(key in parsed)) missing.push(key); });
+                    }
+                    if (missing.length > 0) errors.push(`Missing keys: ${missing.join(', ')}`);
+                }
+                if (errors.length > 0) throw new Error(errors.join('. '));
+
+                const formatted = JSON.stringify(parsed, null, 2);
+                container.innerHTML = `<pre class="whitespace-pre-wrap text-emerald-800 font-medium">${escapeHtml(formatted)}</pre>`;
+                container.className = 'mobile-text-tiny flex-1 rounded-2xl border border-emerald-200 p-4 font-mono text-xs md:text-sm overflow-auto bg-emerald-50/50 shadow-inner';
+                hiddenText.value = formatted;
+                copyBtn.classList.remove('hidden');
+                showToast('Valid JSON');
+            } catch (e) {
+                container.innerHTML = `<div class="flex items-start gap-3 text-red-800"><div class="bg-red-100 p-1.5 rounded-full"><i data-lucide="alert-circle" class="shrink-0 w-5 h-5 text-red-600"></i></div><div class="break-all font-medium mt-0.5">${e.message}</div></div>`;
+                container.className = 'mobile-text-tiny flex-1 rounded-2xl border border-red-200 p-4 font-mono text-xs md:text-sm overflow-auto bg-red-50/50 shadow-inner';
+                copyBtn.classList.add('hidden');
+                lucide.createIcons();
+                showToast('Validation Failed', 'error');
+            }
+        }
+
+        // --- Tool 4: Syncer ---
+        function adjustSyncOffset(amount) {
+            const input = document.getElementById('sync-offset');
+            input.value = Number(input.value) + amount;
+        }
+        function runSyncer() {
+            const input = document.getElementById('sync-input').value;
+            const offsetMs = document.getElementById('sync-offset').value;
+            if (!input) {
+                showToast('Please enter subtitles first', 'error');
+                return;
+            }
+
+            const timeToMs = (timeStr) => {
+                const [h, m, s, ms] = timeStr.split(/[:,]/).map(Number);
+                return (h * 3600000) + (m * 60000) + (s * 1000) + ms;
+            };
+            const msToTime = (totalMs) => {
+                if (totalMs < 0) totalMs = 0;
+                const h = Math.floor(totalMs / 3600000);
+                const m = Math.floor((totalMs % 3600000) / 60000);
+                const s = Math.floor((totalMs % 60000) / 1000);
+                const ms = totalMs % 1000;
+                const pad = (num, size = 2) => num.toString().padStart(size, '0');
+                return `${pad(h)}:${pad(m)}:${pad(s)},${pad(ms, 3)}`;
+            };
+            const lines = input.split('\n');
+            const shiftedLines = lines.map(line => {
+                const regex = /(\d{2}:\d{2}:\d{2},\d{3}) -->(\d{ 2}: \d{ 2}: \d{ 2}, \d{ 3}) /;
+                const match = line.match(regex);
+                if (match) {
+                    const startMs = timeToMs(match[1]);
+                    const endMs = timeToMs(match[2]);
+                    const newStart = msToTime(startMs + Number(offsetMs));
+                    const newEnd = msToTime(endMs + Number(offsetMs));
+                    return `${newStart} --> ${newEnd}`;
+                }
+                return line;
+            });
+            document.getElementById('sync-output').value = shiftedLines.join('\n');
+            showToast('Timestamps Shifted');
+        }
+    </script>
+</body>
+
+</html>

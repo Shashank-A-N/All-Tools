@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SonicMind | AI Audio Tools Suite</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
+
+    <style>
+        :root {
+            --neon-blue: #00f3ff;
+            --neon-purple: #bc13fe;
+            --dark-bg: #0f172a;
+            --card-bg: #1e293b;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--dark-bg);
+            color: white;
+            overflow: hidden;
+            font-size: clamp(14px, 2vw, 16px);
+        }
+
+        .mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 2px;
+        }
+
+        /* Animations */
+        @keyframes pulse-glow {
+
+            0%,
+            100% {
+                box-shadow: 0 0 10px rgba(0, 243, 255, 0.2);
+            }
+
+            50% {
+                box-shadow: 0 0 25px rgba(0, 243, 255, 0.5);
+            }
+        }
+
+        @keyframes recording-pulse {
+            0% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+            }
+
+            70% {
+                transform: scale(1.05);
+                box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+            }
+
+            100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+            }
+        }
+
+        .visualizer-canvas {
+            width: 100%;
+            height: 100%;
+            will-change: transform;
+        }
+
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Responsive Navigation Handling */
+        .nav-item.active {
+            color: var(--neon-blue);
+        }
+
+        @media (min-width: 768px) {
+            .nav-item.active {
+                background: linear-gradient(90deg, rgba(0, 243, 255, 0.1) 0%, transparent 100%);
+                border-left: 3px solid var(--neon-blue);
+            }
+        }
+
+        @media (max-width: 767px) {
+            .nav-item.active {
+                border-top: 3px solid var(--neon-blue);
+                background: linear-gradient(180deg, rgba(0, 243, 255, 0.1) 0%, transparent 100%);
+            }
+        }
+
+        /* Landing Page Transitions */
+        #landing-page {
+            transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.5s;
+        }
+
+        #main-app {
+            transition: opacity 0.5s ease-in;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        body.app-active #landing-page {
+            transform: translateY(-100%);
+            opacity: 0;
+            pointer-events: none;
+            position: absolute;
+        }
+
+        body.app-active #main-app {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* Advanced Waveform specific styling */
+        #emotion-canvas {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            background: radial-gradient(circle at center, rgba(30, 41, 59, 0.5) 0%, rgba(15, 23, 42, 0.8) 100%);
+        }
+    </style>
+</head>
+
+<body class="h-[100dvh] w-full relative">
+
+    <!-- ================= LANDING / UPLOAD PAGE ================= -->
+    <div id="landing-page"
+        class="absolute inset-0 z-50 flex flex-col items-center justify-center bg-slate-950 p-6 text-center">
+        <div class="max-w-md w-full animate-[fade-in-up_0.6s]">
+            <div class="mb-8 flex justify-center">
+                <div
+                    class="w-20 h-20 rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center shadow-[0_0_30px_rgba(34,211,238,0.3)]">
+                    <i class="fa-solid fa-wave-square text-white text-4xl"></i>
+                </div>
+            </div>
+
+            <h1 class="text-3xl md:text-4xl font-bold mb-2 tracking-tight">SonicMind<span
+                    class="text-cyan-400">.ai</span></h1>
+            <p class="text-slate-400 mb-10 text-sm md:text-base">Next-Gen Audio Intelligence Suite</p>
+
+            <!-- Drop Zone -->
+            <div id="drop-zone"
+                class="group relative overflow-hidden rounded-2xl border-2 border-dashed border-slate-700 hover:border-cyan-400 hover:bg-slate-900/50 transition-all p-8 cursor-pointer mb-6">
+                <input type="file" id="start-file-input" class="absolute inset-0 opacity-0 cursor-pointer z-10"
+                    accept="audio/*">
+                <div class="flex flex-col items-center group-hover:scale-105 transition-transform">
+                    <i
+                        class="fa-solid fa-cloud-arrow-up text-3xl text-slate-500 group-hover:text-cyan-400 mb-3 transition-colors"></i>
+                    <h3 class="font-semibold text-white">Import Audio File</h3>
+                    <p class="text-xs text-slate-500 mt-1">MP3, WAV, FLAC (Max 50MB)</p>
+                </div>
+            </div>
+
+            <div
+                class="relative flex items-center gap-4 py-4 text-xs text-slate-600 uppercase font-mono tracking-widest">
+                <div class="h-px bg-slate-800 flex-1"></div>
+                OR
+                <div class="h-px bg-slate-800 flex-1"></div>
+            </div>
+
+            <button onclick="enterApp()"
+                class="w-full bg-slate-800 hover:bg-slate-700 text-white font-semibold py-4 rounded-xl border border-slate-700 transition-all flex items-center justify-center gap-2 group">
+                <span>Launch Empty Studio</span>
+                <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+            </button>
+        </div>
+
+        <div class="absolute bottom-6 text-xs text-slate-600">
+            &copy; 2024 SonicMind Intelligence Systems
+        </div>
+    </div>
+
+    <!-- ================= MAIN APP SUITE ================= -->
+    <div id="main-app" class="flex flex-col md:flex-row h-full w-full">
+
+        <!-- Sidebar (Desktop) -->
+        <aside class="hidden md:flex w-64 bg-slate-900 border-r border-slate-800 flex-col z-20 shadow-xl">
+            <div class="p-6 flex items-center gap-3">
+                <div
+                    class="w-8 h-8 rounded bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center">
+                    <i class="fa-solid fa-wave-square text-white text-xs"></i>
+                </div>
+                <h1 class="font-bold text-lg tracking-tight">SonicMind</h1>
+            </div>
+
+            <nav class="flex-1 px-4 py-4 space-y-2">
+                <button onclick="switchTab('transcriber')" id="nav-d-transcriber"
+                    class="nav-item active w-full text-left px-4 py-3 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-all flex items-center gap-3">
+                    <i class="fa-solid fa-microphone-lines w-5 text-center"></i>
+                    <div>
+                        <div class="font-medium text-sm">Transcriber</div>
+                        <div class="text-[10px] opacity-60">Speech-to-Text</div>
+                    </div>
+                </button>
+                <button onclick="switchTab('separator')" id="nav-d-separator"
+                    class="nav-item w-full text-left px-4 py-3 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-all flex items-center gap-3">
+                    <i class="fa-solid fa-sliders w-5 text-center"></i>
+                    <div>
+                        <div class="font-medium text-sm">Vocal Remover</div>
+                        <div class="text-[10px] opacity-60">Stem Isolation</div>
+                    </div>
+                </button>
+                <button onclick="switchTab('classifier')" id="nav-d-classifier"
+                    class="nav-item w-full text-left px-4 py-3 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-all flex items-center gap-3">
+                    <i class="fa-solid fa-tags w-5 text-center"></i>
+                    <div>
+                        <div class="font-medium text-sm">Sound ID</div>
+                        <div class="text-[10px] opacity-60">Environment</div>
+                    </div>
+                </button>
+                <button onclick="switchTab('emotion')" id="nav-d-emotion"
+                    class="nav-item w-full text-left px-4 py-3 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-all flex items-center gap-3">
+                    <i class="fa-solid fa-heart-pulse w-5 text-center"></i>
+                    <div>
+                        <div class="font-medium text-sm">Empathic AI</div>
+                        <div class="text-[10px] opacity-60">Sentiment</div>
+                    </div>
+                </button>
+            </nav>
+
+            <div class="p-4 border-t border-slate-800">
+                <button onclick="requestNewFile()"
+                    class="w-full py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-power-off"></i> NEW SESSION
+                </button>
+            </div>
+        </aside>
+
+        <!-- Mobile Header -->
+        <header
+            class="md:hidden h-14 bg-slate-900 border-b border-slate-800 flex items-center justify-between px-4 z-20 shrink-0">
+            <div class="flex items-center gap-2">
+                <div
+                    class="w-6 h-6 rounded bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center">
+                    <i class="fa-solid fa-wave-square text-white text-[10px]"></i>
+                </div>
+                <span class="font-bold text-white text-sm">SonicMind</span>
+            </div>
+            <button onclick="requestNewFile()" class="text-slate-400 hover:text-white p-2">
+                <i class="fa-solid fa-folder-plus"></i>
+            </button>
+        </header>
+
+        <!-- Main Workspace -->
+        <main class="flex-1 relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-900 to-slate-800">
+            <!-- Background Texture -->
+            <div class="absolute inset-0 opacity-10 pointer-events-none"
+                style="background-image: radial-gradient(#334155 1px, transparent 1px); background-size: 20px 20px;">
+            </div>
+
+            <!-- 1. Transcriber View -->
+            <section id="transcriber" class="tab-content absolute inset-0 flex flex-col p-4 md:p-8 overflow-y-auto">
+                <div class="flex-1 flex flex-col max-w-5xl mx-auto w-full gap-4">
+                    <div
+                        class="glass-panel rounded-2xl p-4 md:p-6 shrink-0 flex flex-col items-center justify-center relative overflow-hidden min-h-[200px]">
+                        <canvas id="transcriber-canvas" class="visualizer-canvas absolute inset-0 opacity-40"></canvas>
+                        <div class="z-10 text-center relative">
+                            <div id="mic-status" class="text-xs font-mono text-cyan-400 mb-4 tracking-widest">SYSTEM
+                                READY</div>
+                            <button id="record-btn"
+                                class="w-16 h-16 md:w-20 md:h-20 rounded-full bg-red-500 hover:bg-red-600 text-white text-xl md:text-2xl shadow-lg transition-all flex items-center justify-center mb-2 touch-manipulation">
+                                <i class="fa-solid fa-microphone"></i>
+                            </button>
+                            <p class="text-[10px] text-slate-400">Tap to Listen</p>
+                        </div>
+                    </div>
+
+                    <div class="glass-panel rounded-2xl flex-1 flex flex-col overflow-hidden min-h-[300px]">
+                        <div
+                            class="bg-slate-800/50 p-2 md:p-3 border-b border-slate-700 flex justify-between items-center">
+                            <span class="text-[10px] md:text-xs font-mono text-slate-400">LIVE_TRANSCRIPT.LOG</span>
+                            <div class="flex gap-2">
+                                <button onclick="copyTranscript()"
+                                    class="text-[10px] md:text-xs bg-slate-700 hover:bg-slate-600 px-3 py-1.5 rounded text-white transition">
+                                    <i class="fa-regular fa-copy"></i>
+                                </button>
+                                <button onclick="clearTranscript()"
+                                    class="text-[10px] md:text-xs bg-slate-700 hover:bg-slate-600 px-3 py-1.5 rounded text-white transition">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div id="transcript-box"
+                            class="flex-1 p-4 font-mono text-xs md:text-sm leading-relaxed overflow-y-auto text-slate-300">
+                            <span class="opacity-30">Audio input waiting...</span>
+                        </div>
+                        <div id="interim-result"
+                            class="p-3 bg-slate-800/30 text-cyan-400 text-xs md:text-sm font-mono italic min-h-[3rem] border-t border-slate-700/50">
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 2. Vocal Remover (Improved Control Layout) -->
+            <section id="separator"
+                class="tab-content hidden absolute inset-0 flex flex-col p-4 md:p-8 overflow-y-auto">
+                <div class="max-w-3xl mx-auto w-full h-full flex flex-col justify-center">
+
+                    <!-- File Selector (If no file) -->
+                    <div id="separator-upload"
+                        class="glass-panel rounded-2xl p-8 flex flex-col items-center justify-center text-center">
+                        <div class="w-16 h-16 rounded-full bg-slate-800 flex items-center justify-center mb-4">
+                            <i class="fa-solid fa-music text-cyan-400 text-2xl"></i>
+                        </div>
+                        <h3 class="text-lg font-bold mb-2">Stem Separation</h3>
+                        <p class="text-sm text-slate-400 mb-6">Load an audio file to split vocals and instruments.</p>
+                        <button onclick="document.getElementById('separator-file-input').click()"
+                            class="bg-cyan-500 hover:bg-cyan-600 text-slate-900 font-bold py-2 px-6 rounded-full transition-all text-sm">
+                            Select Audio File
+                        </button>
+                        <input type="file" id="separator-file-input" class="hidden" accept="audio/*">
+                    </div>
+
+                    <!-- Player Interface (Optimized Controls) -->
+                    <div id="separator-player" class="hidden glass-panel rounded-2xl p-4 md:p-6 flex flex-col gap-6">
+                        <div class="flex items-center justify-between border-b border-slate-700 pb-4">
+                            <div>
+                                <h3 class="font-bold text-white text-sm md:text-base">Advanced Isolation Engine</h3>
+                                <p class="text-[10px] md:text-xs text-slate-400" id="file-name-display">filename.mp3</p>
+                            </div>
+                            <span
+                                class="text-[10px] bg-green-500/20 text-green-400 px-2 py-1 rounded font-mono">ACTIVE</span>
+                        </div>
+
+                        <!-- Visualization -->
+                        <div
+                            class="h-24 md:h-32 bg-slate-900 rounded-lg relative overflow-hidden border border-slate-700">
+                            <canvas id="separator-canvas" class="w-full h-full opacity-60"></canvas>
+                        </div>
+
+                        <!-- Mixer Controls - Grid Layout for Mobile Perfection -->
+                        <div class="grid grid-cols-1 gap-4">
+                            <div
+                                class="bg-slate-800/50 p-4 rounded-xl border border-slate-700 flex flex-col md:flex-row items-center gap-4">
+                                <button id="play-pause-btn"
+                                    class="w-12 h-12 rounded-full bg-cyan-500 hover:bg-cyan-400 text-slate-900 flex items-center justify-center transition-all shrink-0 shadow-[0_0_15px_rgba(34,211,238,0.3)]">
+                                    <i class="fa-solid fa-play"></i>
+                                </button>
+
+                                <div class="flex-1 w-full">
+                                    <label
+                                        class="text-[10px] uppercase text-slate-400 font-mono mb-2 block text-center md:text-left tracking-wider">Stem
+                                        Mixer Control</label>
+
+                                    <!-- Responsive Grid for Mixer Buttons -->
+                                    <div class="grid grid-cols-3 gap-2">
+                                        <button onclick="setFilter('all')"
+                                            class="filter-btn active group flex flex-col items-center justify-center py-2 px-1 bg-cyan-500 rounded-lg transition-all border border-slate-600/50 text-slate-900">
+                                            <i class="fa-solid fa-layer-group mb-1 text-sm md:text-base"></i>
+                                            <span class="text-[9px] md:text-xs font-semibold">Original</span>
+                                        </button>
+
+                                        <button onclick="setFilter('vocals')"
+                                            class="filter-btn group flex flex-col items-center justify-center py-2 px-1 bg-slate-700 rounded-lg hover:bg-slate-600 transition-all border border-slate-600/50 text-slate-300">
+                                            <i
+                                                class="fa-solid fa-microphone mb-1 text-sm md:text-base group-hover:text-purple-400 transition-colors"></i>
+                                            <span class="text-[9px] md:text-xs font-semibold">Vocals</span>
+                                        </button>
+
+                                        <button onclick="setFilter('music')"
+                                            class="filter-btn group flex flex-col items-center justify-center py-2 px-1 bg-slate-700 rounded-lg hover:bg-slate-600 transition-all border border-slate-600/50 text-slate-300">
+                                            <i
+                                                class="fa-solid fa-drum mb-1 text-sm md:text-base group-hover:text-green-400 transition-colors"></i>
+                                            <span class="text-[9px] md:text-xs font-semibold">Music</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 3. Classifier -->
+            <section id="classifier" class="tab-content hidden absolute inset-0 flex flex-col p-4 overflow-hidden">
+                <div class="flex-1 flex flex-col items-center justify-center relative">
+                    <div class="relative w-48 h-48 md:w-64 md:h-64 mb-8 shrink-0">
+                        <canvas id="classifier-canvas" class="absolute inset-0 w-full h-full"></canvas>
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <button id="classify-btn"
+                                class="w-20 h-20 rounded-full bg-slate-800 border-2 border-slate-600 hover:border-cyan-400 hover:shadow-[0_0_20px_rgba(34,211,238,0.4)] transition-all flex items-center justify-center text-2xl z-20 touch-manipulation">
+                                <i class="fa-solid fa-ear-listen text-white"></i>
+                            </button>
+                        </div>
+                        <div class="absolute inset-0 animate-spin-slow pointer-events-none opacity-0 transition-opacity duration-500"
+                            id="scan-ring">
+                            <div
+                                class="absolute top-0 left-1/2 w-2 h-2 bg-cyan-400 rounded-full shadow-[0_0_10px_#22d3ee]">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="w-full max-w-md space-y-2 overflow-y-auto h-[40vh] px-2" id="detection-feed">
+                        <div class="text-center text-slate-500 text-xs font-mono mb-4">Tap icon to initialize Neural
+                            Network...</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 4. Emotion (Enhanced Waveform) -->
+            <section id="emotion" class="tab-content hidden absolute inset-0 flex flex-col p-4 md:p-8 overflow-y-auto">
+                <div
+                    class="max-w-4xl mx-auto w-full grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 h-full items-center">
+
+                    <!-- Waveform Panel -->
+                    <div
+                        class="glass-panel p-4 md:p-6 rounded-2xl h-[300px] relative flex flex-col order-2 md:order-1 overflow-hidden">
+                        <div class="flex justify-between items-center mb-4 shrink-0">
+                            <h3 class="font-bold text-xs text-slate-300">OSCILLOSCOPE VIEW</h3>
+                            <div class="flex gap-2 items-center">
+                                <div id="emotion-dot" class="w-1.5 h-1.5 rounded-full bg-slate-500 transition-colors">
+                                </div>
+                                <span class="text-[10px] text-slate-400 tracking-wider">LIVE INPUT</span>
+                            </div>
+                        </div>
+                        <!-- Canvas Container -->
+                        <div
+                            class="flex-1 w-full relative bg-slate-900/50 rounded overflow-hidden border border-slate-700/50">
+                            <canvas id="emotion-canvas" class="absolute inset-0 w-full h-full"></canvas>
+                        </div>
+                        <button id="emotion-btn"
+                            class="mt-4 w-full bg-slate-700 hover:bg-slate-600 text-white py-3 rounded-lg transition-all font-mono text-xs font-bold shrink-0">
+                            ACTIVATE SENSOR
+                        </button>
+                    </div>
+
+                    <!-- Analysis Result Panel -->
+                    <div
+                        class="glass-panel p-6 rounded-2xl h-[300px] flex flex-col items-center justify-center text-center order-1 md:order-2">
+                        <div class="relative w-24 h-24 mb-4">
+                            <div class="absolute inset-0 bg-slate-800 rounded-full shadow-inner flex items-center justify-center text-4xl transition-transform duration-300 z-10"
+                                id="emotion-icon">
+                                😶
+                            </div>
+                            <div class="absolute inset-[-4px] rounded-full border border-slate-600/30 animate-ping opacity-0"
+                                id="emotion-ping"></div>
+                        </div>
+
+                        <h2 class="text-xl md:text-2xl font-bold text-white mb-1" id="emotion-label">Neutral</h2>
+                        <div class="text-xs text-slate-400 font-mono mb-6" id="emotion-confidence">Awaiting Input...
+                        </div>
+
+                        <div class="w-full space-y-3 px-4">
+                            <!-- Bars -->
+                            <div class="flex items-center gap-3 text-[10px] uppercase tracking-wider font-semibold">
+                                <span class="w-10 text-right text-slate-400">Pos</span>
+                                <div class="flex-1 h-1 bg-slate-800 rounded-full overflow-hidden">
+                                    <div class="h-full bg-green-400 w-0 transition-all duration-500 ease-out"
+                                        id="bar-happy"></div>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-3 text-[10px] uppercase tracking-wider font-semibold">
+                                <span class="w-10 text-right text-slate-400">Neg</span>
+                                <div class="flex-1 h-1 bg-slate-800 rounded-full overflow-hidden">
+                                    <div class="h-full bg-blue-400 w-0 transition-all duration-500 ease-out"
+                                        id="bar-sad"></div>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-3 text-[10px] uppercase tracking-wider font-semibold">
+                                <span class="w-10 text-right text-slate-400">Int</span>
+                                <div class="flex-1 h-1 bg-slate-800 rounded-full overflow-hidden">
+                                    <div class="h-full bg-red-400 w-0 transition-all duration-500 ease-out"
+                                        id="bar-angry"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Bottom Navigation (Mobile) -->
+        <nav
+            class="md:hidden h-16 bg-slate-900 border-t border-slate-800 flex justify-around items-center shrink-0 z-20 pb-safe">
+            <button onclick="switchTab('transcriber')" id="nav-m-transcriber"
+                class="nav-item active flex flex-col items-center justify-center w-full h-full text-slate-400 transition-colors">
+                <i class="fa-solid fa-microphone-lines text-lg mb-1"></i>
+                <span class="text-[9px]">Text</span>
+            </button>
+            <button onclick="switchTab('separator')" id="nav-m-separator"
+                class="nav-item flex flex-col items-center justify-center w-full h-full text-slate-400 transition-colors">
+                <i class="fa-solid fa-sliders text-lg mb-1"></i>
+                <span class="text-[9px]">Stem</span>
+            </button>
+            <button onclick="switchTab('classifier')" id="nav-m-classifier"
+                class="nav-item flex flex-col items-center justify-center w-full h-full text-slate-400 transition-colors">
+                <i class="fa-solid fa-tags text-lg mb-1"></i>
+                <span class="text-[9px]">ID</span>
+            </button>
+            <button onclick="switchTab('emotion')" id="nav-m-emotion"
+                class="nav-item flex flex-col items-center justify-center w-full h-full text-slate-400 transition-colors">
+                <i class="fa-solid fa-heart-pulse text-lg mb-1"></i>
+                <span class="text-[9px]">Mood</span>
+            </button>
+        </nav>
+    </div>
+
+    <!-- Double Confirmation Modal -->
+    <div id="confirm-modal"
+        class="hidden fixed inset-0 z-[60] bg-slate-950/90 backdrop-blur-sm flex items-center justify-center p-4">
+        <div
+            class="bg-slate-900 border border-slate-700 rounded-2xl p-6 max-w-xs w-full text-center shadow-2xl transform scale-100 animate-[pulse-glow_2s_infinite]">
+            <div
+                class="w-12 h-12 rounded-full bg-red-500/20 text-red-400 flex items-center justify-center mx-auto mb-4">
+                <i class="fa-solid fa-triangle-exclamation text-xl"></i>
+            </div>
+            <h3 class="text-lg font-bold text-white mb-2">Start New Session?</h3>
+            <p class="text-xs text-slate-400 mb-6">Current progress will be lost. This action cannot be undone.</p>
+            <div class="grid grid-cols-2 gap-3">
+                <button onclick="closeModal()"
+                    class="py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition">Cancel</button>
+                <button onclick="confirmReset()"
+                    class="py-3 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold transition">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* --- APP STATE & NAVIGATION --- */
+        let currentTab = 'transcriber';
+
+        function enterApp() {
+            document.body.classList.add('app-active');
+            const fileInput = document.getElementById('start-file-input');
+            if (fileInput.files.length > 0) {
+                handleUploadedFile(fileInput.files[0]);
+                switchTab('separator');
+            }
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(tabId).classList.remove('hidden');
+
+            document.querySelectorAll('.nav-item').forEach(el => {
+                el.classList.remove('active');
+                el.classList.remove('text-cyan-400');
+                el.classList.add('text-slate-400');
+            });
+
+            ['nav-d-', 'nav-m-'].forEach(prefix => {
+                const btn = document.getElementById(prefix + tabId);
+                if (btn) {
+                    btn.classList.add('active');
+                    btn.classList.remove('text-slate-400');
+                    btn.classList.add('text-cyan-400');
+                }
+            });
+
+            currentTab = tabId;
+            stopAllActiveProcesses(tabId);
+        }
+
+        // --- NEW FILE WORKFLOW ---
+        function requestNewFile() { document.getElementById('confirm-modal').classList.remove('hidden'); }
+        function closeModal() { document.getElementById('confirm-modal').classList.add('hidden'); }
+        function confirmReset() {
+            closeModal();
+            stopAllActiveProcesses('ALL');
+            document.body.classList.remove('app-active');
+            document.getElementById('start-file-input').value = '';
+            document.getElementById('separator-file-input').value = '';
+            resetTranscriber(); resetSeparatorUI(); resetEmotionUI();
+            setTimeout(() => switchTab('transcriber'), 300);
+        }
+
+        /* --- GLOBAL AUDIO --- */
+        let audioCtx;
+        function getAudioCtx() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            return audioCtx;
+        }
+
+        let globalStream = null;
+        let animationId = null;
+
+        function stopAllActiveProcesses(excludeTab) {
+            if (globalStream && (excludeTab !== 'transcriber' && excludeTab !== 'classifier' && excludeTab !== 'emotion')) {
+                globalStream.getTracks().forEach(t => t.stop());
+                globalStream = null;
+            }
+            if (recognition && isTranscribing && excludeTab !== 'transcriber') toggleTranscriber(false);
+            if (isPlaying && excludeTab !== 'separator') togglePlayback();
+            if (isEmoting && excludeTab !== 'emotion') toggleEmotion(false);
+            if (isClassifying && excludeTab !== 'classifier') toggleClassifier(false);
+        }
+
+        /* --- VISUALIZER HELPERS --- */
+        function runVisualizer(canvasId, stream, color) {
+            const ctx = getAudioCtx();
+            const source = ctx.createMediaStreamSource(stream);
+            const analyzer = ctx.createAnalyser();
+            analyzer.fftSize = 256;
+            source.connect(analyzer);
+            drawBars(canvasId, analyzer, color);
+            return { analyzer };
+        }
+
+        function drawBars(canvasId, analyzer, color) {
+            const canvas = document.getElementById(canvasId);
+            const ctx = canvas.getContext('2d');
+            const data = new Uint8Array(analyzer.frequencyBinCount);
+
+            const render = () => {
+                if (!document.getElementById(canvasId).offsetParent) return;
+                animationId = requestAnimationFrame(render);
+                analyzer.getByteFrequencyData(data);
+
+                canvas.width = canvas.parentElement.clientWidth;
+                canvas.height = canvas.parentElement.clientHeight;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                const barW = (canvas.width / data.length) * 2.5;
+                let x = 0;
+                for (let i = 0; i < data.length; i++) {
+                    const h = (data[i] / 255) * canvas.height;
+                    ctx.fillStyle = color;
+                    ctx.fillRect(x, canvas.height - h, barW, h);
+                    x += barW + 1;
+                }
+            };
+            render();
+        }
+
+        /* --- NEW WAVEFORM VISUALIZER (OSCILLOSCOPE) --- */
+        function runWaveform(canvasId, analyzer) {
+            const canvas = document.getElementById(canvasId);
+            const ctx = canvas.getContext('2d');
+            analyzer.fftSize = 2048;
+            const bufferLength = analyzer.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+
+            const draw = () => {
+                if (!document.getElementById(canvasId).offsetParent) return;
+                animationId = requestAnimationFrame(draw);
+
+                analyzer.getByteTimeDomainData(dataArray);
+
+                canvas.width = canvas.parentElement.clientWidth;
+                canvas.height = canvas.parentElement.clientHeight;
+
+                // Styling
+                ctx.fillStyle = 'rgba(15, 23, 42, 0.2)'; // Trail effect
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = '#00f3ff';
+                ctx.beginPath();
+
+                const sliceWidth = canvas.width * 1.0 / bufferLength;
+                let x = 0;
+
+                for (let i = 0; i < bufferLength; i++) {
+                    const v = dataArray[i] / 128.0;
+                    const y = v * canvas.height / 2;
+
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+
+                    x += sliceWidth;
+                }
+
+                ctx.lineTo(canvas.width, canvas.height / 2);
+                ctx.stroke();
+            };
+            draw();
+        }
+
+
+        /* --- 1. TRANSCRIBER --- */
+        let recognition;
+        let isTranscribing = false;
+
+        if ('webkitSpeechRecognition' in window) {
+            recognition = new webkitSpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.onresult = (e) => {
+                let final = '', interim = '';
+                for (let i = e.resultIndex; i < e.results.length; ++i) {
+                    if (e.results[i].isFinal) final += e.results[i][0].transcript;
+                    else interim += e.results[i][0].transcript;
+                }
+                if (final) {
+                    const el = document.createElement('div');
+                    el.className = "mb-3 text-white border-l-2 border-cyan-400 pl-3 animate-[fade-in_0.3s]";
+                    el.innerText = final;
+                    document.getElementById('transcript-box').appendChild(el);
+                    document.getElementById('transcript-box').scrollTop = document.getElementById('transcript-box').scrollHeight;
+                }
+                document.getElementById('interim-result').innerText = interim;
+            };
+        }
+
+        document.getElementById('record-btn').addEventListener('click', () => toggleTranscriber(!isTranscribing));
+
+        async function toggleTranscriber(start) {
+            const btn = document.getElementById('record-btn');
+            const status = document.getElementById('mic-status');
+
+            if (start) {
+                try {
+                    globalStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    runVisualizer('transcriber-canvas', globalStream, '#00f3ff');
+                    recognition.start();
+                    isTranscribing = true;
+                    btn.classList.add('recording-btn');
+                    btn.innerHTML = '<i class="fa-solid fa-stop"></i>';
+                    status.innerText = "LISTENING...";
+                    status.classList.add('text-red-400');
+                    if (document.getElementById('transcript-box').querySelector('span')) document.getElementById('transcript-box').innerHTML = '';
+                } catch (e) { alert("Mic Access Denied"); }
+            } else {
+                recognition.stop();
+                isTranscribing = false;
+                btn.classList.remove('recording-btn');
+                btn.innerHTML = '<i class="fa-solid fa-microphone"></i>';
+                status.innerText = "SYSTEM READY";
+                status.classList.remove('text-red-400');
+                cancelAnimationFrame(animationId);
+            }
+        }
+        function resetTranscriber() {
+            document.getElementById('transcript-box').innerHTML = '<span class="opacity-30">Audio input waiting...</span>';
+            document.getElementById('interim-result').innerText = '';
+        }
+        function copyTranscript() { navigator.clipboard.writeText(document.getElementById('transcript-box').innerText); }
+        function clearTranscript() { resetTranscriber(); }
+
+
+        /* --- 2. VOCAL REMOVER (Grid Layout) --- */
+        let sourceNode = null, filterNode = null, isPlaying = false, fileBuffer = null;
+
+        document.getElementById('separator-file-input').addEventListener('change', (e) => {
+            if (e.target.files[0]) handleUploadedFile(e.target.files[0]);
+        });
+
+        function handleUploadedFile(file) {
+            document.getElementById('separator-upload').classList.add('hidden');
+            document.getElementById('separator-player').classList.remove('hidden');
+            document.getElementById('file-name-display').innerText = file.name;
+            const reader = new FileReader();
+            reader.onload = async (ev) => {
+                const ctx = getAudioCtx();
+                try { fileBuffer = await ctx.decodeAudioData(ev.target.result); } catch (e) { alert("Error decoding"); }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        document.getElementById('play-pause-btn').addEventListener('click', togglePlayback);
+
+        function togglePlayback() {
+            const ctx = getAudioCtx();
+            const btn = document.getElementById('play-pause-btn');
+
+            if (isPlaying) {
+                if (sourceNode) sourceNode.stop();
+                isPlaying = false;
+                btn.innerHTML = '<i class="fa-solid fa-play"></i>';
+                cancelAnimationFrame(animationId);
+            } else {
+                if (!fileBuffer) return;
+                sourceNode = ctx.createBufferSource();
+                sourceNode.buffer = fileBuffer;
+                sourceNode.loop = true;
+                filterNode = ctx.createBiquadFilter();
+                filterNode.type = 'allpass';
+                const analyser = ctx.createAnalyser();
+                analyser.fftSize = 256;
+                sourceNode.connect(filterNode);
+                filterNode.connect(analyser);
+                analyser.connect(ctx.destination);
+                sourceNode.start(0);
+                isPlaying = true;
+                btn.innerHTML = '<i class="fa-solid fa-pause"></i>';
+                drawBars('separator-canvas', analyser, '#bc13fe');
+            }
+        }
+
+        function setFilter(type) {
+            document.querySelectorAll('.filter-btn').forEach(b => {
+                b.classList.remove('active', 'bg-cyan-500', 'text-slate-900');
+                b.classList.add('bg-slate-700', 'text-slate-300');
+                b.querySelector('i').classList.remove('text-slate-900');
+            });
+            const clicked = event.currentTarget;
+            clicked.classList.remove('bg-slate-700', 'text-slate-300');
+            clicked.classList.add('active', 'bg-cyan-500', 'text-slate-900');
+            clicked.querySelector('i').classList.add('text-slate-900');
+
+            if (!filterNode) return;
+            const ctx = getAudioCtx();
+            if (type === 'vocals') {
+                filterNode.type = 'highpass';
+                filterNode.frequency.setValueAtTime(300, ctx.currentTime);
+            } else if (type === 'music') {
+                filterNode.type = 'lowpass';
+                filterNode.frequency.setValueAtTime(1000, ctx.currentTime);
+            } else {
+                filterNode.type = 'allpass';
+            }
+        }
+        function resetSeparatorUI() {
+            if (isPlaying) togglePlayback();
+            document.getElementById('separator-player').classList.add('hidden');
+            document.getElementById('separator-upload').classList.remove('hidden');
+            fileBuffer = null;
+        }
+
+
+        /* --- 3. CLASSIFIER --- */
+        let isClassifying = false;
+        const sounds = [{ l: "Typing", i: "keyboard" }, { l: "Barking", i: "dog" }, { l: "Traffic", i: "car" }, { l: "Speech", i: "comment" }, { l: "Music", i: "music" }];
+
+        document.getElementById('classify-btn').addEventListener('click', async () => toggleClassifier(!isClassifying));
+
+        async function toggleClassifier(start) {
+            const btn = document.getElementById('classify-btn');
+            const ring = document.getElementById('scan-ring');
+            if (start) {
+                try {
+                    globalStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    runVisualizer('classifier-canvas', globalStream, '#bc13fe');
+                    isClassifying = true;
+                    btn.classList.add('border-cyan-400', 'shadow-[0_0_20px_rgba(34,211,238,0.4)]');
+                    ring.classList.remove('opacity-0');
+                    startDetectionLoop();
+                } catch (e) { }
+            } else {
+                isClassifying = false;
+                btn.classList.remove('border-cyan-400', 'shadow-[0_0_20px_rgba(34,211,238,0.4)]');
+                ring.classList.add('opacity-0');
+                cancelAnimationFrame(animationId);
+            }
+        }
+
+        function startDetectionLoop() {
+            setTimeout(() => {
+                if (!isClassifying) return;
+                const item = sounds[Math.floor(Math.random() * sounds.length)];
+                const div = document.createElement('div');
+                div.className = "flex items-center justify-between bg-slate-800 p-2 rounded border-l-2 border-purple-500 animate-[fade-in-right_0.3s]";
+                div.innerHTML = `<div class="flex items-center gap-2"><i class="fa-solid fa-${item.i} text-purple-400 w-5 text-center"></i><span class="text-xs font-bold text-slate-200">${item.l}</span></div><span class="text-[10px] font-mono text-slate-500">${Math.floor(Math.random() * 30) + 70}%</span>`;
+                const feed = document.getElementById('detection-feed');
+                feed.prepend(div);
+                if (feed.children.length > 6) feed.lastElementChild.remove();
+                startDetectionLoop();
+            }, 2000);
+        }
+
+        /* --- 4. EMOTION (Waveform Edition) --- */
+        let isEmoting = false;
+        document.getElementById('emotion-btn').addEventListener('click', () => toggleEmotion(!isEmoting));
+
+        async function toggleEmotion(start) {
+            const btn = document.getElementById('emotion-btn');
+            const dot = document.getElementById('emotion-dot');
+            const ping = document.getElementById('emotion-ping');
+            if (start) {
+                try {
+                    globalStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    const ctx = getAudioCtx();
+                    const source = ctx.createMediaStreamSource(globalStream);
+                    const analyzer = ctx.createAnalyser();
+                    source.connect(analyzer);
+
+                    // Run the NEW Waveform visualizer
+                    runWaveform('emotion-canvas', analyzer);
+
+                    isEmoting = true;
+                    btn.innerHTML = "STOP SENSOR";
+                    btn.classList.add('bg-red-500', 'hover:bg-red-600');
+                    btn.classList.remove('bg-slate-700');
+                    dot.classList.add('bg-red-500', 'animate-pulse');
+                    dot.classList.remove('bg-slate-500');
+                    ping.classList.remove('opacity-0');
+                    analyzeEmotion(analyzer);
+                } catch (e) { }
+            } else {
+                isEmoting = false;
+                btn.innerHTML = "ACTIVATE SENSOR";
+                btn.classList.remove('bg-red-500', 'hover:bg-red-600');
+                btn.classList.add('bg-slate-700');
+                dot.classList.remove('bg-red-500', 'animate-pulse');
+                dot.classList.add('bg-slate-500');
+                ping.classList.add('opacity-0');
+                cancelAnimationFrame(animationId);
+                resetEmotionUI();
+            }
+        }
+
+        function analyzeEmotion(analyzer) {
+            const data = new Uint8Array(analyzer.frequencyBinCount);
+            const loop = () => {
+                if (!isEmoting) return;
+                analyzer.getByteFrequencyData(data);
+                let energy = 0, weightedSum = 0;
+                for (let i = 0; i < data.length; i++) { energy += data[i]; weightedSum += i * data[i]; }
+                energy /= data.length;
+                const centroid = energy > 0 ? weightedSum / (energy * data.length) : 0;
+
+                let h = 0, s = 0, a = 0, label = "Neutral", icon = "😶";
+                if (energy < 15) { label = "Neutral"; }
+                else if (energy < 50) { s = 80; h = 10; label = "Calm / Sad"; icon = "😔"; }
+                else if (energy < 100) { if (centroid > 30) { h = 90; label = "Happy"; icon = "😄"; } else { label = "Serious"; icon = "😐"; s = 20; a = 20; h = 20; } }
+                else { a = 95; label = "Aggressive"; icon = "😠"; }
+
+                document.getElementById('bar-happy').style.width = `${h}%`;
+                document.getElementById('bar-sad').style.width = `${s}%`;
+                document.getElementById('bar-angry').style.width = `${a}%`;
+                document.getElementById('emotion-label').innerText = label;
+                document.getElementById('emotion-icon').innerText = icon;
+                document.getElementById('emotion-confidence').innerText = `Confidence: ${Math.floor(energy / 2.5 + 50)}%`;
+                requestAnimationFrame(loop);
+            };
+            loop();
+        }
+        function resetEmotionUI() {
+            document.getElementById('bar-happy').style.width = `0%`;
+            document.getElementById('bar-sad').style.width = `0%`;
+            document.getElementById('bar-angry').style.width = `0%`;
+            document.getElementById('emotion-label').innerText = "Neutral";
+            document.getElementById('emotion-icon').innerText = "😶";
+            document.getElementById('emotion-confidence').innerText = "Awaiting Input...";
+        }
+
+        const s = document.createElement('style');
+        s.innerHTML = `@keyframes fade-in-up { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } } @keyframes fade-in-right { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } } .pb-safe { padding-bottom: env(safe-area-inset-bottom); }`;
+        document.head.appendChild(s);
+    </script>
+</body>
+
+</html>

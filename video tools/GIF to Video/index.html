@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shadow Video - GIF to Video</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;500;600;700&display=swap"
+        rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link rel="stylesheet" href="../../styles.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Rajdhani', 'sans-serif'],
+                        orbitron: ['Orbitron', 'sans-serif']
+                    },
+                    colors: {
+                        cyber: {
+                            primary: '#10b981', // Emerald
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body
+    class="min-h-screen flex flex-col font-sans overflow-x-hidden bg-slate-900 text-white selection:bg-emerald-500 selection:text-white">
+
+    <!-- 3D Background -->
+    <div id="bg-3d-container"></div>
+
+    <!-- Navigation -->
+    <nav
+        class="sticky top-0 z-50 glass-effect border-b border-white/5 px-4 md:px-6 py-3 flex items-center justify-between backdrop-blur-md">
+        <a href="../index.html" class="flex items-center gap-3 text-slate-300 hover:text-white transition-colors group">
+            <div
+                class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center border border-white/10 group-hover:border-emerald-500/50 transition-all">
+                <i class="fas fa-chevron-left text-xs group-hover:-translate-x-0.5 transition-transform"></i>
+            </div>
+            <span class="font-orbitron font-bold tracking-wider hidden md:block">BACK</span>
+        </a>
+
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded bg-emerald-500/20 flex items-center justify-center text-emerald-400">
+                <i class="fas fa-sync"></i>
+            </div>
+            <h1 class="text-lg md:text-xl font-orbitron font-bold tracking-widest text-white">SHADOW<span
+                    class="text-emerald-400">CONVERT</span></h1>
+        </div>
+
+        <div class="w-8"></div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="flex-grow container mx-auto px-4 py-8 relative z-10 flex flex-col items-center gap-6">
+
+        <!-- Upload Area -->
+        <div id="uploadArea"
+            class="w-full max-w-2xl p-12 glass rounded-3xl border-2 border-dashed border-white/10 hover:border-emerald-500/50 transition-all flex flex-col items-center justify-center cursor-pointer group"
+            onclick="document.getElementById('fileInput').click()"
+            ondragover="event.preventDefault(); this.classList.add('border-emerald-500')"
+            ondragleave="this.classList.remove('border-emerald-500')">
+
+            <input type="file" id="fileInput" accept="image/gif" class="hidden" onchange="handleFile(this.files[0])">
+
+            <div
+                class="w-20 h-20 rounded-2xl bg-emerald-500/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                <i class="fas fa-images text-4xl text-emerald-400"></i>
+            </div>
+
+            <h3 class="text-2xl font-orbitron font-bold text-white mb-2">Upload GIF</h3>
+            <p class="text-slate-400 text-sm">Drag & drop or click to browse</p>
+        </div>
+
+        <!-- Editor Area -->
+        <div id="editorArea" class="w-full max-w-4xl hidden flex-col gap-6 animate-fade-in-up">
+
+            <!-- GIF Preview -->
+            <div
+                class="relative w-full aspect-video bg-black/50 rounded-2xl border border-white/10 overflow-hidden flex items-center justify-center">
+                <!-- We display the GIF in an IMG tag to see it -->
+                <img id="gifPreview" class="max-h-full max-w-full object-contain">
+
+                <!-- Hidden Canvas for recording -->
+                <canvas id="convCanvas" class="hidden"></canvas>
+            </div>
+
+            <!-- Controls -->
+            <div class="glass p-6 rounded-2xl border border-white/5 flex flex-col items-center gap-4 text-center">
+                <p class="text-sm text-slate-400 max-w-lg">
+                    <i class="fas fa-info-circle text-emerald-500 mr-2"></i>
+                    This tool plays the GIF and records it into a high-quality WebM/MP4 video format perfectly optimized
+                    for web sharing.
+                </p>
+
+                <div class="flex gap-4 w-full max-w-xs">
+                    <input type="number" id="duration" placeholder="Duration (sec)"
+                        class="w-full bg-slate-950/50 border border-white/10 rounded px-3 py-2 text-white" value="5">
+                    <button onclick="convert()" id="convertBtn"
+                        class="flex-1 px-6 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg shadow-lg transition-all">
+                        CONVERT
+                    </button>
+                </div>
+            </div>
+
+            <!-- Result -->
+            <div id="resultArea" class="hidden flex flex-col items-center gap-4 animate-fade-in-up">
+                <video id="videoOutput" controls
+                    class="w-full max-w-xl rounded-lg border border-emerald-500/30"></video>
+                <a id="downloadLink"
+                    class="px-8 py-3 bg-white text-black font-bold rounded-full hover:scale-105 transition-transform cursor-pointer">Download
+                    Video</a>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Shared Script -->
+    <script type="module" src="../../shared/bg-particles.js"></script>
+
+    <script>
+        const uploadArea = document.getElementById('uploadArea');
+        const editorArea = document.getElementById('editorArea');
+        const img = document.getElementById('gifPreview');
+        const canvas = document.getElementById('convCanvas');
+        const resultArea = document.getElementById('resultArea');
+        const videoOutput = document.getElementById('videoOutput');
+        const downloadLink = document.getElementById('downloadLink');
+        const convertBtn = document.getElementById('convertBtn');
+
+        function handleFile(file) {
+            if (!file) return;
+            const url = URL.createObjectURL(file);
+            img.src = url;
+            uploadArea.classList.add('hidden');
+            editorArea.classList.remove('hidden');
+            editorArea.classList.add('flex');
+        }
+
+        async function convert() {
+            const durationSec = parseInt(document.getElementById('duration').value) || 5;
+
+            convertBtn.textContent = "RECORDING...";
+            convertBtn.disabled = true;
+            convertBtn.classList.add('opacity-50');
+
+            // Setup canvas size
+            canvas.width = img.naturalWidth;
+            canvas.height = img.naturalHeight;
+            const ctx = canvas.getContext('2d');
+
+            // We need to loop drawImage to simulate the GIF playing on canvas
+            // However, browsers don't give frame data of IMG easily.
+            // Hack: Just draw the IMG element repeatedly efficiently. As the browser animates the IMG, the drawImage calls pick up current frame.
+
+            const stream = canvas.captureStream(30); // 30 FPS
+            const mediaRecorder = new MediaRecorder(stream, {
+                mimeType: 'video/webm;codecs=vp9'
+            });
+
+            const chunks = [];
+            mediaRecorder.ondataavailable = e => chunks.push(e.data);
+            mediaRecorder.onstop = () => {
+                const blob = new Blob(chunks, { type: 'video/webm' });
+                const url = URL.createObjectURL(blob);
+                videoOutput.src = url;
+                downloadLink.href = url;
+                downloadLink.download = 'converted_video.webm';
+
+                resultArea.classList.remove('hidden');
+                resultArea.classList.add('flex');
+
+                convertBtn.textContent = "CONVERT AGAIN";
+                convertBtn.disabled = false;
+                convertBtn.classList.remove('opacity-50');
+            };
+
+            mediaRecorder.start();
+
+            const startTime = Date.now();
+            const animate = () => {
+                if (Date.now() - startTime > durationSec * 1000) {
+                    mediaRecorder.stop();
+                    return;
+                }
+                ctx.drawImage(img, 0, 0);
+                requestAnimationFrame(animate);
+            };
+            animate();
+        }
+    </script>
+</body>
+
+</html>

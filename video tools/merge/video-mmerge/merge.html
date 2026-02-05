@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Video Merger & Editor</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Theme & Utilities */
+        :root {
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --neon-blue: #3b82f6;
+            --neon-purple: #8b5cf6;
+        }
+
+        body {
+            background-color: #020617;
+            /* bg-slate-950 */
+            color: #f8fafc;
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+            /* App-like feel */
+        }
+
+        /* Glassmorphism */
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+
+        /* Cinematic Upload Animation */
+        .upload-container {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            margin: 0 auto;
+        }
+
+        .cloud-icon {
+            stroke: #94a3b8;
+            stroke-width: 2;
+            fill: none;
+            filter: drop-shadow(0 0 5px rgba(148, 163, 184, 0.3));
+        }
+
+        .arrow-up {
+            position: absolute;
+            left: 50%;
+            top: 60%;
+            transform: translate(-50%, -50%);
+            color: var(--neon-blue);
+            animation: riseUp 2.5s infinite ease-in-out;
+            filter: drop-shadow(0 0 8px var(--neon-blue));
+        }
+
+        .scan-beam {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, transparent, var(--neon-purple), transparent);
+            box-shadow: 0 0 10px var(--neon-purple);
+            animation: scan 2.5s infinite linear;
+            opacity: 0;
+        }
+
+        .check-cycle {
+            position: absolute;
+            right: 0;
+            bottom: 0;
+            color: #10b981;
+            opacity: 0;
+            animation: checkFade 2.5s infinite;
+        }
+
+        @keyframes riseUp {
+            0% {
+                top: 70%;
+                opacity: 0;
+            }
+
+            30% {
+                top: 50%;
+                opacity: 1;
+            }
+
+            70% {
+                top: 30%;
+                opacity: 0;
+            }
+
+            100% {
+                top: 30%;
+                opacity: 0;
+            }
+        }
+
+        @keyframes scan {
+
+            0%,
+            50% {
+                top: 20%;
+                opacity: 0;
+            }
+
+            55% {
+                opacity: 1;
+            }
+
+            90% {
+                top: 80%;
+                opacity: 1;
+            }
+
+            100% {
+                top: 80%;
+                opacity: 0;
+            }
+        }
+
+        @keyframes checkFade {
+
+            0%,
+            85% {
+                opacity: 0;
+                transform: scale(0.5);
+            }
+
+            90% {
+                opacity: 1;
+                transform: scale(1.2);
+            }
+
+            95% {
+                transform: scale(1);
+            }
+
+            100% {
+                opacity: 0;
+            }
+        }
+
+        /* Fusion Core Animation */
+        .fusion-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(2, 6, 23, 0.95);
+            z-index: 50;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(5px);
+        }
+
+        .core-container {
+            position: relative;
+            width: 200px;
+            height: 200px;
+        }
+
+        .core-ring {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            border-radius: 50%;
+            border: 4px solid transparent;
+            transform: translate(-50%, -50%);
+        }
+
+        .ring-1 {
+            width: 180px;
+            height: 180px;
+            border-top-color: var(--neon-blue);
+            border-bottom-color: var(--neon-blue);
+            animation: spin 3s infinite linear;
+            box-shadow: 0 0 15px var(--neon-blue);
+        }
+
+        .ring-2 {
+            width: 140px;
+            height: 140px;
+            border-left-color: var(--neon-purple);
+            border-right-color: var(--neon-purple);
+            animation: spinReverse 2s infinite linear;
+            box-shadow: 0 0 15px var(--neon-purple);
+        }
+
+        .ring-3 {
+            width: 100px;
+            height: 100px;
+            border: 2px dashed #f8fafc;
+            animation: spin 6s infinite linear;
+        }
+
+        .core-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 60px;
+            height: 60px;
+            background: white;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 30px white, 0 0 60px var(--neon-blue);
+            animation: pulse 1.5s infinite ease-in-out;
+        }
+
+        @keyframes spin {
+            100% {
+                transform: translate(-50%, -50%) rotate(360deg);
+            }
+        }
+
+        @keyframes spinReverse {
+            100% {
+                transform: translate(-50%, -50%) rotate(-360deg);
+            }
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 0.8;
+            }
+
+            50% {
+                transform: translate(-50%, -50%) scale(1.1);
+                opacity: 1;
+            }
+        }
+
+        /* Drag Class */
+        .dragging {
+            opacity: 0.5;
+            border: 2px dashed var(--neon-blue);
+        }
+
+        .drag-over {
+            border-color: var(--neon-blue);
+            background: rgba(59, 130, 246, 0.1);
+        }
+    </style>
+</head>
+
+<body class="h-screen flex flex-col text-sm">
+
+    <!-- Header -->
+    <header class="h-14 glass-panel flex items-center justify-between px-6 z-10 shrink-0">
+        <div class="flex items-center gap-3">
+            <i data-lucide="film" class="text-blue-400"></i>
+            <h1
+                class="font-bold text-lg tracking-wide bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                FUSION STUDIO</h1>
+        </div>
+        <div class="flex items-center gap-4">
+            <button id="resetBtn"
+                class="p-2 hover:bg-white/10 rounded-full transition-colors text-slate-400 hover:text-red-400"
+                title="Double click to reset">
+                <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="flex-1 flex overflow-hidden">
+
+        <!-- Left Sidebar: Assets -->
+        <aside class="w-80 glass-panel m-4 mr-0 rounded-2xl flex flex-col overflow-hidden transition-all">
+            <div class="p-4 border-b border-white/10">
+                <h2 class="font-semibold text-slate-300 flex items-center gap-2">
+                    <i data-lucide="library" class="w-4 h-4"></i> Media Bin
+                </h2>
+            </div>
+
+            <!-- Upload Area -->
+            <div id="dropZone"
+                class="m-4 p-6 border-2 border-dashed border-slate-700 rounded-xl bg-slate-900/50 hover:border-blue-500 hover:bg-slate-900 transition-all cursor-pointer group text-center relative overflow-hidden">
+                <input type="file" id="fileInput" multiple accept="video/*"
+                    class="absolute inset-0 opacity-0 cursor-pointer z-10">
+
+                <!-- Cinematic CSS Animation -->
+                <div class="upload-container mb-2 group-hover:scale-105 transition-transform duration-500">
+                    <svg class="cloud-icon w-20 h-20 mx-auto" viewBox="0 0 24 24">
+                        <path
+                            d="M17.5 19c2.485 0 4.5-2.015 4.5-4.5 0-2.315-1.74-4.22-4.0-4.48-.525-4.325-4.325-7.52-8.5-7.52-4.695 0-8.5 3.585-8.5 8 0 1.25.32 2.45.9 3.5C2.15 14.9 3 16.5 4.5 17.5V19h13z"
+                            stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                    <i data-lucide="arrow-up" class="arrow-up w-8 h-8"></i>
+                    <div class="scan-beam"></div>
+                    <i data-lucide="check-circle" class="check-cycle w-6 h-6"></i>
+                </div>
+
+                <p class="text-slate-400 text-xs mt-2 group-hover:text-blue-300 transition-colors">Drag & Drop or Click
+                </p>
+            </div>
+
+            <!-- File List -->
+            <div id="fileList" class="flex-1 overflow-y-auto px-4 pb-4 space-y-2">
+                <!-- Items injected here by JS -->
+                <div id="emptyState" class="text-center mt-10 opacity-30">
+                    <i data-lucide="film" class="w-12 h-12 mx-auto mb-2"></i>
+                    <p>No clips added</p>
+                </div>
+            </div>
+
+            <div class="p-4 border-t border-white/10 bg-slate-900/30">
+                <div class="flex justify-between text-xs text-slate-500">
+                    <span>Total Duration:</span>
+                    <span id="totalDuration" class="text-slate-300 font-mono">00:00</span>
+                </div>
+                <div class="flex justify-between text-xs text-slate-500 mt-1">
+                    <span>Est. Size (MP4):</span>
+                    <span id="estSize" class="text-slate-300 font-mono">0 MB</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Right Panel: Editor & Preview -->
+        <main class="flex-1 flex flex-col p-4 gap-4 overflow-hidden">
+
+            <!-- Live Preview Area -->
+            <div
+                class="flex-1 glass-panel rounded-2xl p-1 relative flex items-center justify-center bg-black overflow-hidden group">
+                <canvas id="previewCanvas" class="max-w-full max-h-full rounded-xl shadow-2xl"></canvas>
+
+                <div
+                    class="absolute bottom-4 left-4 bg-black/50 backdrop-blur px-3 py-1 rounded-full text-xs text-white/70 border border-white/10">
+                    <i data-lucide="monitor" class="w-3 h-3 inline mr-1"></i> Live Preview
+                </div>
+            </div>
+
+            <!-- Settings Panel -->
+            <div class="h-auto shrink-0 glass-panel rounded-2xl p-6 flex gap-8 items-end justify-between">
+
+                <!-- Controls -->
+                <div class="flex gap-6 w-full">
+                    <div class="flex flex-col gap-2 w-48">
+                        <label class="text-slate-400 text-xs uppercase tracking-wider font-semibold">Resolution</label>
+                        <select id="resolutionSelect"
+                            class="bg-slate-900/50 border border-slate-700 rounded-lg p-2.5 outline-none focus:border-blue-500 transition-colors text-slate-200">
+                            <option value="auto">Auto (Match First)</option>
+                            <option value="1920x1080" selected>1080p Landscape</option>
+                            <option value="1280x720">720p HD</option>
+                            <option value="1080x1920">1080p Portrait</option>
+                            <option value="1080x1080">1:1 Square</option>
+                        </select>
+                    </div>
+
+                    <div class="flex flex-col gap-2 w-48">
+                        <label class="text-slate-400 text-xs uppercase tracking-wider font-semibold">Visual
+                            Filter</label>
+                        <select id="filterSelect"
+                            class="bg-slate-900/50 border border-slate-700 rounded-lg p-2.5 outline-none focus:border-blue-500 transition-colors text-slate-200">
+                            <option value="none" selected>None</option>
+                            <option value="grayscale(100%)">Noir (Grayscale)</option>
+                            <option value="sepia(60%)">Vintage (Sepia)</option>
+                            <option value="contrast(150%)">Dramatic (High Contrast)</option>
+                            <option value="saturate(200%)">Vivid</option>
+                            <option value="blur(2px)">Dreamy (Blur)</option>
+                            <option value="invert(100%)">Negative</option>
+                        </select>
+                    </div>
+
+                    <div class="flex flex-col gap-2 flex-1 justify-end">
+                        <label class="text-slate-400 text-xs uppercase tracking-wider font-semibold">Format
+                            Target</label>
+                        <div class="flex bg-slate-900/50 rounded-lg p-1 border border-slate-700 w-fit">
+                            <button
+                                class="format-btn px-4 py-1.5 rounded-md text-xs bg-slate-700 text-white shadow-sm transition-all"
+                                data-fmt="mp4">MP4</button>
+                            <button
+                                class="format-btn px-4 py-1.5 rounded-md text-xs text-slate-400 hover:text-white transition-all"
+                                data-fmt="webm">WebM</button>
+                            <button
+                                class="format-btn px-4 py-1.5 rounded-md text-xs text-slate-400 hover:text-white transition-all"
+                                data-fmt="mkv">MKV</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Button -->
+                <button id="mergeBtn"
+                    class="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white px-8 py-4 rounded-xl font-bold shadow-lg shadow-blue-500/20 active:scale-95 transition-all flex items-center gap-3 whitespace-nowrap">
+                    <i data-lucide="merge" class="w-5 h-5"></i>
+                    <span>Fuse Videos</span>
+                </button>
+            </div>
+        </main>
+    </div>
+
+    <!-- Hidden Video Container for Processing -->
+    <div id="videoContainer" style="position: fixed; left: -9999px; top: 0;"></div>
+
+    <!-- Fusion Core Modal (Rendering) -->
+    <div id="renderModal" class="fusion-modal hidden opacity-0 transition-opacity duration-300">
+        <div class="core-container mb-8">
+            <div class="core-ring ring-1"></div>
+            <div class="core-ring ring-2"></div>
+            <div class="core-ring ring-3"></div>
+            <div class="core-center"></div>
+        </div>
+
+        <h2 class="text-2xl font-bold text-white tracking-widest mb-2">FUSING STREAMS</h2>
+        <p id="renderStatus" class="text-blue-300 font-mono text-sm mb-8">Initializing Core...</p>
+        <p class="text-slate-500 text-xs mb-4 animate-pulse">Please keep this window active for best performance</p>
+
+        <div class="w-64 h-1.5 bg-slate-800 rounded-full overflow-hidden mb-6">
+            <div id="progressBar"
+                class="h-full bg-gradient-to-r from-blue-500 to-purple-500 w-0 transition-all duration-300"></div>
+        </div>
+
+        <button id="cancelBtn"
+            class="text-red-400 hover:text-red-300 border border-red-500/30 px-6 py-2 rounded-full text-xs uppercase tracking-widest hover:bg-red-500/10 transition-all">
+            Abort Sequence
+        </button>
+    </div>
+
+    <!-- Success Modal -->
+    <div id="successModal" class="fusion-modal hidden opacity-0 transition-opacity duration-300">
+        <div
+            class="bg-slate-900/90 border border-slate-700 p-8 rounded-2xl text-center max-w-sm backdrop-blur-xl shadow-2xl">
+            <div class="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                <i data-lucide="check" class="w-10 h-10 text-green-400"></i>
+            </div>
+            <h2 class="text-2xl font-bold text-white mb-2">Marvelous!</h2>
+            <p class="text-slate-400 mb-6">Your video has been successfully fused and optimized.</p>
+
+            <div class="flex flex-col gap-3">
+                <a id="downloadLink" href="#"
+                    class="w-full bg-green-600 hover:bg-green-500 text-white py-3 rounded-xl font-semibold shadow-lg shadow-green-500/20 transition-all flex items-center justify-center gap-2">
+                    <i data-lucide="download" class="w-5 h-5"></i> Download Video
+                </a>
+                <button onclick="document.getElementById('successModal').classList.add('hidden')"
+                    class="text-slate-500 hover:text-white text-xs mt-2">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Init Lucide
+        lucide.createIcons();
+
+        // --- State ---
+        let files = [];
+        let isRendering = false;
+        let shouldCancel = false;
+        let selectedFormat = 'mp4';
+
+        // --- DOM Elements ---
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const fileList = document.getElementById('fileList');
+        const emptyState = document.getElementById('emptyState');
+        const previewCanvas = document.getElementById('previewCanvas');
+        const ctx = previewCanvas.getContext('2d', { willReadFrequently: true });
+        const mergeBtn = document.getElementById('mergeBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const renderModal = document.getElementById('renderModal');
+        const progressBar = document.getElementById('progressBar');
+        const renderStatus = document.getElementById('renderStatus');
+        const cancelBtn = document.getElementById('cancelBtn');
+        const successModal = document.getElementById('successModal');
+        const downloadLink = document.getElementById('downloadLink');
+        const resolutionSelect = document.getElementById('resolutionSelect');
+        const filterSelect = document.getElementById('filterSelect');
+        const formatBtns = document.querySelectorAll('.format-btn');
+        const totalDurationEl = document.getElementById('totalDuration');
+        const estSizeEl = document.getElementById('estSize');
+        const videoContainer = document.getElementById('videoContainer');
+
+        // --- Event Listeners ---
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('drag-over');
+            handleFiles(e.dataTransfer.files);
+        });
+
+        fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
+
+        formatBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                formatBtns.forEach(b => {
+                    b.classList.remove('bg-slate-700', 'text-white');
+                    b.classList.add('text-slate-400');
+                });
+                btn.classList.add('bg-slate-700', 'text-white');
+                btn.classList.remove('text-slate-400');
+                selectedFormat = btn.dataset.fmt;
+                updateStats();
+            });
+        });
+
+        resetBtn.addEventListener('dblclick', () => {
+            files = [];
+            renderFiles();
+            ctx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+            totalDurationEl.textContent = "00:00";
+            estSizeEl.textContent = "0 MB";
+        });
+
+        mergeBtn.addEventListener('click', startMerging);
+        cancelBtn.addEventListener('click', () => { if (confirm('Abort rendering?')) shouldCancel = true; });
+        resolutionSelect.addEventListener('change', updatePreviewFrame);
+        filterSelect.addEventListener('change', updatePreviewFrame);
+
+        // --- Core Functions ---
+
+        async function handleFiles(fileListObj) {
+            const newFiles = Array.from(fileListObj).filter(f => f.type.startsWith('video/'));
+            for (const file of newFiles) {
+                const id = Math.random().toString(36).substr(2, 9);
+                const duration = await getVideoDuration(file);
+                files.push({ file, id, duration, name: file.name });
+            }
+            renderFiles();
+            if (files.length > 0) updatePreviewFrame();
+        }
+
+        function renderFiles() {
+            fileList.innerHTML = '';
+            if (files.length === 0) {
+                fileList.appendChild(emptyState);
+                return;
+            }
+
+            files.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.className = 'group flex items-center gap-3 p-3 bg-slate-800/50 rounded-lg border border-slate-700 hover:border-blue-500 cursor-grab active:cursor-grabbing transition-all';
+                div.draggable = true;
+
+                div.innerHTML = `
+                    <div class="text-slate-500 font-mono text-xs">#${index + 1}</div>
+                    <div class="flex-1 min-w-0">
+                        <div class="text-xs text-white truncate font-medium">${item.name}</div>
+                        <div class="text-xs text-slate-500">${formatTime(item.duration)}</div>
+                    </div>
+                    <button class="text-slate-500 hover:text-red-400 p-1 opacity-0 group-hover:opacity-100 transition-opacity" onclick="removeFile('${item.id}')">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                    </button>
+                `;
+
+                div.addEventListener('dragstart', (e) => { div.classList.add('dragging'); e.dataTransfer.setData('text/plain', index); });
+                div.addEventListener('dragend', () => div.classList.remove('dragging'));
+                div.addEventListener('dragover', (e) => e.preventDefault());
+                div.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    const fromIndex = parseInt(e.dataTransfer.getData('text/plain'));
+                    const toIndex = index;
+                    if (fromIndex !== toIndex) {
+                        const movedItem = files.splice(fromIndex, 1)[0];
+                        files.splice(toIndex, 0, movedItem);
+                        renderFiles();
+                        updatePreviewFrame();
+                    }
+                });
+
+                fileList.appendChild(div);
+            });
+            lucide.createIcons();
+            updateStats();
+        }
+
+        function removeFile(id) {
+            files = files.filter(f => f.id !== id);
+            renderFiles();
+            if (files.length > 0) updatePreviewFrame();
+            else {
+                ctx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+                totalDurationEl.textContent = "00:00";
+                estSizeEl.textContent = "0 MB";
+            }
+        }
+
+        function updateStats() {
+            const totalDur = files.reduce((acc, f) => acc + f.duration, 0);
+            totalDurationEl.textContent = formatTime(totalDur);
+            let bitrate = 2.5 * 1024 * 1024;
+            if (selectedFormat === 'webm' || selectedFormat === 'mkv') bitrate *= 0.85;
+            const sizeBytes = (bitrate * totalDur) / 8;
+            const sizeMB = (sizeBytes / (1024 * 1024)).toFixed(1);
+            estSizeEl.textContent = `~${sizeMB} MB`;
+        }
+
+        function getVideoDuration(file) {
+            return new Promise((resolve) => {
+                const video = document.createElement('video');
+                video.preload = 'metadata';
+                video.onloadedmetadata = () => { window.URL.revokeObjectURL(video.src); resolve(video.duration); };
+                video.onerror = () => resolve(0);
+                video.src = URL.createObjectURL(file);
+            });
+        }
+
+        async function updatePreviewFrame() {
+            if (files.length === 0) return;
+            const file = files[0].file;
+            const tempVid = document.createElement('video');
+            tempVid.src = URL.createObjectURL(file);
+            tempVid.muted = true;
+            tempVid.currentTime = 1;
+
+            await new Promise(r => { tempVid.onloadeddata = r; tempVid.onerror = r; });
+            await new Promise(r => { tempVid.onseeked = r; if (tempVid.readyState >= 2) tempVid.currentTime = 1; setTimeout(r, 500); });
+
+            let width = tempVid.videoWidth;
+            let height = tempVid.videoHeight;
+            const selRes = resolutionSelect.value;
+            if (selRes !== 'auto') {
+                const [w, h] = selRes.split('x').map(Number);
+                width = w; height = h;
+            }
+
+            previewCanvas.width = width;
+            previewCanvas.height = height;
+            ctx.filter = filterSelect.value !== 'none' ? filterSelect.value : 'none';
+            ctx.drawImage(tempVid, 0, 0, width, height);
+            tempVid.remove();
+        }
+
+        // --- Optimized Merge Engine ---
+
+        async function startMerging() {
+            if (files.length <= 1) {
+                alert("It takes two to tango! Please add at least 2 videos to merge.");
+                return;
+            }
+
+            isRendering = true;
+            shouldCancel = false;
+            renderModal.classList.remove('hidden');
+            setTimeout(() => renderModal.classList.remove('opacity-0'), 10);
+
+            // 1. Setup Canvas
+            const canvas = document.createElement('canvas');
+            let width, height;
+            if (resolutionSelect.value === 'auto') {
+                const firstVid = await getVideoDimensions(files[0].file);
+                width = firstVid.w; height = firstVid.h;
+            } else {
+                [width, height] = resolutionSelect.value.split('x').map(Number);
+            }
+            canvas.width = width;
+            canvas.height = height;
+            const canvasCtx = canvas.getContext('2d', { alpha: false, desynchronized: true });
+
+            // 2. Audio Init
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const destNode = audioCtx.createMediaStreamDestination();
+
+            // 3. Recorder Init
+            const canvasStream = canvas.captureStream(30); // Cap at 30 FPS for stability
+            const combinedStream = new MediaStream([...canvasStream.getVideoTracks(), ...destNode.stream.getAudioTracks()]);
+
+            let mimeType = 'video/mp4; codecs=avc1';
+            if (selectedFormat === 'webm') mimeType = 'video/webm; codecs=vp9';
+            else if (selectedFormat === 'mkv') mimeType = 'video/x-matroska; codecs=avc1';
+
+            if (!MediaRecorder.isTypeSupported(mimeType)) {
+                if (MediaRecorder.isTypeSupported('video/webm; codecs=vp9')) mimeType = 'video/webm; codecs=vp9';
+                else if (MediaRecorder.isTypeSupported('video/webm')) mimeType = 'video/webm';
+                else mimeType = '';
+            }
+
+            // High bitrate for quality, but balanced
+            const options = mimeType ? { mimeType, videoBitsPerSecond: 5000000 } : undefined;
+            let mediaRecorder;
+            try {
+                mediaRecorder = new MediaRecorder(combinedStream, options);
+            } catch (e) {
+                console.error("Recorder init failed, falling back", e);
+                mediaRecorder = new MediaRecorder(combinedStream);
+            }
+
+            const chunks = [];
+            mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
+            mediaRecorder.onstop = () => {
+                const blob = new Blob(chunks, { type: mimeType || 'video/webm' });
+                const url = URL.createObjectURL(blob);
+                renderModal.classList.add('opacity-0');
+                setTimeout(() => {
+                    renderModal.classList.add('hidden');
+                    successModal.classList.remove('hidden');
+                    setTimeout(() => successModal.classList.remove('opacity-0'), 10);
+                }, 300);
+
+                let ext = selectedFormat;
+                if (mimeType && mimeType.includes('webm') && ext === 'mp4') ext = 'webm';
+
+                downloadLink.href = url;
+                downloadLink.download = `fused_video_${Date.now()}.${ext}`;
+
+                audioCtx.close();
+                isRendering = false;
+                videoContainer.innerHTML = '';
+            };
+
+            mediaRecorder.start();
+
+            // 4. Critical: Playback Loop using requestVideoFrameCallback
+            let totalDur = files.reduce((acc, f) => acc + f.duration, 0);
+            let timeElapsed = 0;
+
+            for (let i = 0; i < files.length; i++) {
+                if (shouldCancel) break;
+
+                const fileObj = files[i];
+                const videoEl = document.createElement('video');
+                videoEl.src = URL.createObjectURL(fileObj.file);
+
+                // Vital attributes for background/smooth playback
+                videoEl.muted = false;
+                videoEl.crossOrigin = "anonymous";
+                videoEl.playsInline = true;
+                videoEl.webkitPlaysInline = true;
+                videoEl.disablePictureInPicture = true; // Prevent UI popups
+
+                // Mount to DOM but keep hidden visually, yet 'visible' to browser compositor
+                videoEl.style.position = 'fixed';
+                videoEl.style.left = '0px';
+                videoEl.style.top = '0px';
+                videoEl.style.width = '1px';
+                videoEl.style.height = '1px';
+                videoEl.style.opacity = '0.01';
+                videoEl.style.pointerEvents = 'none';
+
+                videoContainer.appendChild(videoEl);
+
+                // Setup Audio
+                try {
+                    const source = audioCtx.createMediaElementSource(videoEl);
+                    source.connect(destNode);
+                } catch (e) { console.warn("Audio setup issue", e); }
+
+                await new Promise((resolve, reject) => {
+                    // Wait for enough data
+                    videoEl.oncanplay = () => {
+                        videoEl.play().then(() => {
+                            renderStatus.innerText = `Processing Clip ${i + 1}/${files.length}`;
+
+                            // Drawing Loop with rVFC
+                            function renderFrame(now, metadata) {
+                                if (shouldCancel || videoEl.paused || videoEl.ended) return;
+
+                                // Filter
+                                canvasCtx.filter = filterSelect.value !== 'none' ? filterSelect.value : 'none';
+
+                                // Draw (Contain/Cover) - Consistent Aspect Ratio
+                                const hRatio = canvas.width / videoEl.videoWidth;
+                                const vRatio = canvas.height / videoEl.videoHeight;
+                                const ratio = Math.max(hRatio, vRatio); // 'Cover' fit
+                                const centerShift_x = (canvas.width - videoEl.videoWidth * ratio) / 2;
+                                const centerShift_y = (canvas.height - videoEl.videoHeight * ratio) / 2;
+
+                                canvasCtx.drawImage(videoEl,
+                                    0, 0, videoEl.videoWidth, videoEl.videoHeight,
+                                    centerShift_x, centerShift_y, videoEl.videoWidth * ratio, videoEl.videoHeight * ratio
+                                );
+
+                                // Progress
+                                const currentTotal = timeElapsed + videoEl.currentTime;
+                                const pct = (currentTotal / totalDur) * 100;
+                                progressBar.style.width = `${Math.min(pct, 100)}%`;
+
+                                // Next Frame
+                                if ('requestVideoFrameCallback' in videoEl) {
+                                    videoEl.requestVideoFrameCallback(renderFrame);
+                                } else {
+                                    requestAnimationFrame(() => renderFrame()); // Fallback
+                                }
+                            }
+
+                            if ('requestVideoFrameCallback' in videoEl) {
+                                videoEl.requestVideoFrameCallback(renderFrame);
+                            } else {
+                                requestAnimationFrame(() => renderFrame());
+                            }
+
+                        }).catch(e => reject(e));
+                    };
+
+                    videoEl.onended = () => {
+                        timeElapsed += videoEl.duration;
+                        videoEl.remove();
+                        resolve();
+                    };
+
+                    videoEl.onerror = (e) => reject(e);
+                });
+            }
+
+            if (shouldCancel) {
+                mediaRecorder.stop();
+                renderModal.classList.add('hidden');
+                alert("Rendering cancelled.");
+            } else {
+                mediaRecorder.stop();
+            }
+        }
+
+        async function getVideoDimensions(file) {
+            return new Promise((resolve) => {
+                const video = document.createElement('video');
+                video.preload = 'metadata';
+                video.onloadedmetadata = () => {
+                    resolve({ w: video.videoWidth, h: video.videoHeight });
+                    window.URL.revokeObjectURL(video.src);
+                };
+                video.src = URL.createObjectURL(file);
+            });
+        }
+
+        function formatTime(seconds) {
+            if (!seconds) return "00:00";
+            const m = Math.floor(seconds / 60);
+            const s = Math.floor(seconds % 60);
+            return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        }
+    </script>
+</body>
+
+</html>

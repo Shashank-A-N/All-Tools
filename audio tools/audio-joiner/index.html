@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Joiner - Shadow Audio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;500;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="../../styles.css">
+</head>
+
+<body class="bg-gray-900 text-white font-sans antialiased overflow-x-hidden">
+
+    <nav
+        class="sticky top-0 z-50 glass-effect border-b border-white/5 px-6 py-4 flex items-center justify-between backdrop-blur-md">
+        <div class="flex items-center gap-3">
+            <a href="../index.html" class="flex items-center gap-2 group">
+                <div
+                    class="relative w-10 h-10 flex items-center justify-center bg-purple-600/20 rounded-lg border border-purple-500/30 group-hover:border-purple-500/50 transition-all">
+                    <i class="fas fa-link text-purple-400 text-xl group-hover:scale-110 transition-transform"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-orbitron font-bold tracking-widest text-white">SHADOW<span
+                            class="text-purple-500">AUDIO</span></h1>
+                    <span class="text-xs text-slate-400 font-mono tracking-wider">JOINER</span>
+                </div>
+            </a>
+        </div>
+        <a href="../index.html" class="text-slate-400 hover:text-white transition-colors"><i
+                class="fas fa-times text-xl"></i></a>
+    </nav>
+
+    <main class="container mx-auto px-4 py-12 max-w-4xl">
+        <div class="text-center mb-10">
+            <h2 class="text-4xl font-bold font-orbitron mb-2">Audio Joiner</h2>
+            <p class="text-slate-400 text-sm">Merge multiple audio files into a single track.</p>
+        </div>
+
+        <div class="glass p-8 rounded-3xl border border-white/5 shadow-2xl">
+            <!-- File Slots -->
+            <div class="space-y-4 mb-8">
+                <div class="bg-black/40 p-4 rounded-xl border border-white/10 flex items-center justify-between">
+                    <span class="text-slate-400 text-sm">Track 1</span>
+                    <input type="file"
+                        class="text-xs text-slate-500 file:bg-slate-700 file:border-0 file:rounded file:px-2 file:py-1 file:text-white hover:file:bg-slate-600">
+                </div>
+                <div class="bg-black/40 p-4 rounded-xl border border-white/10 flex items-center justify-between">
+                    <span class="text-slate-400 text-sm">Track 2</span>
+                    <input type="file"
+                        class="text-xs text-slate-500 file:bg-slate-700 file:border-0 file:rounded file:px-2 file:py-1 file:text-white hover:file:bg-slate-600">
+                </div>
+                <button
+                    class="w-full py-2 border border-dashed border-white/20 rounded-xl text-slate-500 text-sm hover:bg-white/5 hover:border-white/40 transition-colors">
+                    <i class="fas fa-plus"></i> Add Another Track
+                </button>
+            </div>
+
+            <div class="flex justify-center flex-col items-center gap-4">
+                <button id="merge-btn"
+                    class="px-12 py-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-bold rounded-xl transition-all shadow-lg hover:scale-105">
+                    <i class="fas fa-link mr-2"></i> MERGE TRACKS
+                </button>
+                <div id="status" class="text-xs text-slate-500 hidden">Processing...</div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        document.getElementById('merge-btn').onclick = function () {
+            document.getElementById('status').classList.remove('hidden');
+            setTimeout(() => {
+                document.getElementById('status').textContent = "Merge Complete (Simulation)";
+                document.getElementById('status').className = "text-xs text-green-400 font-bold";
+            }, 1000);
+        }
+    </script>
+</body>
+
+</html>

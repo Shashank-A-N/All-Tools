@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Fusion Studio - Mobile Optimized</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Theme & Utilities */
+        :root {
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --neon-blue: #3b82f6;
+            --neon-purple: #8b5cf6;
+        }
+
+        body {
+            background-color: #020617;
+            color: #f8fafc;
+            font-family: 'Inter', sans-serif;
+            /* Mobile Viewport Fix */
+            height: 100dvh;
+            overflow: hidden;
+            overscroll-behavior: none;
+            touch-action: pan-x pan-y;
+        }
+
+        /* Glassmorphism */
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Better Touch Targets */
+        button,
+        select,
+        input {
+            touch-action: manipulation;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 3px;
+            height: 3px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+
+        /* Cinematic Upload Animation */
+        .upload-container {
+            position: relative;
+            width: 80px;
+            height: 80px;
+            margin: 0 auto;
+        }
+
+        .cloud-icon {
+            stroke: #94a3b8;
+            stroke-width: 2;
+            fill: none;
+            filter: drop-shadow(0 0 5px rgba(148, 163, 184, 0.3));
+        }
+
+        .arrow-up {
+            position: absolute;
+            left: 50%;
+            top: 60%;
+            transform: translate(-50%, -50%);
+            color: var(--neon-blue);
+            animation: riseUp 2.5s infinite ease-in-out;
+            filter: drop-shadow(0 0 8px var(--neon-blue));
+        }
+
+        .scan-beam {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, transparent, var(--neon-purple), transparent);
+            box-shadow: 0 0 10px var(--neon-purple);
+            animation: scan 2.5s infinite linear;
+            opacity: 0;
+        }
+
+        .check-cycle {
+            position: absolute;
+            right: 0;
+            bottom: 0;
+            color: #10b981;
+            opacity: 0;
+            animation: checkFade 2.5s infinite;
+        }
+
+        /* Drag Class */
+        .dragging {
+            opacity: 0.5;
+            border: 2px dashed var(--neon-blue);
+        }
+
+        .drag-over {
+            border-color: var(--neon-blue) !important;
+            background: rgba(59, 130, 246, 0.1) !important;
+        }
+
+        @keyframes riseUp {
+            0% {
+                top: 70%;
+                opacity: 0;
+            }
+
+            30% {
+                top: 50%;
+                opacity: 1;
+            }
+
+            70% {
+                top: 30%;
+                opacity: 0;
+            }
+
+            100% {
+                top: 30%;
+                opacity: 0;
+            }
+        }
+
+        @keyframes scan {
+
+            0%,
+            50% {
+                top: 20%;
+                opacity: 0;
+            }
+
+            55% {
+                opacity: 1;
+            }
+
+            90% {
+                top: 80%;
+                opacity: 1;
+            }
+
+            100% {
+                top: 80%;
+                opacity: 0;
+            }
+        }
+
+        @keyframes checkFade {
+
+            0%,
+            85% {
+                opacity: 0;
+                transform: scale(0.5);
+            }
+
+            90% {
+                opacity: 1;
+                transform: scale(1.2);
+            }
+
+            95% {
+                transform: scale(1);
+            }
+
+            100% {
+                opacity: 0;
+            }
+        }
+
+        /* Fusion Core Animation (Modals) */
+        .fusion-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(2, 6, 23, 0.95);
+            z-index: 50;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(5px);
+        }
+
+        .core-container {
+            position: relative;
+            width: 160px;
+            height: 160px;
+        }
+
+        .core-ring {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            border-radius: 50%;
+            border: 4px solid transparent;
+            transform: translate(-50%, -50%);
+        }
+
+        .ring-1 {
+            width: 140px;
+            height: 140px;
+            border-top-color: var(--neon-blue);
+            border-bottom-color: var(--neon-blue);
+            animation: spin 3s infinite linear;
+        }
+
+        .ring-2 {
+            width: 110px;
+            height: 110px;
+            border-left-color: var(--neon-purple);
+            border-right-color: var(--neon-purple);
+            animation: spinReverse 2s infinite linear;
+        }
+
+        .ring-3 {
+            width: 80px;
+            height: 80px;
+            border: 2px dashed #f8fafc;
+            animation: spin 6s infinite linear;
+        }
+
+        .core-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 50px;
+            height: 50px;
+            background: white;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 20px white, 0 0 40px var(--neon-blue);
+            animation: pulse 1.5s infinite ease-in-out;
+        }
+
+        @keyframes spin {
+            100% {
+                transform: translate(-50%, -50%) rotate(360deg);
+            }
+        }
+
+        @keyframes spinReverse {
+            100% {
+                transform: translate(-50%, -50%) rotate(-360deg);
+            }
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 0.8;
+            }
+
+            50% {
+                transform: translate(-50%, -50%) scale(1.1);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+
+<body class="h-[100dvh] flex flex-col text-[10px] sm:text-xs lg:text-sm bg-[#020617] text-slate-50">
+
+    <header class="h-10 lg:h-14 glass-panel flex items-center justify-between px-3 lg:px-6 z-30 shrink-0 relative">
+        <div class="flex items-center gap-2 lg:gap-3">
+            <i data-lucide="film" class="text-blue-400 w-4 h-4 lg:w-5 lg:h-5"></i>
+            <h1
+                class="hidden sm:block font-bold text-base lg:text-lg tracking-wide bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                FUSION STUDIO
+            </h1>
+            <!-- Compact Title for Mobile -->
+            <h1
+                class="sm:hidden font-bold text-xs tracking-wide bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                FUSION
+            </h1>
+        </div>
+        <div class="flex items-center gap-1 sm:gap-2">
+            <!-- Mobile Upload Button (Replaces Dropzone on small screens) -->
+            <button id="headerUploadBtn"
+                class="sm:hidden p-1.5 hover:bg-white/10 rounded-full text-blue-400 transition-colors active:scale-95">
+                <i data-lucide="upload-cloud" class="w-4 h-4"></i>
+            </button>
+
+            <button id="resetBtn" class="p-1.5 lg:p-2 hover:bg-white/10 rounded-full text-slate-400 transition-colors">
+                <i data-lucide="rotate-ccw" class="w-4 h-4 lg:w-5 lg:h-5"></i>
+            </button>
+        </div>
+    </header>
+
+    <div class="flex-1 flex flex-col lg:flex-row overflow-hidden relative">
+
+        <!-- Preview Area: Adjusted height for mobile to give more room to list if needed, or keeping prominent -->
+        <div
+            class="shrink-0 lg:order-2 lg:flex-1 p-2 lg:p-4 flex flex-col h-[30vh] sm:h-[40vh] lg:h-auto z-10 transition-all">
+            <div
+                class="w-full h-full glass-panel rounded-lg lg:rounded-xl p-1 relative flex items-center justify-center bg-black overflow-hidden group border-slate-800">
+                <canvas id="previewCanvas" class="max-w-full max-h-full rounded shadow-2xl object-contain"></canvas>
+                <div
+                    class="absolute bottom-2 left-2 lg:bottom-3 lg:left-3 bg-black/60 backdrop-blur px-1.5 py-0.5 rounded-full text-[9px] lg:text-[10px] text-white/70 border border-white/10 flex items-center pointer-events-none">
+                    <i data-lucide="monitor" class="w-2.5 h-2.5 lg:w-3 lg:h-3 mr-1"></i> Live
+                </div>
+            </div>
+        </div>
+
+        <div
+            class="flex-1 lg:w-96 lg:shrink-0 lg:order-1 flex flex-col overflow-y-auto lg:overflow-hidden p-3 pt-0 lg:p-4 lg:pr-0 gap-2 lg:gap-4">
+
+            <!-- Controls Panel: Compressed padding/text for mobile -->
+            <div class="glass-panel p-2.5 lg:p-4 rounded-lg lg:rounded-xl shrink-0">
+                <div class="grid grid-cols-2 gap-2 lg:gap-3 mb-2 lg:mb-4">
+                    <div class="flex flex-col gap-1">
+                        <label
+                            class="text-slate-400 text-[9px] lg:text-[10px] uppercase font-bold tracking-wider">Res</label>
+                        <select id="resolutionSelect"
+                            class="bg-slate-900/80 border border-slate-700 rounded-lg py-1.5 lg:py-2 px-2 text-[9px] sm:text-[10px] lg:text-xs outline-none focus:border-blue-500 text-slate-200">
+                            <option value="auto">Auto</option>
+                            <option value="1920x1080" selected>1080p</option>
+                            <option value="1280x720">720p</option>
+                            <option value="1080x1920">Portrait</option>
+                            <option value="1080x1080">Square</option>
+                        </select>
+                    </div>
+
+                    <div class="flex flex-col gap-1">
+                        <label
+                            class="text-slate-400 text-[9px] lg:text-[10px] uppercase font-bold tracking-wider">FX</label>
+                        <select id="filterSelect"
+                            class="bg-slate-900/80 border border-slate-700 rounded-lg py-1.5 lg:py-2 px-2 text-[9px] sm:text-[10px] lg:text-xs outline-none focus:border-blue-500 text-slate-200">
+                            <option value="none" selected>None</option>
+                            <option value="grayscale(100%)">Noir</option>
+                            <option value="sepia(60%)">Vintage</option>
+                            <option value="contrast(150%)">Drama</option>
+                            <option value="saturate(200%)">Vivid</option>
+                            <option value="blur(2px)">Dreamy</option>
+                            <option value="invert(100%)">Negative</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between gap-2 lg:gap-3">
+                    <div class="flex bg-slate-900/80 rounded-lg p-0.5 lg:p-1 border border-slate-700">
+                        <button
+                            class="format-btn px-2 lg:px-3 py-1 lg:py-1.5 rounded text-[9px] lg:text-[10px] bg-slate-700 text-white transition-all font-medium"
+                            data-fmt="mp4">MP4</button>
+                        <button
+                            class="format-btn px-2 lg:px-3 py-1 lg:py-1.5 rounded text-[9px] lg:text-[10px] text-slate-400 transition-all font-medium"
+                            data-fmt="webm">WEBM</button>
+                    </div>
+
+                    <button id="mergeBtn"
+                        class="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white py-1.5 lg:py-2 rounded-lg font-bold shadow-lg shadow-blue-500/20 active:scale-95 transition-all text-[10px] lg:text-xs flex items-center justify-center gap-1.5">
+                        <i data-lucide="merge" class="w-3 h-3 lg:w-4 lg:h-4"></i>
+                        <span>FUSE</span>
+                    </button>
+                </div>
+            </div>
+
+            <aside class="glass-panel rounded-lg lg:rounded-xl flex flex-col flex-1 min-h-[200px] overflow-hidden">
+                <div class="p-2 lg:p-3 border-b border-white/10 flex justify-between items-center bg-slate-900/30">
+                    <h2 class="font-semibold text-slate-300 flex items-center gap-1.5 text-[10px] lg:text-xs">
+                        <i data-lucide="library" class="w-3 h-3"></i> Clips
+                    </h2>
+                    <div class="text-[9px] lg:text-[10px] text-slate-500">
+                        <span id="totalDuration" class="text-blue-300 font-mono font-bold">00:00</span>
+                        <span class="mx-1">|</span>
+                        <span id="estSize" class="text-slate-400">0 MB</span>
+                    </div>
+                </div>
+
+                <!-- DropZone: Hidden on mobile (<640px) to save space. Mobile uses header button. -->
+                <div id="dropZone"
+                    class="hidden sm:block m-2 lg:m-3 p-2 lg:p-4 border-2 border-dashed border-slate-700 rounded-lg bg-slate-900/30 hover:border-blue-500 cursor-pointer text-center relative transition-all active:bg-slate-800 group overflow-hidden">
+                    <input type="file" id="fileInput" multiple accept="video/*"
+                        class="absolute inset-0 opacity-0 cursor-pointer z-10">
+
+                    <!-- Cinematic Animation (Desktop Only) -->
+                    <div
+                        class="upload-container mb-1 lg:mb-2 group-hover:scale-105 transition-transform duration-500 scale-75 lg:scale-100">
+                        <svg class="cloud-icon w-12 h-12 lg:w-16 lg:h-16 mx-auto" viewBox="0 0 24 24">
+                            <path
+                                d="M17.5 19c2.485 0 4.5-2.015 4.5-4.5 0-2.315-1.74-4.22-4.0-4.48-.525-4.325-4.325-7.52-8.5-7.52-4.695 0-8.5 3.585-8.5 8 0 1.25.32 2.45.9 3.5C2.15 14.9 3 16.5 4.5 17.5V19h13z"
+                                stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                        <i data-lucide="arrow-up" class="arrow-up w-5 h-5 lg:w-6 lg:h-6"></i>
+                        <div class="scan-beam"></div>
+                        <i data-lucide="check-circle" class="check-cycle w-4 h-4 lg:w-5 lg:h-5"></i>
+                    </div>
+
+                    <div class="flex flex-col items-center gap-1 pointer-events-none">
+                        <p class="text-slate-400 text-[9px] lg:text-[10px] group-hover:text-blue-300 transition-colors">
+                            Tap or Drag Videos</p>
+                    </div>
+                </div>
+
+                <div id="fileList" class="flex-1 overflow-y-auto px-2 pb-2 lg:px-3 lg:pb-3 space-y-1.5">
+                    <div id="emptyState" class="text-center mt-6 lg:mt-8 opacity-30">
+                        <i data-lucide="film" class="w-6 h-6 lg:w-8 lg:h-8 mx-auto mb-1.5"></i>
+                        <p class="text-[9px] lg:text-xs">No clips added</p>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </div>
+
+    <div id="videoContainer" style="position: fixed; left: -9999px; top: 0;"></div>
+
+    <!-- Clip Preview Modal -->
+    <div id="clipPreviewModal" class="fusion-modal hidden opacity-0 transition-opacity duration-300">
+        <button id="closePreviewBtn" class="absolute top-4 right-4 text-white/50 hover:text-white z-50 p-2">
+            <i data-lucide="x" class="w-6 h-6 lg:w-8 lg:h-8"></i>
+        </button>
+
+        <div class="w-full max-w-4xl px-4 flex flex-col items-center relative group">
+            <div
+                class="relative w-full aspect-video bg-black rounded-lg lg:rounded-xl overflow-hidden border border-slate-700 shadow-2xl">
+                <video id="previewPlayer" class="w-full h-full object-contain" playsinline></video>
+
+                <div
+                    class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent pt-12 pb-3 lg:pb-4 px-3 lg:px-4 opacity-100 transition-opacity duration-300 flex flex-col gap-1.5 lg:gap-2">
+                    <div class="relative w-full h-1 bg-white/20 rounded cursor-pointer group/progress"
+                        id="previewProgressContainer">
+                        <div id="previewProgressBar" class="absolute top-0 left-0 h-full bg-blue-500 rounded w-0"></div>
+                        <div class="absolute top-1/2 -translate-y-1/2 w-2 h-2 lg:w-3 lg:h-3 bg-white rounded-full shadow opacity-0 group-hover/progress:opacity-100 transition-opacity"
+                            id="previewThumb" style="left: 0%"></div>
+                    </div>
+
+                    <div class="flex items-center justify-between mt-0.5">
+                        <div class="flex items-center gap-3">
+                            <button id="previewPlayBtn" class="text-white hover:text-blue-400 transition-colors">
+                                <i data-lucide="play" class="w-5 h-5 lg:w-6 lg:h-6 fill-current"></i>
+                            </button>
+                            <div class="text-[9px] lg:text-[10px] font-mono text-slate-300">
+                                <span id="previewCurrentTime">0:00</span> / <span id="previewDuration">0:00</span>
+                            </div>
+                        </div>
+                        <div class="text-[9px] lg:text-[10px] text-slate-400 font-medium uppercase tracking-wider truncate max-w-[120px]"
+                            id="previewName">
+                            Filename.mp4
+                        </div>
+                    </div>
+                </div>
+
+                <div id="previewCenterPlay"
+                    class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div
+                        class="w-12 h-12 lg:w-16 lg:h-16 bg-black/40 backdrop-blur rounded-full flex items-center justify-center border border-white/10 group-active:scale-95 transition-transform">
+                        <i data-lucide="play" class="w-6 h-6 lg:w-8 lg:h-8 text-white fill-current ml-1"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Render Modal -->
+    <div id="renderModal" class="fusion-modal hidden opacity-0 transition-opacity duration-300">
+        <div class="core-container mb-4 lg:mb-6 scale-75 lg:scale-100">
+            <div class="core-ring ring-1"></div>
+            <div class="core-ring ring-2"></div>
+            <div class="core-ring ring-3"></div>
+            <div class="core-center"></div>
+        </div>
+
+        <h2 class="text-lg lg:text-xl font-bold text-white tracking-widest mb-1">FUSING</h2>
+        <p id="renderStatus" class="text-blue-300 font-mono text-[10px] lg:text-xs mb-4 lg:mb-6">Initializing...</p>
+
+        <div class="w-48 lg:w-64 h-1.5 bg-slate-800 rounded-full overflow-hidden mb-4 lg:mb-6">
+            <div id="progressBar"
+                class="h-full bg-gradient-to-r from-blue-500 to-purple-500 w-0 transition-all duration-300"></div>
+        </div>
+
+        <button id="cancelBtn"
+            class="text-red-400 hover:text-red-300 border border-red-500/30 px-5 py-1.5 rounded-full text-[10px] lg:text-xs uppercase tracking-widest hover:bg-red-500/10 transition-all">
+            Cancel
+        </button>
+    </div>
+
+    <!-- Success Modal -->
+    <div id="successModal" class="fusion-modal hidden opacity-0 transition-opacity duration-300">
+        <div
+            class="bg-slate-900/90 border border-slate-700 p-5 lg:p-6 rounded-2xl text-center max-w-[280px] lg:max-w-xs backdrop-blur-xl shadow-2xl mx-4">
+            <div
+                class="w-12 h-12 lg:w-16 lg:h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-3 lg:mb-4">
+                <i data-lucide="check" class="w-6 h-6 lg:w-8 lg:h-8 text-green-400"></i>
+            </div>
+            <h2 class="text-lg lg:text-xl font-bold text-white mb-1 lg:mb-2">Success!</h2>
+            <p class="text-slate-400 mb-5 lg:mb-6 text-[10px] lg:text-xs">Video fused successfully.</p>
+
+            <div class="flex flex-col gap-2.5">
+                <a id="downloadLink" href="#"
+                    class="w-full bg-green-600 hover:bg-green-500 text-white py-2.5 lg:py-3 rounded-xl font-semibold shadow-lg shadow-green-500/20 transition-all flex items-center justify-center gap-2 text-[10px] lg:text-xs">
+                    <i data-lucide="download" class="w-3.5 h-3.5 lg:w-4 lg:h-4"></i> Download
+                </a>
+                <button onclick="document.getElementById('successModal').classList.add('hidden')"
+                    class="text-slate-500 hover:text-white text-[10px] lg:text-xs py-1.5">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reset Modal -->
+    <div id="resetModal" class="fusion-modal hidden opacity-0 transition-opacity duration-300">
+        <div
+            class="bg-slate-900/90 border border-slate-700 p-5 lg:p-6 rounded-2xl text-center max-w-[280px] lg:max-w-xs backdrop-blur-xl shadow-2xl mx-4">
+            <div
+                class="w-10 h-10 lg:w-14 lg:h-14 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-3 lg:mb-4">
+                <i data-lucide="alert-triangle" class="w-5 h-5 lg:w-6 lg:h-6 text-red-500"></i>
+            </div>
+            <h2 class="text-base lg:text-lg font-bold text-white mb-1 lg:mb-2">Reset All?</h2>
+
+            <div class="flex gap-3 justify-center mt-4 lg:mt-6">
+                <button id="cancelReset"
+                    class="px-4 py-1.5 rounded-lg border border-slate-600 text-slate-300 text-[10px] lg:text-xs uppercase">No</button>
+                <button id="confirmReset"
+                    class="px-4 py-1.5 rounded-lg bg-red-600 text-white text-[10px] lg:text-xs uppercase shadow-lg shadow-red-500/20">Yes</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Init Icons
+        lucide.createIcons();
+
+        // --- State ---
+        let files = [];
+        let isRendering = false;
+        let shouldCancel = false;
+        let selectedFormat = 'mp4';
+
+        // --- DOM Elements ---
+        const dropZone = document.getElementById('dropZone');
+        const headerUploadBtn = document.getElementById('headerUploadBtn'); // New Mobile Button
+        const fileInput = document.getElementById('fileInput');
+        const fileList = document.getElementById('fileList');
+        const emptyState = document.getElementById('emptyState');
+        const previewCanvas = document.getElementById('previewCanvas');
+        const ctx = previewCanvas.getContext('2d', { willReadFrequently: true });
+        const mergeBtn = document.getElementById('mergeBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const renderModal = document.getElementById('renderModal');
+        const progressBar = document.getElementById('progressBar');
+        const renderStatus = document.getElementById('renderStatus');
+        const cancelBtn = document.getElementById('cancelBtn');
+        const successModal = document.getElementById('successModal');
+        const downloadLink = document.getElementById('downloadLink');
+        const resolutionSelect = document.getElementById('resolutionSelect');
+        const filterSelect = document.getElementById('filterSelect');
+        const formatBtns = document.querySelectorAll('.format-btn');
+        const totalDurationEl = document.getElementById('totalDuration');
+        const estSizeEl = document.getElementById('estSize');
+        const videoContainer = document.getElementById('videoContainer');
+
+        // Preview Modal Elements
+        const clipPreviewModal = document.getElementById('clipPreviewModal');
+        const previewPlayer = document.getElementById('previewPlayer');
+        const closePreviewBtn = document.getElementById('closePreviewBtn');
+        const previewPlayBtn = document.getElementById('previewPlayBtn');
+        const previewCenterPlay = document.getElementById('previewCenterPlay');
+        const previewProgressContainer = document.getElementById('previewProgressContainer');
+        const previewProgressBar = document.getElementById('previewProgressBar');
+        const previewThumb = document.getElementById('previewThumb');
+        const previewCurrentTime = document.getElementById('previewCurrentTime');
+        const previewDuration = document.getElementById('previewDuration');
+        const previewName = document.getElementById('previewName');
+
+        // --- Event Listeners ---
+        // Header Upload Button triggers file input
+        headerUploadBtn.addEventListener('click', () => fileInput.click());
+
+        // Dropzone events
+        dropZone.addEventListener('click', () => fileInput.click());
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('drag-over');
+            handleFiles(e.dataTransfer.files);
+        });
+
+        fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
+
+        formatBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                formatBtns.forEach(b => { b.classList.remove('bg-slate-700', 'text-white'); b.classList.add('text-slate-400'); });
+                btn.classList.add('bg-slate-700', 'text-white');
+                btn.classList.remove('text-slate-400');
+                selectedFormat = btn.dataset.fmt;
+                updateStats();
+            });
+        });
+
+        // Reset Logic
+        const resetModal = document.getElementById('resetModal');
+        const confirmResetBtn = document.getElementById('confirmReset');
+        const cancelResetBtn = document.getElementById('cancelReset');
+
+        resetBtn.addEventListener('click', () => {
+            resetModal.classList.remove('hidden');
+            setTimeout(() => resetModal.classList.remove('opacity-0'), 10);
+        });
+
+        const closeResetModal = () => {
+            resetModal.classList.add('opacity-0');
+            setTimeout(() => resetModal.classList.add('hidden'), 300);
+        };
+
+        cancelResetBtn.addEventListener('click', closeResetModal);
+        confirmResetBtn.addEventListener('click', () => {
+            files = [];
+            renderFiles();
+            ctx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+            totalDurationEl.textContent = "00:00";
+            estSizeEl.textContent = "0 MB";
+            closeResetModal();
+        });
+
+        mergeBtn.addEventListener('click', startMerging);
+        cancelBtn.addEventListener('click', () => { shouldCancel = true; });
+        resolutionSelect.addEventListener('change', updatePreviewFrame);
+        filterSelect.addEventListener('change', updatePreviewFrame);
+
+        // --- Preview Logic ---
+        closePreviewBtn.addEventListener('click', closePreview);
+
+        function togglePreviewPlay() {
+            if (previewPlayer.paused) {
+                previewPlayer.play();
+                updatePlayIcons(true);
+            } else {
+                previewPlayer.pause();
+                updatePlayIcons(false);
+            }
+        }
+
+        previewPlayBtn.addEventListener('click', togglePreviewPlay);
+        previewPlayer.addEventListener('click', togglePreviewPlay);
+
+        function updatePlayIcons(isPlaying) {
+            const icon = isPlaying ? 'pause' : 'play';
+            previewPlayBtn.innerHTML = `<i data-lucide="${icon}" class="w-5 h-5 lg:w-6 lg:h-6 fill-current"></i>`;
+
+            if (isPlaying) {
+                previewCenterPlay.classList.add('opacity-0');
+            } else {
+                previewCenterPlay.classList.remove('opacity-0');
+                previewCenterPlay.innerHTML = `<div class="w-12 h-12 lg:w-16 lg:h-16 bg-black/40 backdrop-blur rounded-full flex items-center justify-center border border-white/10 transition-transform"><i data-lucide="play" class="w-6 h-6 lg:w-8 lg:h-8 text-white fill-current ml-1"></i></div>`;
+            }
+            lucide.createIcons();
+        }
+
+        previewPlayer.addEventListener('timeupdate', () => {
+            if (!previewPlayer.duration) return;
+            const pct = (previewPlayer.currentTime / previewPlayer.duration) * 100;
+            previewProgressBar.style.width = `${pct}%`;
+            previewThumb.style.left = `${pct}%`;
+            previewCurrentTime.textContent = formatTime(previewPlayer.currentTime);
+        });
+
+        previewPlayer.addEventListener('ended', () => {
+            updatePlayIcons(false);
+        });
+
+        previewProgressContainer.addEventListener('click', (e) => {
+            const rect = previewProgressContainer.getBoundingClientRect();
+            const pos = (e.clientX - rect.left) / rect.width;
+            previewPlayer.currentTime = pos * previewPlayer.duration;
+        });
+
+        function openPreview(id) {
+            const fileObj = files.find(f => f.id === id);
+            if (!fileObj) return;
+
+            previewPlayer.src = URL.createObjectURL(fileObj.file);
+            previewName.textContent = fileObj.name;
+            previewDuration.textContent = formatTime(fileObj.duration);
+            previewCurrentTime.textContent = "0:00";
+            previewProgressBar.style.width = "0%";
+            previewThumb.style.left = "0%";
+
+            updatePlayIcons(false);
+
+            clipPreviewModal.classList.remove('hidden');
+            setTimeout(() => clipPreviewModal.classList.remove('opacity-0'), 10);
+
+            previewPlayer.play().then(() => updatePlayIcons(true)).catch(() => updatePlayIcons(false));
+        }
+
+        function closePreview() {
+            previewPlayer.pause();
+            clipPreviewModal.classList.add('opacity-0');
+            setTimeout(() => {
+                clipPreviewModal.classList.add('hidden');
+                previewPlayer.src = "";
+            }, 300);
+        }
+
+        // --- Helper Functions ---
+
+        async function handleFiles(fileListObj) {
+            const newFiles = Array.from(fileListObj).filter(f => f.type.startsWith('video/'));
+            for (const file of newFiles) {
+                const id = Math.random().toString(36).substr(2, 9);
+                const duration = await getVideoDuration(file);
+                files.push({ file, id, duration, name: file.name });
+            }
+            renderFiles();
+            if (files.length > 0) updatePreviewFrame();
+        }
+
+        function renderFiles() {
+            fileList.innerHTML = '';
+            if (files.length === 0) {
+                fileList.appendChild(emptyState);
+                return;
+            }
+
+            files.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.className = 'group flex items-center gap-1.5 lg:gap-2 p-2 lg:p-2.5 bg-slate-800/40 rounded-lg border border-slate-700/50 hover:border-blue-500/50 transition-all';
+
+                div.innerHTML = `
+                    <div class="flex flex-col gap-0.5">
+                        <button onclick="moveFile(${index}, -1)" class="p-0.5 hover:bg-white/10 rounded text-slate-500 hover:text-blue-400 disabled:opacity-20" ${index === 0 ? 'disabled' : ''}>
+                            <i data-lucide="chevron-up" class="w-2.5 h-2.5 lg:w-3 lg:h-3"></i>
+                        </button>
+                        <button onclick="moveFile(${index}, 1)" class="p-0.5 hover:bg-white/10 rounded text-slate-500 hover:text-blue-400 disabled:opacity-20" ${index === files.length - 1 ? 'disabled' : ''}>
+                            <i data-lucide="chevron-down" class="w-2.5 h-2.5 lg:w-3 lg:h-3"></i>
+                        </button>
+                    </div>
+
+                    <div class="flex-1 min-w-0 ml-1 cursor-pointer" onclick="openPreview('${item.id}')">
+                        <div class="text-[10px] lg:text-xs text-white truncate font-medium leading-tight group-hover:text-blue-300 transition-colors">${item.name}</div>
+                        <div class="text-[9px] lg:text-[10px] text-slate-500 font-mono mt-0.5">${formatTime(item.duration)}</div>
+                    </div>
+
+                    <div class="flex items-center gap-1">
+                        <button class="p-1.5 text-slate-500 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors" onclick="openPreview('${item.id}')" title="Preview Clip">
+                            <i data-lucide="eye" class="w-3.5 h-3.5 lg:w-4 lg:h-4"></i>
+                        </button>
+                        <button class="p-1.5 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors" onclick="removeFile('${item.id}')" title="Remove">
+                            <i data-lucide="trash-2" class="w-3.5 h-3.5 lg:w-4 lg:h-4"></i>
+                        </button>
+                    </div>
+                `;
+                fileList.appendChild(div);
+            });
+            lucide.createIcons();
+            updateStats();
+        }
+
+        function moveFile(index, direction) {
+            const newIndex = index + direction;
+            if (newIndex < 0 || newIndex >= files.length) return;
+            [files[index], files[newIndex]] = [files[newIndex], files[index]];
+            renderFiles();
+            updatePreviewFrame();
+        }
+
+        function removeFile(id) {
+            files = files.filter(f => f.id !== id);
+            renderFiles();
+            if (files.length > 0) updatePreviewFrame();
+            else {
+                ctx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+                totalDurationEl.textContent = "00:00";
+                estSizeEl.textContent = "0 MB";
+            }
+        }
+
+        function updateStats() {
+            const totalDur = files.reduce((acc, f) => acc + f.duration, 0);
+            totalDurationEl.textContent = formatTime(totalDur);
+
+            // LOGIC: MP4 needs 5Mbps for high quality. 
+            // WebM (VP9) is efficient, so we set it to 3Mbps to save space.
+            let videoBitrate = 5000000;
+            if (selectedFormat === 'webm') videoBitrate = 3000000;
+
+            const audioBitrate = 128000;
+            const totalBitrate = videoBitrate + audioBitrate;
+
+            const sizeBytes = (totalBitrate * totalDur) / 8;
+            const sizeMB = (sizeBytes / (1024 * 1024)).toFixed(1);
+            estSizeEl.textContent = `~${sizeMB} MB`;
+        }
+
+        function getVideoDuration(file) {
+            return new Promise((resolve) => {
+                const video = document.createElement('video');
+                video.preload = 'metadata';
+                video.onloadedmetadata = () => { window.URL.revokeObjectURL(video.src); resolve(video.duration); };
+                video.onerror = () => resolve(0);
+                video.src = URL.createObjectURL(file);
+            });
+        }
+
+        async function updatePreviewFrame() {
+            if (files.length === 0) return;
+            const file = files[0].file;
+            const tempVid = document.createElement('video');
+            tempVid.src = URL.createObjectURL(file);
+            tempVid.muted = true;
+            tempVid.currentTime = 1;
+
+            await new Promise(r => { tempVid.onloadeddata = r; tempVid.onerror = r; });
+            await new Promise(r => { tempVid.onseeked = r; if (tempVid.readyState >= 2) tempVid.currentTime = 1; setTimeout(r, 200); });
+
+            let width = tempVid.videoWidth;
+            let height = tempVid.videoHeight;
+            const selRes = resolutionSelect.value;
+            if (selRes !== 'auto') {
+                const [w, h] = selRes.split('x').map(Number);
+                width = w; height = h;
+            }
+
+            previewCanvas.width = width;
+            previewCanvas.height = height;
+            ctx.filter = filterSelect.value !== 'none' ? filterSelect.value : 'none';
+            ctx.drawImage(tempVid, 0, 0, width, height);
+            tempVid.remove();
+        }
+
+        async function startMerging() {
+            if (files.length <= 1) {
+                const jokes = [
+                    "It takes two to tango! One video is just a solo performance.",
+                    "Merging one video? That's called 'copy-paste' in my book!",
+                    "I need at least two videos to work my magic. Don't be shy!",
+                    "One is the loneliest number... add another clip!",
+                    "You want me to merge this video with... itself? 🤨",
+                    "Error 404: Second video not found. Please try again!",
+                    "Come on, give me a challenge! Add one more video.",
+                    "I'm a merger, not a mirror! Add another file."
+                ];
+                const randomJoke = jokes[Math.floor(Math.random() * jokes.length)];
+                alert(randomJoke);
+                return;
+            }
+
+            isRendering = true;
+            shouldCancel = false;
+            renderModal.classList.remove('hidden');
+            setTimeout(() => renderModal.classList.remove('opacity-0'), 10);
+
+            // Setup
+            const canvas = document.createElement('canvas');
+            let width, height;
+            if (resolutionSelect.value === 'auto') {
+                const firstVid = await getVideoDimensions(files[0].file);
+                width = firstVid.w; height = firstVid.h;
+            } else {
+                [width, height] = resolutionSelect.value.split('x').map(Number);
+            }
+            canvas.width = width;
+            canvas.height = height;
+            const canvasCtx = canvas.getContext('2d', { alpha: false, desynchronized: true });
+
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const destNode = audioCtx.createMediaStreamDestination();
+            const canvasStream = canvas.captureStream(30);
+            const combinedStream = new MediaStream([...canvasStream.getVideoTracks(), ...destNode.stream.getAudioTracks()]);
+
+            // Mime Check
+            let mimeType = 'video/mp4; codecs=avc1';
+            if (selectedFormat === 'webm') mimeType = 'video/webm; codecs=vp9';
+            if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = ''; // Fallback
+
+            const mediaRecorder = new MediaRecorder(combinedStream, mimeType ? { mimeType, videoBitsPerSecond: 5000000 } : undefined);
+            const chunks = [];
+
+            mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
+            mediaRecorder.onstop = () => {
+                const blob = new Blob(chunks, { type: mimeType || 'video/webm' });
+                const url = URL.createObjectURL(blob);
+
+                renderModal.classList.add('opacity-0');
+                setTimeout(() => {
+                    renderModal.classList.add('hidden');
+                    successModal.classList.remove('hidden');
+                    setTimeout(() => successModal.classList.remove('opacity-0'), 10);
+                }, 300);
+
+                let ext = selectedFormat;
+                downloadLink.href = url;
+                downloadLink.download = `fusion_video_${Date.now()}.${ext}`;
+
+                audioCtx.close();
+                isRendering = false;
+                videoContainer.innerHTML = '';
+            };
+
+            mediaRecorder.start();
+
+            // Playback Loop
+            let totalDur = files.reduce((acc, f) => acc + f.duration, 0);
+            let timeElapsed = 0;
+
+            for (let i = 0; i < files.length; i++) {
+                if (shouldCancel) break;
+                const fileObj = files[i];
+                const videoEl = document.createElement('video');
+                videoEl.src = URL.createObjectURL(fileObj.file);
+                videoEl.muted = false;
+                videoEl.crossOrigin = "anonymous";
+                videoEl.playsInline = true;
+
+                // Helper styles
+                Object.assign(videoEl.style, { position: 'fixed', opacity: '0.01', pointerEvents: 'none' });
+                videoContainer.appendChild(videoEl);
+
+                try {
+                    const source = audioCtx.createMediaElementSource(videoEl);
+                    source.connect(destNode);
+                } catch (e) { }
+
+                await new Promise((resolve, reject) => {
+                    videoEl.oncanplay = () => {
+                        videoEl.play();
+                        renderStatus.innerText = `Processing Clip ${i + 1}/${files.length}`;
+
+                        function renderFrame() {
+                            if (shouldCancel || videoEl.paused || videoEl.ended) return;
+
+                            canvasCtx.filter = filterSelect.value !== 'none' ? filterSelect.value : 'none';
+
+                            // "Cover" fit
+                            const hRatio = canvas.width / videoEl.videoWidth;
+                            const vRatio = canvas.height / videoEl.videoHeight;
+                            const ratio = Math.max(hRatio, vRatio);
+                            const cx = (canvas.width - videoEl.videoWidth * ratio) / 2;
+                            const cy = (canvas.height - videoEl.videoHeight * ratio) / 2;
+
+                            canvasCtx.drawImage(videoEl, 0, 0, videoEl.videoWidth, videoEl.videoHeight, cx, cy, videoEl.videoWidth * ratio, videoEl.videoHeight * ratio);
+
+                            const pct = ((timeElapsed + videoEl.currentTime) / totalDur) * 100;
+                            progressBar.style.width = `${Math.min(pct, 100)}%`;
+
+                            if ('requestVideoFrameCallback' in videoEl) videoEl.requestVideoFrameCallback(renderFrame);
+                            else requestAnimationFrame(renderFrame);
+                        }
+
+                        if ('requestVideoFrameCallback' in videoEl) videoEl.requestVideoFrameCallback(renderFrame);
+                        else requestAnimationFrame(renderFrame);
+                    };
+
+                    videoEl.onended = () => { timeElapsed += videoEl.duration; videoEl.remove(); resolve(); };
+                    videoEl.onerror = reject;
+                });
+            }
+
+            if (shouldCancel) {
+                mediaRecorder.stop();
+                renderModal.classList.add('hidden');
+                alert("Cancelled");
+            } else {
+                mediaRecorder.stop();
+            }
+        }
+
+        async function getVideoDimensions(file) {
+            return new Promise((resolve) => {
+                const v = document.createElement('video');
+                v.preload = 'metadata';
+                v.onloadedmetadata = () => { resolve({ w: v.videoWidth, h: v.videoHeight }); window.URL.revokeObjectURL(v.src); };
+                v.src = URL.createObjectURL(file);
+            });
+        }
+
+        function formatTime(s) {
+            if (!s) return "00:00";
+            const m = Math.floor(s / 60);
+            const sec = Math.floor(s % 60);
+            return `${m}:${sec.toString().padStart(2, '0')}`;
+        }
+    </script>
+</body>
+
+</html>

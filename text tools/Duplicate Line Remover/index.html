@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shadow Text - Duplicate Remover</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;500;600;700&display=swap"
+        rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link rel="stylesheet" href="../../styles.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        mono: ['Courier New', 'monospace'],
+                        sans: ['Rajdhani', 'sans-serif'],
+                        orbitron: ['Orbitron', 'sans-serif']
+                    },
+                    colors: {
+                        cyber: {
+                            accent: '#ef4444', // Red-500
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body
+    class="min-h-screen flex flex-col font-sans overflow-x-hidden bg-slate-900 text-white selection:bg-red-500 selection:text-white">
+
+    <!-- 3D Background -->
+    <div id="bg-3d-container"></div>
+
+    <!-- Navigation -->
+    <nav
+        class="sticky top-0 z-50 glass-effect border-b border-white/5 px-4 md:px-6 py-3 flex items-center justify-between backdrop-blur-md">
+        <a href="../index.html" class="flex items-center gap-3 text-slate-300 hover:text-white transition-colors group">
+            <div
+                class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center border border-white/10 group-hover:border-red-500/50 transition-all">
+                <i class="fas fa-chevron-left text-xs group-hover:-translate-x-0.5 transition-transform"></i>
+            </div>
+            <span class="font-orbitron font-bold tracking-wider hidden md:block">BACK</span>
+        </a>
+
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded bg-red-500/20 flex items-center justify-center text-red-400">
+                <i class="fas fa-eraser"></i>
+            </div>
+            <h1 class="text-lg md:text-xl font-orbitron font-bold tracking-widest text-white">SHADOW<span
+                    class="text-red-500">CLEAN</span></h1>
+        </div>
+
+        <div class="w-8"></div>
+    </nav>
+
+    <!-- Main Content -->
+    <main
+        class="flex-grow container mx-auto px-4 py-8 relative z-10 flex flex-col lg:flex-row gap-6 h-[calc(100vh-80px)] min-h-[600px]">
+
+        <!-- Input Panel -->
+        <div
+            class="lg:w-1/2 flex flex-col glass rounded-2xl border border-white/5 shadow-xl overflow-hidden h-full group">
+            <div class="px-6 py-4 border-b border-white/5 bg-slate-900/50 flex justify-between items-center">
+                <span class="text-xs font-bold text-slate-400 tracking-widest uppercase"><i
+                        class="fas fa-list mr-2"></i>Original List</span>
+                <span id="originalCount" class="text-[10px] bg-slate-800 px-2 py-1 rounded text-slate-400 font-mono">0
+                    lines</span>
+            </div>
+            <textarea id="textInput" oninput="process()"
+                class="flex-1 w-full bg-transparent p-6 text-sm md:text-base font-mono text-slate-300 focus:outline-none resize-none custom-scrollbar placeholder-slate-700"
+                placeholder="Paste your list here..."></textarea>
+        </div>
+
+        <!-- Controls (Center Desktop) -->
+        <div class="flex lg:flex-col items-center justify-center gap-4 shrink-0">
+            <div class="p-4 glass rounded-xl border border-white/5 flex lg:flex-col gap-4 items-center">
+                <button onclick="process()"
+                    class="w-12 h-12 rounded-lg bg-red-600 hover:bg-red-500 text-white shadow-lg shadow-red-500/20 transition-all flex items-center justify-center text-xl group relative">
+                    <i class="fas fa-filter group-hover:scale-110 transition-transform"></i>
+                </button>
+
+                <label class="flex items-center gap-2 cursor-pointer group" title="Case Sensitive">
+                    <input type="checkbox" id="caseSensitive" onchange="process()" class="hidden peer">
+                    <div
+                        class="w-8 h-8 rounded bg-slate-800 peer-checked:bg-red-500/20 text-slate-500 peer-checked:text-red-400 flex items-center justify-center transition-all border border-white/5 peer-checked:border-red-500/50">
+                        <i class="fas fa-font"></i>
+                    </div>
+                </label>
+            </div>
+        </div>
+
+        <!-- Output Panel -->
+        <div class="lg:w-1/2 flex flex-col glass rounded-2xl border border-white/5 shadow-xl overflow-hidden h-full">
+            <div class="px-6 py-4 border-b border-white/5 bg-slate-900/50 flex justify-between items-center">
+                <span class="text-xs font-bold text-red-400 tracking-widest uppercase"><i
+                        class="fas fa-check mr-2"></i>Cleaned List</span>
+                <div class="flex items-center gap-3">
+                    <span id="cleanedCount"
+                        class="text-[10px] bg-red-900/20 px-2 py-1 rounded text-red-400 font-mono border border-red-500/10">0
+                        lines</span>
+                    <button onclick="copy('textOutput')"
+                        class="text-[10px] text-red-400 hover:text-white transition-colors uppercase font-bold tracking-wider"><i
+                            class="fas fa-copy mr-1"></i>Copy</button>
+                </div>
+            </div>
+            <textarea id="textOutput" readonly
+                class="flex-1 w-full bg-transparent p-6 text-sm md:text-base font-mono text-red-300 focus:outline-none resize-none custom-scrollbar placeholder-red-900/30"
+                placeholder="Unique lines will appear here..."></textarea>
+        </div>
+
+    </main>
+
+    <!-- Shared Script -->
+    <script type="module" src="../../shared/bg-particles.js"></script>
+
+    <script>
+        function process() {
+            const input = document.getElementById('textInput').value;
+            const caseSensitive = document.getElementById('caseSensitive').checked;
+
+            const lines = input.split('\n');
+            document.getElementById('originalCount').innerText = `${lines.length} lines`;
+
+            let uniqueLines = [];
+
+            if (caseSensitive) {
+                uniqueLines = [...new Set(lines)];
+            } else {
+                const seen = new Set();
+                uniqueLines = lines.filter(line => {
+                    const lower = line.toLowerCase();
+                    if (seen.has(lower)) return false;
+                    seen.add(lower);
+                    return true;
+                });
+            }
+
+            document.getElementById('textOutput').value = uniqueLines.join('\n');
+            document.getElementById('cleanedCount').innerText = `${uniqueLines.length} lines`;
+        }
+
+        function copy(id) {
+            const el = document.getElementById(id);
+            el.select();
+            document.execCommand('copy');
+            const btn = document.querySelector(`button[onclick="copy('${id}')"]`);
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-check mr-1"></i>COPIED';
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+            }, 1500);
+        }
+    </script>
+</body>
+
+</html>

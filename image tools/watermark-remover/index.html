@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CleanSlate AI - Extreme</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* --- UTILITIES --- */
+        body {
+            overscroll-behavior: none;
+            /* Prevent pull-to-refresh on mobile */
+        }
+
+        /* Fluid Typography */
+        :root {
+            --fs-xs: clamp(0.65rem, 1.5vw, 0.75rem);
+            --fs-sm: clamp(0.75rem, 2vw, 0.875rem);
+            --fs-base: clamp(0.875rem, 2.5vw, 1rem);
+            --fs-lg: clamp(1rem, 3vw, 1.125rem);
+            --fs-xl: clamp(1.125rem, 4vw, 1.25rem);
+        }
+
+        .text-fluid-xs {
+            font-size: var(--fs-xs);
+        }
+
+        .text-fluid-sm {
+            font-size: var(--fs-sm);
+        }
+
+        .text-fluid-base {
+            font-size: var(--fs-base);
+        }
+
+        .text-fluid-lg {
+            font-size: var(--fs-lg);
+        }
+
+        .text-fluid-xl {
+            font-size: var(--fs-xl);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* Canvas Background */
+        .canvas-wrapper {
+            background-image:
+                linear-gradient(45deg, #f0f0f0 25%, transparent 25%),
+                linear-gradient(-45deg, #f0f0f0 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, #f0f0f0 75%),
+                linear-gradient(-45deg, transparent 75%, #f0f0f0 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+            background-color: white;
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.05);
+            touch-action: none;
+        }
+
+        /* Centered Canvas */
+        canvas {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            max-width: 100%;
+            max-height: 100%;
+            z-index: 10;
+            cursor: none;
+        }
+
+        #maskCanvas {
+            z-index: 20;
+            opacity: 0.6;
+        }
+
+        /* Custom Brush Cursor */
+        #cursor-brush {
+            position: fixed;
+            pointer-events: none;
+            border: 2px solid rgba(255, 0, 0, 0.8);
+            background-color: rgba(255, 0, 0, 0.1);
+            border-radius: 50%;
+            z-index: 9999;
+            display: none;
+            transform: translate(-50%, -50%);
+        }
+
+        /* Glassmorphism Classes */
+        .glass {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        /* Animations */
+        @keyframes pulse-ring {
+            0% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
+            }
+
+            70% {
+                transform: scale(1);
+                box-shadow: 0 0 0 10px rgba(59, 130, 246, 0);
+            }
+
+            100% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+            }
+        }
+
+        .animate-pulse-ring {
+            animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        .loader {
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top: 2px solid white;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-slate-100 text-slate-800 font-sans h-[100dvh] flex flex-col overflow-hidden selection:bg-blue-200">
+
+    <!-- Custom Cursor -->
+    <div id="cursor-brush"></div>
+
+    <!-- HEADER & NAV -->
+    <header class="bg-white border-b border-gray-200 z-50 flex-none h-14 lg:h-16 shadow-sm relative">
+        <div class="h-full max-w-screen-2xl mx-auto px-4 flex justify-between items-center">
+
+            <!-- Logo -->
+            <div class="flex items-center gap-2 lg:gap-3">
+                <div
+                    class="w-7 h-7 lg:w-8 lg:h-8 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center text-white font-bold shadow-blue-500/20 shadow-lg">
+                    <i class="fas fa-magic text-fluid-sm"></i>
+                </div>
+                <h1 class="text-fluid-lg font-bold tracking-tight text-slate-900">CleanSlate <span
+                        class="text-blue-600">Pro</span></h1>
+            </div>
+
+            <div class="flex items-center gap-2 lg:gap-4">
+
+                <!-- MOBILE: Floated 'Remove' Button in Nav -->
+                <button id="processBtnMobile"
+                    class="lg:hidden px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-full font-bold shadow-md shadow-blue-500/20 transition transform active:scale-95 flex items-center gap-2 text-fluid-xs disabled:opacity-50 disabled:cursor-not-allowed">
+                    <span>Remove</span>
+                    <i class="fas fa-magic" id="btnIconMobile"></i>
+                    <div id="btnLoaderMobile" class="loader hidden"></div>
+                </button>
+
+                <!-- Status Indicator -->
+                <div
+                    class="hidden sm:flex items-center gap-2 px-3 py-1 bg-slate-50 rounded-full border border-slate-100">
+                    <span class="w-2 h-2 rounded-full bg-orange-400 animate-pulse" id="statusDot"></span>
+                    <span id="statusText" class="text-fluid-xs font-medium text-slate-500">Connecting...</span>
+                </div>
+
+                <!-- Desktop Github -->
+                <a href="#" class="hidden md:block text-slate-400 hover:text-slate-700 transition">
+                    <i class="fab fa-github text-fluid-xl"></i>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN WORKSPACE -->
+    <main class="flex-1 flex flex-col lg:flex-row overflow-hidden relative">
+
+        <!-- SIDEBAR (Desktop) / TOP TOOLBAR (Mobile) -->
+        <aside class="
+            order-1 
+            w-full lg:w-80 
+            glass lg:bg-white 
+            lg:border-r border-gray-200 
+            z-40 flex-none 
+            flex flex-row lg:flex-col 
+            items-center lg:items-stretch 
+            justify-between lg:justify-start
+            p-2 lg:p-6 gap-3 lg:gap-6
+            shadow-sm lg:shadow-none
+        ">
+
+            <!-- 1. UPLOAD SECTION -->
+
+            <!-- Desktop: Big Drop Zone -->
+            <div class="hidden lg:block bg-slate-50 border-2 border-dashed border-slate-300 rounded-xl p-6 text-center transition hover:border-blue-400 hover:bg-blue-50 group cursor-pointer relative"
+                id="dropZoneDesktop">
+                <input type="file" id="imageUploadDesktop" accept="image/*"
+                    class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+                <div class="flex flex-col items-center gap-2 text-slate-400 group-hover:text-blue-500 transition">
+                    <div class="w-12 h-12 rounded-full bg-white shadow-sm flex items-center justify-center mb-1">
+                        <i class="fas fa-cloud-upload-alt text-2xl"></i>
+                    </div>
+                    <span class="text-fluid-sm font-semibold">Drop or Click</span>
+                    <span class="text-fluid-xs opacity-70">JPG, PNG</span>
+                </div>
+            </div>
+
+            <!-- Mobile: Animated Upload Icon -->
+            <div class="lg:hidden relative group">
+                <label for="imageUploadMobile"
+                    class="w-9 h-9 flex items-center justify-center bg-blue-50 text-blue-600 rounded-full active:bg-blue-100 active:scale-95 transition cursor-pointer border border-blue-200 animate-pulse-ring relative overflow-hidden">
+                    <i class="fas fa-cloud-upload-alt text-fluid-base z-10"></i>
+                </label>
+                <input type="file" id="imageUploadMobile" accept="image/*" class="hidden">
+            </div>
+
+            <!-- 2. TOOLS -->
+            <div class="flex-1 flex lg:flex-col items-center lg:items-stretch gap-3 lg:gap-6 opacity-50 pointer-events-none transition-opacity duration-300"
+                id="toolsPanel">
+
+                <!-- Brush Size Slider -->
+                <div class="flex flex-col gap-1 lg:gap-2 flex-1 lg:flex-none min-w-[100px]">
+                    <div class="flex justify-between items-center">
+                        <label
+                            class="text-fluid-xs font-bold uppercase text-slate-400 tracking-wider hidden lg:block">Brush
+                            Size</label>
+                        <span
+                            class="text-fluid-xs font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-600 lg:ml-auto"
+                            id="brushSizeDisplay">20px</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-circle text-[8px] text-slate-300 lg:hidden"></i>
+                        <input type="range" id="brushSize" min="5" max="100" value="20"
+                            class="w-full accent-blue-600 h-1.5 lg:h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                        <i class="fas fa-circle text-[16px] text-slate-300 lg:hidden"></i>
+                    </div>
+                </div>
+
+                <!-- Actions Group -->
+                <div class="flex flex-row lg:grid lg:grid-cols-2 gap-2">
+                    <button id="undoBtn"
+                        class="w-9 h-9 lg:w-auto lg:h-auto lg:px-4 lg:py-2.5 flex items-center justify-center gap-2 bg-white border border-slate-200 rounded-lg text-slate-700 hover:bg-slate-50 transition shadow-sm active:scale-95"
+                        title="Undo">
+                        <i class="fas fa-undo text-fluid-sm"></i> <span
+                            class="hidden lg:inline text-fluid-sm font-medium">Undo</span>
+                    </button>
+
+                    <button id="resetBtn"
+                        class="w-9 h-9 lg:w-auto lg:h-auto lg:px-4 lg:py-2.5 flex items-center justify-center gap-2 bg-white border border-slate-200 rounded-lg text-red-500 hover:bg-red-50 hover:border-red-200 transition shadow-sm active:scale-95"
+                        title="Reset Canvas">
+                        <i class="fas fa-trash-alt text-fluid-sm"></i> <span
+                            class="hidden lg:inline text-fluid-sm font-medium">Reset</span>
+                    </button>
+                </div>
+
+                <!-- Desktop Process Button (Hidden on mobile as it's in header) -->
+                <button id="processBtnDesktop"
+                    class="hidden lg:flex w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold shadow-lg shadow-blue-500/30 transition transform active:scale-95 items-center justify-center gap-2 text-fluid-base">
+                    <span id="btnTextDesktop">Remove Watermark</span>
+                    <div id="btnLoaderDesktop" class="loader hidden"></div>
+                </button>
+            </div>
+        </aside>
+
+        <!-- CANVAS AREA -->
+        <section class="order-2 flex-1 bg-slate-100 relative overflow-hidden flex flex-col p-2 lg:p-6">
+            <div id="editorView"
+                class="w-full h-full rounded-xl lg:rounded-2xl overflow-hidden shadow-inner border border-slate-200 relative flex flex-col bg-white">
+                <!-- Watermark Label -->
+                <div
+                    class="absolute top-4 left-4 z-30 bg-white/90 backdrop-blur px-3 py-1.5 rounded-full text-fluid-xs font-bold text-slate-500 shadow-sm border border-slate-100 pointer-events-none">
+                    EDITOR CANVAS
+                </div>
+
+                <!-- Canvas Container -->
+                <div class="canvas-wrapper w-full h-full flex items-center justify-center" id="editorContainer">
+                    <div class="text-center p-8 text-slate-400 flex flex-col items-center gap-4 animate-pulse">
+                        <div
+                            class="w-16 h-16 lg:w-20 lg:h-20 rounded-full bg-slate-50 flex items-center justify-center mb-2">
+                            <i class="fas fa-image text-3xl lg:text-4xl opacity-30"></i>
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <p class="hidden lg:block text-fluid-sm font-medium">Drag & Drop an image to start</p>
+                            <!-- Mobile specific instruction -->
+                            <div class="lg:hidden text-center">
+                                <p class="text-fluid-sm font-bold text-slate-500">Upload File to Start</p>
+                                <p class="text-fluid-xs opacity-70">Tap the pulsing icon above</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- RESULT MODAL (Full Screen Overlay) -->
+    <div id="resultView"
+        class="fixed inset-0 z-50 bg-slate-900/95 backdrop-blur-sm hidden flex-col transition-opacity duration-300 opacity-0">
+        <!-- Result Content -->
+        <div class="w-full h-full flex flex-col relative">
+
+            <!-- Result Toolbar -->
+            <div
+                class="absolute top-0 left-0 right-0 p-4 z-20 flex justify-between items-start bg-gradient-to-b from-black/80 to-transparent">
+                <button id="closeResultBtn"
+                    class="w-10 h-10 rounded-full bg-white/10 backdrop-blur text-white hover:bg-white/20 flex items-center justify-center transition">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+
+                <div class="flex gap-3">
+                    <button id="compareBtn"
+                        class="px-4 py-2 rounded-full bg-white/10 backdrop-blur text-white text-fluid-xs font-medium hover:bg-white/20 select-none transition border border-white/10 active:scale-95">
+                        <i class="fas fa-eye mr-2"></i> Hold to Compare
+                    </button>
+                    <button id="downloadBtn"
+                        class="px-4 py-2 rounded-full bg-blue-600 text-white text-fluid-xs font-medium hover:bg-blue-500 shadow-lg shadow-blue-500/20 transition flex items-center gap-2 active:scale-95">
+                        <i class="fas fa-download"></i> <span class="hidden sm:inline">Save</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Image Area (Maximized) -->
+            <div class="flex-1 w-full h-full relative flex items-center justify-center overflow-hidden p-0 lg:p-8">
+                <img id="finalImage" class="max-w-full max-h-full object-contain transition-opacity duration-200" src=""
+                    alt="Processed">
+                <img id="originalImageHidden" class="hidden" src="" alt="Original">
+            </div>
+        </div>
+    </div>
+
+    <!-- DOUBLE CONFIRMATION MODAL -->
+    <div id="confirmModal"
+        class="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-[2px] hidden opacity-0 transition-opacity duration-200 px-4">
+        <!-- Added click-outside listener to parent, and click propagation stop to child -->
+        <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm transform scale-95 transition-transform duration-200 border border-slate-100"
+            id="confirmBox">
+            <div class="w-12 h-12 rounded-full bg-red-100 text-red-500 flex items-center justify-center mb-4 mx-auto">
+                <i class="fas fa-exclamation-triangle text-xl"></i>
+            </div>
+            <h3 class="text-fluid-lg font-bold text-center text-slate-800 mb-2">Reset Canvas?</h3>
+            <p class="text-fluid-sm text-slate-500 text-center mb-6">This will remove all your masking work. You will
+                have to start drawing from scratch.</p>
+            <div class="grid grid-cols-2 gap-3">
+                <button id="cancelResetBtn"
+                    class="py-3 px-4 rounded-xl border border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 transition text-fluid-sm">
+                    Cancel
+                </button>
+                <button id="confirmResetBtn"
+                    class="py-3 px-4 rounded-xl bg-red-500 text-white font-semibold hover:bg-red-600 shadow-md shadow-red-500/20 transition text-fluid-sm">
+                    Yes, Reset
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- CONFIG ---
+        // CRITICAL: Relative path allows this to work on localhost AND Render automatically
+        const API_URL = 'https://image-watermark-remover.onrender.com/process';
+        const HEALTH_URL = 'https://image-watermark-remover.onrender.com/';
+
+        // --- DOM ELEMENTS ---
+        const imageUploadDesktop = document.getElementById('imageUploadDesktop');
+        const imageUploadMobile = document.getElementById('imageUploadMobile');
+        const editorContainer = document.getElementById('editorContainer');
+        const toolsPanel = document.getElementById('toolsPanel');
+
+        // Tools
+        const brushSizeInput = document.getElementById('brushSize');
+        const brushSizeDisplay = document.getElementById('brushSizeDisplay');
+        const resetBtn = document.getElementById('resetBtn');
+        const undoBtn = document.getElementById('undoBtn');
+
+        // Process Buttons (Mobile & Desktop)
+        const processBtnDesktop = document.getElementById('processBtnDesktop');
+        const btnTextDesktop = document.getElementById('btnTextDesktop');
+        const btnLoaderDesktop = document.getElementById('btnLoaderDesktop');
+
+        const processBtnMobile = document.getElementById('processBtnMobile');
+        const btnIconMobile = document.getElementById('btnIconMobile');
+        const btnLoaderMobile = document.getElementById('btnLoaderMobile');
+
+        // Confirmation Modal
+        const confirmModal = document.getElementById('confirmModal');
+        const confirmBox = document.getElementById('confirmBox');
+        const cancelResetBtn = document.getElementById('cancelResetBtn');
+        const confirmResetBtn = document.getElementById('confirmResetBtn');
+
+        // Result View
+        const resultView = document.getElementById('resultView');
+        const closeResultBtn = document.getElementById('closeResultBtn');
+        const finalImage = document.getElementById('finalImage');
+        const originalImageHidden = document.getElementById('originalImageHidden');
+        const compareBtn = document.getElementById('compareBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+
+        // Others
+        const statusDot = document.getElementById('statusDot');
+        const statusText = document.getElementById('statusText');
+        const cursorBrush = document.getElementById('cursor-brush');
+
+        // --- STATE ---
+        let imageCanvas, maskCanvas;
+        let ctxImg, ctxMask;
+        let isDrawing = false;
+        let lastX = 0, lastY = 0;
+        let scaleRatio = 1;
+        let history = [];
+        let currentImage = null;
+
+        // --- INIT ---
+        async function checkBackend() {
+            try {
+                const res = await fetch(HEALTH_URL);
+                if (res.ok) {
+                    if (statusDot) {
+                        statusDot.classList.replace('bg-orange-400', 'bg-green-500');
+                        statusDot.classList.replace('bg-red-500', 'bg-green-500');
+                    }
+                    if (statusText) statusText.textContent = "Online";
+                }
+            } catch (e) {
+                if (statusDot) {
+                    statusDot.classList.replace('bg-orange-400', 'bg-red-500');
+                    statusDot.classList.replace('bg-green-500', 'bg-red-500');
+                }
+                if (statusText) statusText.textContent = "Offline";
+            }
+        }
+        checkBackend();
+        setInterval(checkBackend, 10000);
+
+        // --- UPLOAD HANDLER ---
+        function handleFile(file) {
+            if (!file || !file.type.startsWith('image/')) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => initCanvases(img);
+                img.src = e.target.result;
+                currentImage = img;
+                originalImageHidden.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        [imageUploadDesktop, imageUploadMobile].forEach(input => {
+            input.addEventListener('change', (e) => handleFile(e.target.files[0]));
+        });
+
+        const dropZone = document.getElementById('dropZoneDesktop');
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('border-blue-500', 'bg-blue-50');
+        });
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('border-blue-500', 'bg-blue-50');
+        });
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('border-blue-500', 'bg-blue-50');
+            handleFile(e.dataTransfer.files[0]);
+        });
+
+        // --- CANVAS LOGIC ---
+        function initCanvases(img) {
+            editorContainer.innerHTML = '';
+            toolsPanel.classList.remove('opacity-50', 'pointer-events-none');
+
+            imageCanvas = document.createElement('canvas');
+            maskCanvas = document.createElement('canvas');
+            maskCanvas.id = 'maskCanvas';
+
+            const maxWidth = 1920;
+            const maxHeight = 1080;
+            let width = img.width;
+            let height = img.height;
+
+            if (width > maxWidth || height > maxHeight) {
+                const ratio = Math.min(maxWidth / width, maxHeight / height);
+                width *= ratio;
+                height *= ratio;
+            }
+
+            imageCanvas.width = width;
+            imageCanvas.height = height;
+            maskCanvas.width = width;
+            maskCanvas.height = height;
+
+            ctxImg = imageCanvas.getContext('2d');
+            ctxMask = maskCanvas.getContext('2d');
+
+            ctxImg.drawImage(img, 0, 0, width, height);
+
+            ctxMask.lineCap = 'round';
+            ctxMask.lineJoin = 'round';
+            ctxMask.strokeStyle = 'rgba(255, 0, 0, 0.5)';
+
+            editorContainer.appendChild(imageCanvas);
+            editorContainer.appendChild(maskCanvas);
+
+            // Critical Fix: Reset history when loading a NEW image
+            history = [];
+            saveHistory();
+            attachCanvasEvents();
+            updateScaleRatio();
+        }
+
+        function updateScaleRatio() {
+            if (!maskCanvas) return;
+            const rect = maskCanvas.getBoundingClientRect();
+            scaleRatio = maskCanvas.width / rect.width;
+        }
+        window.addEventListener('resize', updateScaleRatio);
+
+        // --- DRAWING ---
+        function attachCanvasEvents() {
+            const start = (e, x, y) => {
+                isDrawing = true;
+                lastX = x; lastY = y;
+                ctxMask.beginPath();
+                ctxMask.arc(x, y, brushSizeInput.value / 2, 0, Math.PI * 2);
+                ctxMask.fillStyle = 'rgba(255, 0, 0, 0.5)';
+                ctxMask.fill();
+            };
+
+            const move = (e, x, y) => {
+                if (!isDrawing) return;
+                ctxMask.beginPath();
+                ctxMask.moveTo(lastX, lastY);
+                ctxMask.lineTo(x, y);
+                ctxMask.lineWidth = brushSizeInput.value;
+                ctxMask.stroke();
+                lastX = x; lastY = y;
+            };
+
+            const getPos = (e) => {
+                const rect = maskCanvas.getBoundingClientRect();
+                const clientX = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
+                const clientY = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
+                return {
+                    x: (clientX - rect.left) * scaleRatio,
+                    y: (clientY - rect.top) * scaleRatio
+                };
+            };
+
+            maskCanvas.addEventListener('mousedown', (e) => {
+                const { x, y } = getPos(e);
+                start(e, x, y);
+            });
+            maskCanvas.addEventListener('mousemove', (e) => {
+                const { x, y } = getPos(e);
+                move(e, x, y);
+                updateCursor(e);
+            });
+            maskCanvas.addEventListener('mouseup', () => { isDrawing = false; saveHistory(); });
+            maskCanvas.addEventListener('mouseout', () => isDrawing = false);
+            maskCanvas.addEventListener('mouseenter', () => cursorBrush.style.display = 'block');
+            maskCanvas.addEventListener('mouseleave', () => cursorBrush.style.display = 'none');
+
+            maskCanvas.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                const { x, y } = getPos(e);
+                start(e, x, y);
+            }, { passive: false });
+            maskCanvas.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+                const { x, y } = getPos(e);
+                move(e, x, y);
+            }, { passive: false });
+            maskCanvas.addEventListener('touchend', () => { isDrawing = false; saveHistory(); });
+        }
+
+        function updateCursor(e) {
+            const size = brushSizeInput.value / scaleRatio;
+            cursorBrush.style.width = `${size}px`;
+            cursorBrush.style.height = `${size}px`;
+            cursorBrush.style.top = `${e.clientY}px`;
+            cursorBrush.style.left = `${e.clientX}px`;
+        }
+
+        // --- HISTORY ---
+        function saveHistory() {
+            if (history.length > 10) history.shift();
+            history.push(maskCanvas.toDataURL());
+        }
+
+        undoBtn.addEventListener('click', () => {
+            if (history.length <= 1) {
+                ctxMask.clearRect(0, 0, maskCanvas.width, maskCanvas.height);
+                return;
+            }
+            history.pop();
+            const prevUrl = history[history.length - 1];
+            const img = new Image();
+            img.onload = () => {
+                ctxMask.clearRect(0, 0, maskCanvas.width, maskCanvas.height);
+                ctxMask.drawImage(img, 0, 0);
+            };
+            img.src = prevUrl;
+        });
+
+        // --- RESET & CONFIRMATION ---
+        brushSizeInput.addEventListener('input', (e) => brushSizeDisplay.textContent = `${e.target.value}px`);
+
+        resetBtn.addEventListener('click', () => {
+            if (!maskCanvas) return;
+            confirmModal.classList.remove('hidden');
+            setTimeout(() => {
+                confirmModal.classList.remove('opacity-0');
+                confirmBox.classList.remove('scale-95');
+                confirmBox.classList.add('scale-100');
+            }, 10);
+        });
+
+        function hideModal() {
+            confirmModal.classList.add('opacity-0');
+            confirmBox.classList.add('scale-95');
+            confirmBox.classList.remove('scale-100');
+            setTimeout(() => confirmModal.classList.add('hidden'), 200);
+        }
+
+        // Close when clicking OUTSIDE the box
+        confirmModal.addEventListener('click', (e) => {
+            if (e.target === confirmModal) hideModal();
+        });
+
+        // Close on Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !confirmModal.classList.contains('hidden')) {
+                hideModal();
+            }
+        });
+
+        cancelResetBtn.addEventListener('click', hideModal);
+
+        confirmResetBtn.addEventListener('click', () => {
+            ctxMask.clearRect(0, 0, maskCanvas.width, maskCanvas.height);
+            // Save this cleared state as a new history point so users can UNDO the reset if accidental
+            saveHistory();
+            hideModal();
+        });
+
+        // --- PROCESS (Handle both Desktop and Mobile buttons) ---
+        const handleProcess = async () => {
+            if (!imageCanvas) return;
+
+            // Update Desktop UI
+            if (processBtnDesktop) {
+                btnTextDesktop.textContent = "Processing...";
+                btnLoaderDesktop.classList.remove('hidden');
+                processBtnDesktop.disabled = true;
+            }
+            // Update Mobile UI
+            if (processBtnMobile) {
+                btnIconMobile.classList.add('hidden');
+                btnLoaderMobile.classList.remove('hidden');
+                processBtnMobile.disabled = true;
+            }
+
+            try {
+                // Use relative path - browser handles domain automatically
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        image: imageCanvas.toDataURL('image/png'),
+                        mask: maskCanvas.toDataURL('image/png')
+                    })
+                });
+
+                if (!response.ok) throw new Error("Server error");
+                const data = await response.json();
+
+                finalImage.src = data.processed_image;
+                resultView.classList.remove('hidden');
+                setTimeout(() => resultView.classList.remove('opacity-0'), 10);
+
+            } catch (error) {
+                console.error(error);
+                alert("Processing Failed. If on Render, check logs. If Local, ensure server.py is running.");
+            } finally {
+                // Reset Desktop UI
+                if (processBtnDesktop) {
+                    btnTextDesktop.textContent = "Remove Watermark";
+                    btnLoaderDesktop.classList.add('hidden');
+                    processBtnDesktop.disabled = false;
+                }
+                // Reset Mobile UI
+                if (processBtnMobile) {
+                    btnIconMobile.classList.remove('hidden');
+                    btnLoaderMobile.classList.add('hidden');
+                    processBtnMobile.disabled = false;
+                }
+            }
+        };
+
+        if (processBtnDesktop) processBtnDesktop.addEventListener('click', handleProcess);
+        if (processBtnMobile) processBtnMobile.addEventListener('click', handleProcess);
+
+        // --- RESULT VIEW ---
+        closeResultBtn.addEventListener('click', () => {
+            resultView.classList.add('opacity-0');
+            setTimeout(() => resultView.classList.add('hidden'), 300);
+        });
+
+        downloadBtn.addEventListener('click', () => {
+            const link = document.createElement('a');
+            link.download = 'cleanslate_result.png';
+            link.href = finalImage.src;
+            link.click();
+        });
+
+        const showOriginal = () => {
+            finalImage.style.opacity = '0';
+            originalImageHidden.classList.remove('hidden');
+            originalImageHidden.classList.add('absolute', 'inset-0', 'm-auto', 'max-w-full', 'max-h-full', 'object-contain');
+        };
+        const hideOriginal = () => {
+            finalImage.style.opacity = '1';
+            originalImageHidden.classList.add('hidden');
+        };
+
+        compareBtn.addEventListener('mousedown', showOriginal);
+        compareBtn.addEventListener('mouseup', hideOriginal);
+        compareBtn.addEventListener('mouseleave', hideOriginal);
+        compareBtn.addEventListener('touchstart', (e) => { e.preventDefault(); showOriginal(); });
+        compareBtn.addEventListener('touchend', hideOriginal);
+
+    </script>
+</body>
+
+</html>

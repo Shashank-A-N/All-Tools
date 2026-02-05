@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CineSlice | Multi-Clip Video Studio</title>
+    <!-- Tailwind for layout utility -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- JSZip for bundling exports -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <!-- FFmpeg (Main Thread Controller) -->
+    <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
+
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --glass-bg: rgba(30, 41, 59, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --accent: #38bdf8;
+            --accent-glow: rgba(56, 189, 248, 0.5);
+            --danger: #ef4444;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            overflow-x: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Glassmorphism Utilities */
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Custom Range Slider */
+        input[type=range] {
+            -webkit-appearance: none;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: var(--accent);
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 0 10px var(--accent-glow);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: var(--glass-border);
+            border-radius: 2px;
+        }
+
+        /* Canvas Container */
+        .timeline-container {
+            position: relative;
+            width: 100%;
+            height: 120px;
+            cursor: crosshair;
+            user-select: none;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Drop Zone */
+        .drop-zone {
+            transition: all 0.3s ease;
+        }
+
+        .drop-zone.drag-over {
+            border-color: var(--accent);
+            background: rgba(56, 189, 248, 0.1);
+        }
+
+        /* Segment Item in Sidebar */
+        .segment-item {
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+
+        .segment-item.active {
+            background: rgba(56, 189, 248, 0.1);
+            border-color: rgba(56, 189, 248, 0.3);
+        }
+
+        /* Loader */
+        .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-left-color: var(--accent);
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-dark);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+    </style>
+</head>
+
+<body class="bg-slate-900">
+
+    <!-- Header -->
+    <header
+        class="h-14 border-b border-slate-700 flex items-center justify-between px-6 bg-slate-900/80 backdrop-blur z-20">
+        <div class="flex items-center gap-2">
+            <svg class="w-6 h-6 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M15.41 5H20a2 2 0 012 2v10a2 2 0 01-2 2h-4.59l-5 4V1l5 4zM7 8H2a2 2 0 00-2 2v4a2 2 0 002 2h5l4 5V3L7 8z">
+                </path>
+            </svg>
+            <h1 class="text-lg font-bold tracking-wide text-white">CineSlice <span
+                    class="text-xs text-sky-500 font-normal border border-sky-900 px-1 rounded">PRO</span></h1>
+        </div>
+        <div class="flex items-center gap-3 text-sm">
+            <button id="new-project-btn"
+                class="bg-slate-700 hover:bg-slate-600 text-white px-3 py-1.5 rounded-md font-medium transition flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                </svg>
+                <span>New Project</span>
+            </button>
+            <button id="export-single-btn"
+                class="hidden bg-slate-700 hover:bg-slate-600 text-white px-3 py-1.5 rounded-md font-medium transition items-center gap-2 disabled:opacity-50">
+                <span>Export Selection</span>
+            </button>
+            <button id="export-all-btn"
+                class="bg-sky-500 hover:bg-sky-400 text-white px-4 py-1.5 rounded-md font-medium transition flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                <span>Export All (ZIP)</span>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                </svg>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="flex-1 flex overflow-hidden">
+
+        <!-- Video Preview & Timeline -->
+        <div class="flex-1 flex flex-col relative p-6 overflow-hidden">
+            <!-- Drop Zone / Player -->
+            <div id="drop-zone"
+                class="drop-zone flex-1 glass-panel rounded-xl flex flex-col items-center justify-center relative overflow-hidden group mb-6">
+                <!-- Hidden inputs -->
+                <input type="file" id="file-input" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
+                    accept="video/*">
+
+                <div id="upload-placeholder" class="text-center pointer-events-none transition-opacity duration-300">
+                    <div
+                        class="w-16 h-16 bg-slate-700/50 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
+                        <svg class="w-8 h-8 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12">
+                            </path>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-medium text-slate-200">Drop video here</h3>
+                </div>
+                <video id="main-video"
+                    class="absolute inset-0 w-full h-full object-contain bg-black hidden z-10"></video>
+
+                <!-- Overlay for "Segment Mode" -->
+                <div id="playback-mode-indicator"
+                    class="hidden absolute top-4 left-4 bg-sky-500/90 text-white text-xs px-2 py-1 rounded shadow pointer-events-none z-30 font-bold uppercase tracking-wider">
+                    Segment View
+                </div>
+            </div>
+
+            <!-- Timeline & Controls -->
+            <div class="glass-panel rounded-xl p-4 flex flex-col gap-4">
+
+                <div class="flex justify-between text-xs font-mono text-slate-400">
+                    <span id="current-time">00:00.000</span>
+                    <span id="duration">00:00.000</span>
+                </div>
+
+                <div class="timeline-container rounded-lg overflow-hidden border border-slate-700 bg-slate-800/50"
+                    id="timeline-wrapper">
+                    <canvas id="timeline-canvas"></canvas>
+                </div>
+
+                <!-- Control Bar -->
+                <div class="flex items-center gap-4">
+                    <button id="restart-btn"
+                        class="w-10 h-10 rounded-full bg-slate-700 hover:bg-slate-600 flex items-center justify-center text-white transition disabled:opacity-50"
+                        title="Restart Video">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+                            </path>
+                        </svg>
+                    </button>
+
+                    <button id="play-pause-btn"
+                        class="w-10 h-10 rounded-full bg-slate-700 hover:bg-slate-600 flex items-center justify-center text-white transition disabled:opacity-50">
+                        <svg class="w-5 h-5 ml-0.5" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M8 5v14l11-7z" />
+                        </svg>
+                    </button>
+
+                    <div class="h-8 w-px bg-slate-700 mx-2"></div>
+
+                    <button id="add-segment-btn"
+                        class="flex items-center gap-2 px-3 py-1.5 bg-emerald-600/20 text-emerald-400 border border-emerald-600/30 rounded hover:bg-emerald-600/30 transition text-sm">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4">
+                            </path>
+                        </svg>
+                        Add Cut
+                    </button>
+
+                    <button id="remove-segment-btn"
+                        class="flex items-center gap-2 px-3 py-1.5 bg-red-600/20 text-red-400 border border-red-600/30 rounded hover:bg-red-600/30 transition text-sm">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                            </path>
+                        </svg>
+                        Delete
+                    </button>
+
+                    <div class="flex-1 text-center text-xs text-slate-500 italic" id="hint-text">
+                        Click empty space to reset view
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <label class="text-[10px] uppercase tracking-wider text-slate-500 font-bold">Zoom</label>
+                        <input type="range" id="zoom-slider" min="1" max="50" value="1" step="0.1" class="w-24">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar (Segments & Logs) -->
+        <div class="w-80 border-l border-slate-700 bg-slate-900/50 flex flex-col">
+
+            <!-- Segment List -->
+            <div class="flex-1 flex flex-col min-h-0 border-b border-slate-700">
+                <div
+                    class="p-4 border-b border-slate-700 font-semibold text-sm text-slate-300 flex justify-between items-center">
+                    <span>Segments</span>
+                    <span id="segment-count" class="bg-slate-700 text-xs px-2 py-0.5 rounded text-white">0</span>
+                </div>
+                <div id="segments-list" class="overflow-y-auto p-2 space-y-2 flex-1">
+                    <!-- Segment items injected here -->
+                    <div class="text-center text-slate-500 text-xs mt-10 italic">No segments added</div>
+                </div>
+            </div>
+
+            <!-- Console / Progress -->
+            <div class="h-1/3 flex flex-col bg-black/20">
+                <div class="p-3 border-b border-slate-700/50 font-mono text-xs text-slate-500">System Log</div>
+                <div id="console-output"
+                    class="flex-1 p-3 font-mono text-[10px] text-slate-400 overflow-y-auto space-y-1">
+                    <div class="text-sky-500">System Ready.</div>
+                </div>
+
+                <div id="progress-container" class="p-3 border-t border-slate-700 hidden">
+                    <div class="flex justify-between text-xs mb-1">
+                        <span id="progress-text">Processing...</span>
+                        <span id="progress-percent" class="text-sky-400">0%</span>
+                    </div>
+                    <div class="w-full bg-slate-700 rounded-full h-1.5 overflow-hidden">
+                        <div id="progress-bar" class="bg-sky-500 h-full w-0 transition-all duration-300"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal (Alerts & Confirmation) -->
+    <div id="modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm hidden">
+        <div class="bg-slate-800 border border-slate-700 p-6 rounded-xl max-w-md w-full shadow-2xl">
+            <h3 id="modal-title" class="text-lg font-bold text-white mb-2">Notice</h3>
+            <p id="modal-msg" class="text-slate-300 text-sm mb-6 leading-relaxed"></p>
+            <div class="flex justify-end gap-3" id="modal-actions">
+                <button id="modal-cancel-btn"
+                    class="hidden text-slate-400 hover:text-white px-4 py-2 rounded text-sm">Cancel</button>
+                <button id="modal-ok-btn"
+                    class="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded text-sm">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /** UTILS */
+        const $ = (id) => document.getElementById(id);
+        const uuid = () => Math.random().toString(36).substr(2, 9);
+        const formatTime = (s) => {
+            const date = new Date(s * 1000);
+            const mm = date.getUTCMinutes().toString().padStart(2, '0');
+            const ss = date.getUTCSeconds().toString().padStart(2, '0');
+            const ms = date.getUTCMilliseconds().toString().padStart(3, '0');
+            return `${mm}:${ss}.${ms}`;
+        };
+
+        const log = (msg, type = 'info') => {
+            const el = $('console-output');
+            const line = document.createElement('div');
+            line.textContent = `> ${msg}`;
+            if (type === 'error') line.classList.add('text-red-400');
+            if (type === 'success') line.classList.add('text-green-400');
+            el.appendChild(line);
+            el.scrollTop = el.scrollHeight;
+        };
+
+        /** STATE STORE */
+        const store = {
+            state: {
+                file: null,
+                duration: 0,
+                currentTime: 0,
+                zoomLevel: 1,
+                isProcessing: false,
+                segments: [], // { id, start, end }
+                activeSegmentId: null,
+                playbackLimit: null // { end: number } | null
+            },
+            listeners: new Set(),
+            setState(newState) {
+                this.state = { ...this.state, ...newState };
+                this.notify();
+            },
+            getState() { return this.state; },
+            subscribe(fn) {
+                this.listeners.add(fn);
+                return () => this.listeners.delete(fn);
+            },
+            notify() { this.listeners.forEach(fn => fn(this.state)); }
+        };
+
+        /** MODAL MANAGER */
+        const Modal = {
+            show(title, msg) {
+                $('modal-title').innerText = title;
+                $('modal-msg').innerText = msg;
+                $('modal-cancel-btn').classList.add('hidden');
+                $('modal-ok-btn').innerText = 'Close';
+                $('modal-ok-btn').onclick = () => $('modal').classList.add('hidden');
+                $('modal').classList.remove('hidden');
+            },
+            confirm(title, msg, onYes) {
+                $('modal-title').innerText = title;
+                $('modal-msg').innerText = msg;
+                $('modal-cancel-btn').classList.remove('hidden');
+                $('modal-cancel-btn').onclick = () => $('modal').classList.add('hidden');
+                $('modal-ok-btn').innerText = 'Yes, Continue';
+                $('modal-ok-btn').onclick = () => {
+                    $('modal').classList.add('hidden');
+                    onYes();
+                };
+                $('modal').classList.remove('hidden');
+            }
+        };
+
+        /** TIMELINE CANVAS */
+        class Timeline {
+            constructor(canvasId, onDownloadCallback, onSegmentPlayCallback) {
+                this.canvas = $(canvasId);
+                this.ctx = this.canvas.getContext('2d');
+                this.height = 120;
+                this.onDownload = onDownloadCallback;
+                this.onSegmentPlay = onSegmentPlayCallback;
+
+                this.dragState = null;
+
+                this.resizeObserver = new ResizeObserver(() => this.resize());
+                this.resizeObserver.observe(this.canvas.parentElement);
+                this.bindEvents();
+            }
+
+            resize() {
+                const rect = this.canvas.parentElement.getBoundingClientRect();
+                this.canvas.width = rect.width;
+                this.canvas.height = this.height;
+                this.width = rect.width;
+                this.draw();
+            }
+
+            timeToX(time) {
+                const s = store.getState();
+                return (time / s.duration) * (this.width * s.zoomLevel);
+            }
+
+            xToTime(x) {
+                const s = store.getState();
+                return (x / (this.width * s.zoomLevel)) * s.duration;
+            }
+
+            draw() {
+                const s = store.getState();
+                const ctx = this.ctx;
+                const w = this.width;
+                const h = this.height;
+
+                // Clear
+                ctx.clearRect(0, 0, w, h);
+                ctx.fillStyle = '#1e293b';
+                ctx.fillRect(0, h / 2 - 2, w, 4);
+
+                if (!s.duration) return;
+
+                // Draw Segments
+                s.segments.forEach(seg => {
+                    const isActive = seg.id === s.activeSegmentId;
+                    const startX = this.timeToX(seg.start);
+                    const endX = this.timeToX(seg.end);
+                    const segW = Math.max(endX - startX, 2);
+
+                    // Body
+                    ctx.fillStyle = isActive ? 'rgba(56, 189, 248, 0.2)' : 'rgba(56, 189, 248, 0.1)';
+                    ctx.fillRect(startX, 0, segW, h);
+
+                    // Border
+                    ctx.strokeStyle = isActive ? '#38bdf8' : 'rgba(56, 189, 248, 0.4)';
+                    ctx.lineWidth = isActive ? 2 : 1;
+                    ctx.strokeRect(startX, 0, segW, h);
+
+                    // Handles
+                    if (isActive) {
+                        this.drawHandle(startX, true);
+                        this.drawHandle(endX, false);
+                    }
+
+                    // Download Icon
+                    if (segW > 24) {
+                        const iconX = endX - 20;
+                        const iconY = 10;
+                        this.drawDownloadIcon(ctx, iconX, iconY, isActive);
+                    }
+
+                    // Label
+                    if (isActive || segW > 50) {
+                        ctx.fillStyle = isActive ? '#fff' : '#94a3b8';
+                        ctx.font = '10px sans-serif';
+                        ctx.fillText(formatTime(seg.end - seg.start), startX + 5, h - 10);
+                    }
+                });
+
+                // Playhead
+                const playX = this.timeToX(s.currentTime);
+                ctx.beginPath();
+                ctx.strokeStyle = '#ef4444';
+                ctx.lineWidth = 2;
+                ctx.moveTo(playX, 0);
+                ctx.lineTo(playX, h);
+                ctx.stroke();
+
+                // Cap
+                ctx.fillStyle = '#ef4444';
+                ctx.beginPath();
+                ctx.moveTo(playX - 5, 0);
+                ctx.lineTo(playX + 5, 0);
+                ctx.lineTo(playX, 8);
+                ctx.fill();
+            }
+
+            drawHandle(x, isLeft) {
+                const ctx = this.ctx;
+                ctx.fillStyle = '#38bdf8';
+                ctx.beginPath();
+                if (isLeft) {
+                    ctx.moveTo(x, 0);
+                    ctx.lineTo(x + 10, 0);
+                    ctx.lineTo(x, 10);
+                    ctx.lineTo(x, this.height);
+                    ctx.lineTo(x - 4, this.height);
+                    ctx.lineTo(x - 4, 0);
+                } else {
+                    ctx.moveTo(x, 0);
+                    ctx.lineTo(x - 10, 0);
+                    ctx.lineTo(x, 10);
+                    ctx.lineTo(x, this.height);
+                    ctx.lineTo(x + 4, this.height);
+                    ctx.lineTo(x + 4, 0);
+                }
+                ctx.fill();
+            }
+
+            drawDownloadIcon(ctx, x, y, isActive) {
+                ctx.save();
+                ctx.translate(x, y);
+                ctx.strokeStyle = isActive ? '#fff' : '#94a3b8';
+                ctx.fillStyle = isActive ? '#fff' : '#94a3b8';
+                ctx.lineWidth = 1.5;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+
+                ctx.beginPath();
+                ctx.moveTo(3, 11);
+                ctx.lineTo(3, 13);
+                ctx.lineTo(13, 13);
+                ctx.lineTo(13, 11);
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.moveTo(8, 3);
+                ctx.lineTo(8, 9);
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.moveTo(5, 6);
+                ctx.lineTo(8, 9);
+                ctx.lineTo(11, 6);
+                ctx.stroke();
+                ctx.restore();
+            }
+
+            getInteraction(x, y) {
+                const s = store.getState();
+                const tolerance = 10;
+
+                // 1. Check Active Handles
+                if (s.activeSegmentId) {
+                    const activeSeg = s.segments.find(sg => sg.id === s.activeSegmentId);
+                    if (activeSeg) {
+                        const sx = this.timeToX(activeSeg.start);
+                        const ex = this.timeToX(activeSeg.end);
+                        if (Math.abs(x - sx) < tolerance) return { type: 'START', id: activeSeg.id };
+                        if (Math.abs(x - ex) < tolerance) return { type: 'END', id: activeSeg.id };
+                    }
+                }
+
+                // 2. Check Segment Bodies
+                for (let i = s.segments.length - 1; i >= 0; i--) {
+                    const seg = s.segments[i];
+                    const sx = this.timeToX(seg.start);
+                    const ex = this.timeToX(seg.end);
+                    const segW = ex - sx;
+
+                    if (x >= sx && x <= ex) {
+                        if (segW > 24) {
+                            const iconX = ex - 20;
+                            const iconY = 10;
+                            if (x >= iconX && x <= iconX + 16 && y >= iconY && y <= iconY + 16) {
+                                return { type: 'DOWNLOAD', id: seg.id };
+                            }
+                        }
+                        return { type: 'SELECT', id: seg.id };
+                    }
+                }
+
+                // 3. Scrub
+                return { type: 'SCRUB' };
+            }
+
+            bindEvents() {
+                const getPos = (e) => {
+                    const r = this.canvas.getBoundingClientRect();
+                    return { x: e.clientX - r.left, y: e.clientY - r.top };
+                };
+
+                this.canvas.addEventListener('mousedown', (e) => {
+                    const s = store.getState();
+                    if (!s.duration) return;
+
+                    const { x, y } = getPos(e);
+                    const interaction = this.getInteraction(x, y);
+
+                    if (interaction.type === 'DOWNLOAD') {
+                        if (this.onDownload) this.onDownload(interaction.id);
+                        return;
+                    }
+
+                    if (interaction.type === 'SELECT') {
+                        store.setState({
+                            activeSegmentId: interaction.id,
+                            playbackLimit: { end: s.segments.find(sg => sg.id === interaction.id).end }
+                        });
+
+                        const seg = s.segments.find(sg => sg.id === interaction.id);
+                        if (this.onSegmentPlay) this.onSegmentPlay(seg.start);
+
+                    } else if (interaction.type === 'SCRUB') {
+                        const clickedOnAnySegment = s.segments.some(sg => {
+                            const sx = this.timeToX(sg.start);
+                            const ex = this.timeToX(sg.end);
+                            return x >= sx && x <= ex;
+                        });
+
+                        if (!clickedOnAnySegment) {
+                            store.setState({ activeSegmentId: null, playbackLimit: null });
+                        }
+
+                        this.updateTime(x);
+                        this.dragState = { type: 'SCRUB' };
+                    } else {
+                        this.dragState = { type: interaction.type, segmentId: interaction.id };
+                    }
+                });
+
+                window.addEventListener('mousemove', (e) => {
+                    const { x, y } = getPos(e);
+                    const s = store.getState();
+                    if (!s.duration) return;
+
+                    const hover = this.getInteraction(x, y);
+                    if (hover.type === 'DOWNLOAD') this.canvas.style.cursor = 'pointer';
+                    else if (hover.type === 'START' || hover.type === 'END') this.canvas.style.cursor = 'ew-resize';
+                    else if (hover.type === 'SELECT') this.canvas.style.cursor = 'pointer';
+                    else this.canvas.style.cursor = 'default';
+
+                    if (!this.dragState) return;
+
+                    if (this.dragState.type === 'SCRUB') {
+                        this.updateTime(x);
+                    } else {
+                        const t = this.xToTime(x);
+                        const segs = [...s.segments];
+                        const idx = segs.findIndex(sg => sg.id === this.dragState.segmentId);
+                        if (idx === -1) return;
+
+                        const seg = { ...segs[idx] };
+
+                        if (this.dragState.type === 'START') {
+                            seg.start = Math.max(0, Math.min(t, seg.end - 0.1));
+                            store.setState({ currentTime: seg.start });
+                        } else {
+                            seg.end = Math.min(s.duration, Math.max(seg.start + 0.1, t));
+                            store.setState({ currentTime: seg.end });
+                        }
+
+                        if (s.activeSegmentId === seg.id) {
+                            store.setState({ playbackLimit: { end: seg.end } });
+                        }
+
+                        segs[idx] = seg;
+                        store.setState({ segments: segs });
+                    }
+                });
+
+                window.addEventListener('mouseup', () => {
+                    this.dragState = null;
+                });
+            }
+
+            updateTime(x) {
+                const t = Math.max(0, Math.min(this.xToTime(x), store.getState().duration));
+                store.setState({ currentTime: t });
+            }
+        }
+
+        /** APP LOGIC */
+        class App {
+            constructor() {
+                this.video = $('main-video');
+                this.timeline = new Timeline(
+                    'timeline-canvas',
+                    (id) => this.downloadSingleSegment(id),
+                    (time) => {
+                        this.video.currentTime = time;
+                        this.video.play();
+                    }
+                );
+
+                this.ffmpeg = null;
+                this.initFFmpeg();
+                this.setupUI();
+                store.subscribe(this.render.bind(this));
+            }
+
+            async initFFmpeg() {
+                try {
+                    const { createFFmpeg } = FFmpeg;
+                    this.ffmpeg = createFFmpeg({
+                        log: false,
+                        corePath: 'https://unpkg.com/@ffmpeg/core@0.11.6/dist/ffmpeg-core.js'
+                    });
+                    await this.ffmpeg.load();
+                    log('FFmpeg Engine Ready.', 'success');
+                } catch (e) {
+                    log('FFmpeg Load Error: ' + e.message, 'error');
+                }
+            }
+
+            async processSegment(file, segment) {
+                if (!this.ffmpeg || !this.ffmpeg.isLoaded()) throw new Error("Engine not loaded");
+
+                const { fetchFile } = FFmpeg;
+                const fileName = 'input.mp4';
+                const outName = `out_${segment.id}.mp4`;
+
+                this.ffmpeg.FS('writeFile', fileName, await fetchFile(file));
+
+                await this.ffmpeg.run(
+                    '-i', fileName,
+                    '-ss', segment.start.toString(),
+                    '-to', segment.end.toString(),
+                    '-c', 'copy',
+                    outName
+                );
+
+                const data = this.ffmpeg.FS('readFile', outName);
+
+                // Cleanup
+                this.ffmpeg.FS('unlink', fileName);
+                this.ffmpeg.FS('unlink', outName);
+
+                return data.buffer;
+            }
+
+            setupUI() {
+                const load = (f) => {
+                    this.video.src = URL.createObjectURL(f);
+                    store.setState({ file: f });
+                };
+
+                // Drop Logic
+                const dz = $('drop-zone');
+                dz.ondragover = (e) => { e.preventDefault(); dz.classList.add('drag-over'); };
+                dz.ondragleave = (e) => { e.preventDefault(); dz.classList.remove('drag-over'); };
+                dz.ondrop = (e) => { e.preventDefault(); dz.classList.remove('drag-over'); if (e.dataTransfer.files[0]) load(e.dataTransfer.files[0]); };
+                $('file-input').onchange = (e) => { if (e.target.files[0]) load(e.target.files[0]); };
+
+                // New Project Logic
+                $('new-project-btn').onclick = () => {
+                    if (store.getState().file) {
+                        Modal.confirm("Start New Project?", "Current progress and segments will be lost. Continue?", () => {
+                            this.resetApp();
+                            $('file-input').click();
+                        });
+                    } else {
+                        $('file-input').click();
+                    }
+                };
+
+                // Video Events
+                this.video.onloadedmetadata = () => {
+                    const dur = this.video.duration;
+                    const initialSeg = { id: uuid(), start: 0, end: Math.min(dur, 10) };
+                    store.setState({
+                        duration: dur,
+                        segments: [initialSeg],
+                        activeSegmentId: initialSeg.id,
+                        currentTime: 0,
+                        playbackLimit: { end: initialSeg.end }
+                    });
+                    $('main-video').classList.remove('hidden');
+                    $('upload-placeholder').classList.add('hidden');
+                };
+
+                this.video.ontimeupdate = () => {
+                    const s = store.getState();
+                    if (s.playbackLimit && this.video.currentTime >= s.playbackLimit.end) {
+                        this.video.pause();
+                        this.video.currentTime = s.playbackLimit.end;
+                    }
+                    if (!this.timeline.dragState) {
+                        store.setState({ currentTime: this.video.currentTime });
+                    }
+                };
+
+                // Controls
+                $('restart-btn').onclick = () => {
+                    this.video.currentTime = 0;
+                    if (store.getState().activeSegmentId) {
+                        // If in segment mode, maybe seek to segment start?
+                        // User asked for "start video from start", usually implies global start.
+                        // But if in "Segment View", it feels consistent to reset view.
+                        store.setState({ activeSegmentId: null, playbackLimit: null });
+                    }
+                };
+
+                $('play-pause-btn').onclick = () => {
+                    if (this.video.paused) {
+                        const s = store.getState();
+                        if (s.playbackLimit && Math.abs(this.video.currentTime - s.playbackLimit.end) < 0.1) {
+                            const seg = s.segments.find(sg => sg.id === s.activeSegmentId);
+                            if (seg) this.video.currentTime = seg.start;
+                        }
+                        this.video.play();
+                    } else {
+                        this.video.pause();
+                    }
+                };
+
+                $('add-segment-btn').onclick = () => {
+                    const s = store.getState();
+                    if (!s.duration) return;
+                    const start = s.currentTime;
+                    const end = Math.min(s.duration, start + 5);
+                    const newSeg = { id: uuid(), start, end };
+                    store.setState({
+                        segments: [...s.segments, newSeg],
+                        activeSegmentId: newSeg.id,
+                        playbackLimit: { end: newSeg.end }
+                    });
+                };
+
+                $('remove-segment-btn').onclick = () => {
+                    const s = store.getState();
+                    if (!s.activeSegmentId) return;
+                    const newSegs = s.segments.filter(sg => sg.id !== s.activeSegmentId);
+                    store.setState({
+                        segments: newSegs,
+                        activeSegmentId: newSegs.length ? newSegs[newSegs.length - 1].id : null,
+                        playbackLimit: null
+                    });
+                };
+
+                $('export-all-btn').onclick = () => this.startExport(true);
+                $('export-single-btn').onclick = () => this.startExport(false);
+                $('zoom-slider').oninput = (e) => store.setState({ zoomLevel: parseFloat(e.target.value) });
+            }
+
+            resetApp() {
+                this.video.pause();
+                this.video.src = "";
+                $('main-video').classList.add('hidden');
+                $('upload-placeholder').classList.remove('hidden');
+                store.setState({
+                    file: null,
+                    duration: 0,
+                    currentTime: 0,
+                    segments: [],
+                    activeSegmentId: null,
+                    playbackLimit: null
+                });
+                $('file-input').value = ""; // Clear input
+            }
+
+            async downloadSingleSegment(id) {
+                const s = store.getState();
+                const seg = s.segments.find(sg => sg.id === id);
+                if (!seg) return;
+
+                store.setState({ isProcessing: true });
+                $('progress-container').classList.remove('hidden');
+                $('progress-text').innerText = "Processing single clip...";
+                $('progress-bar').style.width = "50%";
+
+                try {
+                    const buffer = await this.processSegment(s.file, seg);
+                    const name = `clip_${formatTime(seg.start)}-${formatTime(seg.end)}.mp4`.replace(/:/g, '-');
+                    this.saveFile(buffer, name);
+                    log("Clip exported!", "success");
+                } catch (e) {
+                    log("Error: " + e.message, "error");
+                    Modal.show("Export Error", e.message + "\n\n(Try using a modern browser like Chrome/Firefox)");
+                } finally {
+                    store.setState({ isProcessing: false });
+                    setTimeout(() => $('progress-container').classList.add('hidden'), 1000);
+                }
+            }
+
+            async startExport(isZip) {
+                const s = store.getState();
+                const segmentsToExport = isZip ? s.segments : s.segments.filter(sg => sg.id === s.activeSegmentId);
+                if (!segmentsToExport.length) return;
+
+                store.setState({ isProcessing: true });
+                $('progress-container').classList.remove('hidden');
+
+                try {
+                    const zip = new JSZip();
+                    let completed = 0;
+
+                    for (let i = 0; i < segmentsToExport.length; i++) {
+                        const seg = segmentsToExport[i];
+                        $('progress-text').innerText = `Processing Clip ${i + 1}/${segmentsToExport.length}...`;
+                        const buffer = await this.processSegment(s.file, seg);
+                        const name = `clip_${i + 1}_${formatTime(seg.start)}-${formatTime(seg.end)}.mp4`.replace(/:/g, '-');
+
+                        if (isZip) zip.file(name, buffer);
+                        else this.saveFile(buffer, name);
+
+                        completed++;
+                        $('progress-bar').style.width = `${(completed / segmentsToExport.length) * 100}%`;
+                    }
+
+                    if (isZip) {
+                        $('progress-text').innerText = "Zipping files...";
+                        const zipBlob = await zip.generateAsync({ type: "blob" });
+                        this.saveFile(zipBlob, "cineslice_export.zip");
+                    }
+                } catch (err) {
+                    log("Export Failed: " + err.message, "error");
+                    Modal.show("Export Error", err.message);
+                } finally {
+                    store.setState({ isProcessing: false });
+                    setTimeout(() => $('progress-container').classList.add('hidden'), 2000);
+                }
+            }
+
+            saveFile(blob, name) {
+                const url = URL.createObjectURL(new Blob([blob]));
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = name;
+                a.click();
+            }
+
+            render(state) {
+                // Segment List
+                const list = $('segments-list');
+                list.innerHTML = '';
+                if (state.segments.length === 0) {
+                    list.innerHTML = '<div class="text-center text-slate-500 text-xs mt-10 italic">No segments added</div>';
+                } else {
+                    state.segments.forEach((seg, idx) => {
+                        const div = document.createElement('div');
+                        const isActive = seg.id === state.activeSegmentId;
+                        div.className = `segment-item p-2 rounded cursor-pointer flex justify-between items-center text-xs mb-1 ${isActive ? 'active' : 'hover:bg-slate-800'}`;
+                        div.innerHTML = `
+                            <span class="font-mono text-sky-400">#${idx + 1}</span>
+                            <span class="text-slate-300 font-mono">${formatTime(seg.start)} - ${formatTime(seg.end)}</span>
+                            <span class="text-slate-500 hover:text-white" title="Download This Clip">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                            </span>
+                        `;
+                        div.onclick = (e) => {
+                            if (e.target.closest('svg')) this.downloadSingleSegment(seg.id);
+                            else {
+                                store.setState({ activeSegmentId: seg.id, currentTime: seg.start, playbackLimit: { end: seg.end } });
+                                this.video.currentTime = seg.start;
+                                this.video.play();
+                            }
+                        };
+                        list.appendChild(div);
+                    });
+                }
+
+                $('segment-count').innerText = state.segments.length;
+                $('current-time').innerText = formatTime(state.currentTime);
+                $('duration').innerText = formatTime(state.duration);
+
+                // Indicators
+                const indicator = $('playback-mode-indicator');
+                if (state.playbackLimit) {
+                    indicator.classList.remove('hidden');
+                    indicator.innerText = `Segment Mode (Ends: ${formatTime(state.playbackLimit.end)})`;
+                } else {
+                    indicator.classList.add('hidden');
+                }
+
+                // Buttons
+                if (state.activeSegmentId) {
+                    $('export-single-btn').classList.remove('hidden');
+                    $('export-single-btn').classList.add('flex');
+                    $('remove-segment-btn').disabled = false;
+                    $('remove-segment-btn').classList.remove('opacity-50');
+                } else {
+                    $('export-single-btn').classList.add('hidden');
+                    $('remove-segment-btn').disabled = true;
+                    $('remove-segment-btn').classList.add('opacity-50');
+                }
+
+                $('export-all-btn').disabled = state.isProcessing || state.segments.length === 0;
+
+                // Canvas Sync
+                if (Math.abs(this.video.currentTime - state.currentTime) > 0.5) {
+                    this.video.currentTime = state.currentTime;
+                }
+
+                this.timeline.draw();
+            }
+        }
+
+        window.onload = () => new App();
+
+    </script>
+</body>
+
+</html>

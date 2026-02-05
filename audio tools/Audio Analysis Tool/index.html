@@ -1,0 +1,1124 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SonicCore - Advanced Audio Engine</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Google Fonts: Orbitron & Rajdhani -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;500;700&display=swap"
+        rel="stylesheet">
+
+    <!-- JSMediaTags -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsmediatags/3.9.5/jsmediatags.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Rajdhani', 'sans-serif'],
+                        mono: ['Orbitron', 'monospace'],
+                    },
+                    colors: {
+                        cyber: {
+                            dark: '#050511',
+                            panel: 'rgba(20, 20, 40, 0.6)',
+                            neon: '#00f3ff',
+                            pink: '#bc13fe',
+                            accent: '#4d4dff'
+                        }
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'spin-slow': 'spin 12s linear infinite',
+                        'float': 'float 6s ease-in-out infinite',
+                    },
+                    fontSize: {
+                        'xxs': '0.65rem',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        :root {
+            /* Fluid typography: 14px at 320px viewport, up to 16px at 1200px */
+            font-size: clamp(14px, 2vw, 16px);
+        }
+
+        body {
+            background: radial-gradient(circle at 50% -20%, #1a1a40, #050511);
+            color: #e2e8f0;
+            min-height: 100vh;
+            /* Prevent horizontal scroll on mobile */
+            overflow-x: hidden;
+        }
+
+        /* Glassmorphism Panels */
+        .cyber-panel {
+            background: var(--tw-colors-cyber-panel);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        /* Neon Borders */
+        .neon-border-b {
+            border-bottom: 1px solid rgba(0, 243, 255, 0.3);
+            box-shadow: 0 1px 10px rgba(0, 243, 255, 0.1);
+        }
+
+        /* Range Sliders */
+        input[type=range] {
+            -webkit-appearance: none;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 18px;
+            width: 18px;
+            border-radius: 2px;
+            background: #00f3ff;
+            cursor: pointer;
+            margin-top: -7px;
+            box-shadow: 0 0 10px #00f3ff;
+            clip-path: polygon(20% 0%, 80% 0%, 100% 20%, 100% 80%, 80% 100%, 20% 100%, 0% 80%, 0% 20%);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: linear-gradient(90deg, #bc13fe, #00f3ff);
+            border-radius: 2px;
+        }
+
+        /* Animations */
+        @keyframes scanline {
+            0% {
+                transform: translateY(-100%);
+            }
+
+            100% {
+                transform: translateY(100%);
+            }
+        }
+
+        .scanline::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(to bottom, transparent, rgba(0, 243, 255, 0.1), transparent);
+            animation: scanline 4s linear infinite;
+            pointer-events: none;
+        }
+
+        /* Loading */
+        .loader-ring {
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-left-color: #00f3ff;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .tab-active {
+            background: rgba(255, 255, 255, 0.05);
+            color: #ffffff;
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .tab-inactive {
+            color: #6b7280;
+            background: transparent;
+        }
+    </style>
+</head>
+
+<body class="flex flex-col text-sm md:text-base">
+
+    <!-- CONFIRMATION MODAL -->
+    <div id="confirmModal"
+        class="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-[#0b0b1e] border border-cyber-neon/50 p-6 rounded-xl shadow-[0_0_30px_rgba(0,243,255,0.2)] max-w-xs md:max-w-sm w-full mx-4 text-center relative overflow-hidden transform scale-95 transition-transform duration-300"
+            id="confirmModalContent">
+            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cyber-pink to-cyber-neon"></div>
+            <i class="fa-solid fa-triangle-exclamation text-3xl text-cyber-neon mb-3"></i>
+            <h3 class="text-white font-mono text-xl font-bold mb-2">REPLACE TRACK?</h3>
+            <p class="text-gray-400 text-xs md:text-sm mb-6 font-sans">Current audio data and analysis will be lost. Are
+                you sure you want to load a new file?</p>
+            <div class="flex gap-3 justify-center">
+                <button id="confirmCancel"
+                    class="flex-1 px-4 py-2 rounded text-xs font-mono border border-gray-600 text-gray-400 hover:text-white hover:border-white transition">CANCEL</button>
+                <button id="confirmYes"
+                    class="flex-1 px-4 py-2 rounded text-xs font-mono bg-cyber-neon/20 border border-cyber-neon text-cyber-neon hover:bg-cyber-neon hover:text-black transition font-bold">LOAD
+                    NEW</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- LANDING PAGE / UPLOAD SCREEN -->
+    <div id="landingPage"
+        class="fixed inset-0 z-50 flex flex-col items-center justify-center p-4 md:p-6 bg-[#050511] overflow-hidden">
+        <!-- Background Ambient Effects -->
+        <div
+            class="absolute top-1/4 left-1/4 w-64 md:w-96 h-64 md:h-96 bg-cyber-pink/20 rounded-full blur-[80px] md:blur-[120px] pointer-events-none animate-pulse-slow">
+        </div>
+        <div
+            class="absolute bottom-1/4 right-1/4 w-64 md:w-96 h-64 md:h-96 bg-cyber-neon/10 rounded-full blur-[80px] md:blur-[120px] pointer-events-none">
+        </div>
+
+        <!-- Logo Section -->
+        <div class="mb-8 md:mb-12 text-center animate-float relative z-10 w-full max-w-lg">
+            <i
+                class="fa-brands fa-soundcloud text-cyber-neon text-5xl md:text-7xl mb-4 md:mb-6 filter drop-shadow-[0_0_15px_#00f3ff]"></i>
+            <h1
+                class="font-mono text-4xl md:text-7xl font-bold tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-cyber-neon to-cyber-pink drop-shadow-lg">
+                SONIC<span class="text-white">CORE</span>
+            </h1>
+            <div class="h-1 w-24 md:w-32 bg-gradient-to-r from-transparent via-cyber-neon to-transparent mx-auto mt-4">
+            </div>
+            <p
+                class="text-cyber-accent font-mono tracking-[0.3em] md:tracking-[0.5em] mt-4 text-xs md:text-base opacity-80">
+                ADVANCED AUDIO INTELLIGENCE</p>
+        </div>
+
+        <!-- Large Drop Zone -->
+        <div id="landingDropZone"
+            class="w-full max-w-xl aspect-[2/1] md:aspect-[3/1] border-2 border-dashed border-cyber-neon/30 rounded-2xl bg-cyber-panel backdrop-blur-md flex flex-col items-center justify-center cursor-pointer hover:bg-cyber-neon/5 hover:border-cyber-neon hover:scale-[1.02] transition-all group relative overflow-hidden shadow-2xl z-10 p-4 text-center">
+            <div
+                class="absolute inset-0 bg-gradient-to-tr from-cyber-pink/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+            </div>
+
+            <i
+                class="fa-solid fa-cloud-arrow-up text-3xl md:text-4xl text-gray-400 group-hover:text-cyber-neon transition-colors mb-3 z-10"></i>
+            <h3
+                class="text-lg md:text-2xl font-mono text-white font-bold z-10 group-hover:text-cyber-neon transition-colors">
+                UPLOAD AUDIO</h3>
+            <p class="text-gray-500 font-mono text-xs md:text-sm mt-2 z-10">Tap or Drop File Here</p>
+            <p class="text-gray-600 font-sans text-[10px] md:text-xs mt-1 z-10">MP3, WAV, OGG</p>
+        </div>
+    </div>
+
+    <!-- MAIN APP NAVBAR (Initially Hidden) -->
+    <nav id="appNavbar"
+        class="hidden h-14 md:h-16 cyber-panel neon-border-b sticky top-0 z-40 flex items-center justify-between px-4 md:px-6 backdrop-blur-xl bg-[#050511]/80">
+        <div class="flex items-center gap-2 md:gap-3 cursor-pointer" onclick="location.reload()">
+            <i class="fa-brands fa-soundcloud text-cyber-neon text-xl md:text-2xl"></i>
+            <h1
+                class="font-mono text-lg md:text-xl font-bold tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-cyber-neon to-cyber-pink truncate max-w-[150px] md:max-w-none">
+                SONIC<span class="text-white">CORE</span>
+            </h1>
+        </div>
+
+        <div class="flex items-center gap-4">
+            <!-- Mobile Optimized Button -->
+            <div id="navDropZone"
+                class="flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-1.5 rounded border border-cyber-neon/30 bg-cyber-neon/5 text-cyber-neon text-xs font-mono uppercase tracking-widest cursor-pointer hover:bg-cyber-neon/20 transition-all active:scale-95">
+                <i class="fa-solid fa-folder-open md:fa-file-arrow-up text-sm"></i>
+                <span id="dropText" class="hidden md:inline">New File</span>
+            </div>
+            <input type="file" id="fileInput" accept="audio/*" class="hidden">
+        </div>
+    </nav>
+
+    <!-- MAIN DASHBOARD (Initially Hidden) -->
+    <main id="mainDashboard"
+        class="hidden flex-grow p-3 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-6 relative max-w-[1600px] mx-auto w-full">
+
+        <!-- Background Effects -->
+        <div
+            class="fixed top-20 left-10 w-64 h-64 bg-cyber-pink/20 rounded-full blur-[100px] pointer-events-none -z-10">
+        </div>
+        <div
+            class="fixed bottom-10 right-10 w-96 h-96 bg-cyber-neon/10 rounded-full blur-[120px] pointer-events-none -z-10">
+        </div>
+
+        <!-- LEFT COLUMN: Visualizer & Waveform (8 Cols) -->
+        <div class="lg:col-span-8 space-y-4 md:space-y-6 flex flex-col">
+
+            <!-- Main Display: Spectrogram -->
+            <div
+                class="cyber-panel rounded-xl p-1 relative flex-grow min-h-[300px] md:min-h-[400px] flex flex-col group scanline overflow-hidden shadow-2xl">
+
+                <!-- Overlay Info -->
+                <div class="absolute top-3 left-3 md:top-4 md:left-4 z-10 flex gap-4">
+                    <div class="bg-black/40 backdrop-blur px-2 py-1 md:px-3 rounded border-l-2 border-cyber-neon">
+                        <p class="text-[9px] md:text-[10px] text-cyber-neon font-mono uppercase">Frequency Domain</p>
+                        <p id="hzDisplay" class="text-white font-bold font-mono text-xs md:text-sm">0 Hz</p>
+                    </div>
+                </div>
+
+                <canvas id="spectrogramCanvas" class="w-full h-full rounded-lg bg-black/80"></canvas>
+
+                <!-- Floating Controls Overlay -->
+                <!-- Adjusted for mobile: slightly smaller padding, font size -->
+                <div
+                    class="absolute bottom-4 md:bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-4 md:gap-6 bg-black/70 backdrop-blur-md px-4 py-2 md:px-8 md:py-3 rounded-full border border-white/10 shadow-2xl transition-transform z-20 w-[90%] md:w-auto max-w-sm justify-center">
+
+                    <button id="playBtn" disabled
+                        class="w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-tr from-cyber-pink to-cyber-accent text-white flex items-center justify-center text-lg md:text-xl shadow-[0_0_20px_rgba(188,19,254,0.5)] hover:shadow-[0_0_30px_rgba(188,19,254,0.8)] transition disabled:opacity-20 disabled:shadow-none shrink-0">
+                        <i class="fa-solid fa-play ml-1"></i>
+                    </button>
+
+                    <div class="flex flex-col flex-grow md:w-32">
+                        <div class="flex justify-between text-[9px] md:text-[10px] font-mono text-gray-400 mb-1">
+                            <span>VOL</span>
+                            <span id="volVal">80%</span>
+                        </div>
+                        <input type="range" id="volumeSlider" min="0" max="1" step="0.01" value="0.8">
+                    </div>
+
+                    <button id="stopBtn" disabled
+                        class="text-gray-400 hover:text-cyber-neon transition disabled:opacity-20 p-2">
+                        <i class="fa-solid fa-stop text-lg md:text-xl"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Waveform & Navigation -->
+            <div class="cyber-panel rounded-xl p-3 md:p-4 border-l-4 border-cyber-pink relative shadow-xl">
+                <div class="flex justify-between items-center mb-2">
+                    <h3
+                        class="font-mono text-xxs md:text-xs text-cyber-pink uppercase tracking-widest flex items-center gap-2">
+                        <i class="fa-solid fa-wave-square"></i> Amplitude
+                    </h3>
+                    <div id="timeDisplay"
+                        class="font-mono text-cyber-neon text-xs md:text-sm bg-cyber-neon/10 px-2 py-0.5 rounded">
+                        00:00.000</div>
+                </div>
+
+                <div class="relative h-24 md:h-32 bg-black/50 rounded overflow-hidden cursor-crosshair border border-white/5"
+                    id="waveformContainer">
+                    <canvas id="waveformCanvas" class="w-full h-full block"></canvas>
+                    <div id="playhead"
+                        class="absolute top-0 bottom-0 w-[2px] bg-cyber-neon shadow-[0_0_15px_#00f3ff] left-0 pointer-events-none transition-all duration-75 z-10">
+                        <div class="absolute -top-1 -left-1.5 w-4 h-4 bg-cyber-neon rounded-full blur-sm opacity-50">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT COLUMN: EQ, Metadata, Stats (4 Cols) -->
+        <div class="lg:col-span-4 space-y-4 md:space-y-6 flex flex-col">
+
+            <!-- EQ Panel -->
+            <div class="cyber-panel rounded-xl p-4 md:p-6 relative overflow-hidden shadow-xl">
+                <div
+                    class="absolute top-0 right-0 w-20 h-20 bg-gradient-to-bl from-cyber-accent/20 to-transparent pointer-events-none">
+                </div>
+                <h3 class="font-mono text-base md:text-lg text-white font-bold mb-4 md:mb-6 flex items-center gap-2">
+                    <i class="fa-solid fa-sliders text-cyber-neon"></i> Equalizer
+                </h3>
+
+                <div class="space-y-4 md:space-y-6">
+                    <!-- Low -->
+                    <div class="relative">
+                        <div class="flex justify-between text-xxs md:text-xs font-mono text-gray-400 mb-1">
+                            <span>LOW (Bass)</span>
+                            <span id="lowVal" class="text-cyber-neon">0dB</span>
+                        </div>
+                        <input type="range" id="eqLow" min="-15" max="15" step="1" value="0" class="w-full">
+                    </div>
+                    <!-- Mid -->
+                    <div class="relative">
+                        <div class="flex justify-between text-xxs md:text-xs font-mono text-gray-400 mb-1">
+                            <span>MID (Vocals)</span>
+                            <span id="midVal" class="text-cyber-neon">0dB</span>
+                        </div>
+                        <input type="range" id="eqMid" min="-15" max="15" step="1" value="0" class="w-full">
+                    </div>
+                    <!-- High -->
+                    <div class="relative">
+                        <div class="flex justify-between text-xxs md:text-xs font-mono text-gray-400 mb-1">
+                            <span>HIGH (Treble)</span>
+                            <span id="highVal" class="text-cyber-neon">0dB</span>
+                        </div>
+                        <input type="range" id="eqHigh" min="-15" max="15" step="1" value="0" class="w-full">
+                    </div>
+
+                    <!-- Speed -->
+                    <div class="pt-4 border-t border-white/10">
+                        <div class="flex justify-between text-xxs md:text-xs font-mono text-gray-400 mb-1">
+                            <span>PLAYBACK RATE</span>
+                            <span id="rateVal" class="text-cyber-pink">1.0x</span>
+                        </div>
+                        <input type="range" id="playbackRate" min="0.5" max="2.0" step="0.1" value="1.0" class="w-full">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Analysis & Metadata -->
+            <div class="cyber-panel rounded-xl p-0 flex-grow flex flex-col shadow-xl">
+                <!-- Tabs -->
+                <div class="flex border-b border-white/10">
+                    <button id="btnMeta"
+                        class="flex-1 py-3 text-xs md:text-sm font-mono text-center font-bold tab-active transition-colors">METADATA</button>
+                    <button id="btnAnalysis"
+                        class="flex-1 py-3 text-xs md:text-sm font-mono text-center tab-inactive transition-colors">ANALYSIS</button>
+                </div>
+
+                <!-- Tab Content: Metadata -->
+                <div id="tabMetadata" class="p-4 md:p-6 space-y-4">
+                    <div class="flex gap-4 items-start">
+                        <div
+                            class="w-20 h-20 md:w-24 md:h-24 bg-black rounded border border-white/10 flex items-center justify-center shrink-0 overflow-hidden relative shadow-lg group">
+                            <img id="coverArt"
+                                class="w-full h-full object-cover hidden transition-transform duration-700 group-hover:scale-110">
+                            <i id="coverIcon"
+                                class="fa-solid fa-compact-disc text-3xl md:text-4xl text-gray-700 animate-spin-slow"></i>
+                        </div>
+                        <div class="overflow-hidden min-w-0">
+                            <h4 id="metaTitleDisplay" class="text-white font-bold truncate text-base md:text-lg">No
+                                Track Loaded</h4>
+                            <p id="metaArtistDisplay" class="text-cyber-neon text-xs md:text-sm truncate">--</p>
+                            <p id="metaAlbumDisplay" class="text-gray-500 text-[10px] md:text-xs truncate mt-1">--</p>
+                        </div>
+                    </div>
+
+                    <!-- Manual Inputs -->
+                    <div class="space-y-3 pt-2">
+                        <div>
+                            <label class="block text-[10px] text-gray-500 mb-1 uppercase">Title (Editable)</label>
+                            <input type="text" id="manualTitle"
+                                class="w-full bg-white/5 border border-white/10 rounded px-2 py-1.5 text-xs md:text-sm text-white focus:border-cyber-neon focus:outline-none"
+                                placeholder="...">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] text-gray-500 mb-1 uppercase">Artist (Editable)</label>
+                            <input type="text" id="manualArtist"
+                                class="w-full bg-white/5 border border-white/10 rounded px-2 py-1.5 text-xs md:text-sm text-white focus:border-cyber-neon focus:outline-none"
+                                placeholder="...">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab Content: Analysis -->
+                <div id="tabAnalysis" class="p-4 md:p-6 space-y-4 hidden">
+                    <!-- BPM Block -->
+                    <div class="bg-black/40 rounded p-4 border border-white/5 flex items-center justify-between">
+                        <div>
+                            <p class="text-[9px] md:text-[10px] text-gray-500 font-mono uppercase">Estimated BPM</p>
+                            <div class="flex items-baseline gap-2">
+                                <span id="bpmDisplay"
+                                    class="text-xl md:text-2xl font-mono font-bold text-white">--</span>
+                                <span class="text-xs text-cyber-pink animate-pulse">●</span>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-[9px] md:text-[10px] text-gray-500 font-mono uppercase">Duration</p>
+                            <p id="durationDisplay" class="text-white font-mono text-sm md:text-base">--:--</p>
+                        </div>
+                    </div>
+
+                    <!-- Tech Details -->
+                    <div class="grid grid-cols-2 gap-2 text-xxs md:text-xs font-mono text-gray-500">
+                        <div class="bg-white/5 px-2 py-1 rounded break-words">Rate: <span id="srDisplay"
+                                class="text-gray-300">--</span></div>
+                        <div class="bg-white/5 px-2 py-1 rounded break-words">Ch: <span id="chDisplay"
+                                class="text-gray-300">--</span></div>
+                        <div class="bg-white/5 px-2 py-1 rounded break-words">Size: <span id="sizeDisplay"
+                                class="text-gray-300">--</span></div>
+                        <div class="bg-white/5 px-2 py-1 rounded break-words">Type: <span id="typeDisplay"
+                                class="text-gray-300">--</span></div>
+                    </div>
+
+                    <div
+                        class="p-2 bg-cyber-accent/10 border border-cyber-accent/30 rounded text-[10px] text-cyber-accent">
+                        <i class="fa-solid fa-circle-info mr-1"></i> Analysis is performed locally in the browser.
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Loader Overlay -->
+    <div id="loader"
+        class="fixed inset-0 z-[100] bg-[#050511]/90 backdrop-blur-sm flex flex-col items-center justify-center hidden">
+        <div class="loader-ring"></div>
+        <div class="mt-4 text-cyber-neon font-mono tracking-widest text-xs md:text-sm animate-pulse">PROCESSING AUDIO
+            DATA</div>
+    </div>
+
+    <script>
+        // --- System State ---
+        const audioCtxClass = (window.AudioContext || window.webkitAudioContext);
+        const state = {
+            ctx: null,
+            buffer: null,
+            source: null,
+            analyser: null,
+            gain: null,
+            // EQ Nodes
+            lowFilter: null,
+            midFilter: null,
+            highFilter: null,
+
+            isPlaying: false,
+            startTime: 0,
+            pausedAt: 0,
+            playbackRate: 1.0,
+            rafId: null
+        };
+
+        // --- DOM Elements ---
+        const el = {
+            landingPage: document.getElementById('landingPage'),
+            mainDashboard: document.getElementById('mainDashboard'),
+            appNavbar: document.getElementById('appNavbar'),
+            landingDropZone: document.getElementById('landingDropZone'),
+            navDropZone: document.getElementById('navDropZone'),
+            fileInput: document.getElementById('fileInput'),
+            loader: document.getElementById('loader'),
+
+            // Modal
+            confirmModal: document.getElementById('confirmModal'),
+            confirmModalContent: document.getElementById('confirmModalContent'),
+            confirmYes: document.getElementById('confirmYes'),
+            confirmCancel: document.getElementById('confirmCancel'),
+
+            // Canvas
+            specCanvas: document.getElementById('spectrogramCanvas'),
+            waveCanvas: document.getElementById('waveformCanvas'),
+            waveContainer: document.getElementById('waveformContainer'),
+            playhead: document.getElementById('playhead'),
+
+            // Controls
+            playBtn: document.getElementById('playBtn'),
+            stopBtn: document.getElementById('stopBtn'),
+            volSlider: document.getElementById('volumeSlider'),
+            volVal: document.getElementById('volVal'),
+            rateSlider: document.getElementById('playbackRate'),
+            rateVal: document.getElementById('rateVal'),
+
+            // EQ
+            eqLow: document.getElementById('eqLow'),
+            eqMid: document.getElementById('eqMid'),
+            eqHigh: document.getElementById('eqHigh'),
+            lowVal: document.getElementById('lowVal'),
+            midVal: document.getElementById('midVal'),
+            highVal: document.getElementById('highVal'),
+
+            // Metadata & Info
+            timeDisplay: document.getElementById('timeDisplay'),
+            hzDisplay: document.getElementById('hzDisplay'),
+            bpmDisplay: document.getElementById('bpmDisplay'),
+            durationDisplay: document.getElementById('durationDisplay'),
+            srDisplay: document.getElementById('srDisplay'),
+            chDisplay: document.getElementById('chDisplay'),
+            sizeDisplay: document.getElementById('sizeDisplay'),
+            typeDisplay: document.getElementById('typeDisplay'),
+
+            // Meta Visuals
+            coverArt: document.getElementById('coverArt'),
+            coverIcon: document.getElementById('coverIcon'),
+            mTitle: document.getElementById('metaTitleDisplay'),
+            mArtist: document.getElementById('metaArtistDisplay'),
+            mAlbum: document.getElementById('metaAlbumDisplay'),
+            manualTitle: document.getElementById('manualTitle'),
+            manualArtist: document.getElementById('manualArtist'),
+
+            // Tabs
+            btnMeta: document.getElementById('btnMeta'),
+            btnAnalysis: document.getElementById('btnAnalysis'),
+            tabMeta: document.getElementById('tabMetadata'),
+            tabAnalysis: document.getElementById('tabAnalysis'),
+        };
+
+        // --- Event Listeners ---
+
+        // Navigation / Landing Page Logic
+        el.landingDropZone.addEventListener('click', () => el.fileInput.click());
+
+        // DOUBLE CONFIRMATION LOGIC for Navbar Button
+        el.navDropZone.addEventListener('click', () => {
+            if (state.buffer) {
+                // File loaded, show confirmation
+                showModal();
+            } else {
+                // No file loaded, proceed directly
+                el.fileInput.click();
+            }
+        });
+
+        // Modal Handlers
+        el.confirmCancel.addEventListener('click', hideModal);
+        el.confirmYes.addEventListener('click', () => {
+            hideModal();
+            el.fileInput.click();
+        });
+
+        function showModal() {
+            el.confirmModal.classList.remove('hidden');
+            // Small delay to allow display:block to apply before opacity transition
+            setTimeout(() => {
+                el.confirmModal.classList.remove('opacity-0');
+                el.confirmModalContent.classList.remove('scale-95');
+                el.confirmModalContent.classList.add('scale-100');
+            }, 10);
+        }
+
+        function hideModal() {
+            el.confirmModal.classList.add('opacity-0');
+            el.confirmModalContent.classList.remove('scale-100');
+            el.confirmModalContent.classList.add('scale-95');
+            setTimeout(() => {
+                el.confirmModal.classList.add('hidden');
+            }, 300);
+        }
+
+        el.fileInput.addEventListener('change', handleFile);
+
+        // Drag & Drop
+        const dropZones = [el.landingDropZone, el.navDropZone, document.body];
+        dropZones.forEach(zone => {
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                zone.addEventListener(eventName, preventDefaults, false);
+            });
+        });
+
+        function preventDefaults(e) { e.preventDefault(); e.stopPropagation(); }
+
+        document.body.addEventListener('drop', (e) => {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            if (files.length) {
+                // Check if we need confirmation for drop too
+                if (state.buffer) {
+                    if (confirm("Replace current track?")) {
+                        el.fileInput.files = files;
+                        handleFile({ target: { files: files } });
+                    }
+                } else {
+                    el.fileInput.files = files;
+                    handleFile({ target: { files: files } });
+                }
+            }
+        });
+
+        // Tabs Logic
+        el.btnMeta.addEventListener('click', () => switchTab('meta'));
+        el.btnAnalysis.addEventListener('click', () => switchTab('analysis'));
+
+        function switchTab(tab) {
+            if (tab === 'meta') {
+                el.tabMeta.classList.remove('hidden');
+                el.tabAnalysis.classList.add('hidden');
+                el.btnMeta.classList.add('tab-active');
+                el.btnMeta.classList.remove('tab-inactive');
+                el.btnAnalysis.classList.remove('tab-active');
+                el.btnAnalysis.classList.add('tab-inactive');
+            } else {
+                el.tabMeta.classList.add('hidden');
+                el.tabAnalysis.classList.remove('hidden');
+                el.btnAnalysis.classList.add('tab-active');
+                el.btnAnalysis.classList.remove('tab-inactive');
+                el.btnMeta.classList.remove('tab-active');
+                el.btnMeta.classList.add('tab-inactive');
+            }
+        }
+
+        // Controls
+        el.playBtn.addEventListener('click', togglePlay);
+        el.stopBtn.addEventListener('click', stop);
+
+        el.volSlider.addEventListener('input', (e) => {
+            const val = e.target.value;
+            if (state.gain) state.gain.gain.value = val;
+            el.volVal.textContent = Math.round(val * 100) + '%';
+        });
+
+        el.rateSlider.addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value);
+            state.playbackRate = val;
+            if (state.source) state.source.playbackRate.value = val;
+            el.rateVal.textContent = val.toFixed(1) + 'x';
+        });
+
+        // EQ Listeners
+        const updateEQ = (type, val) => {
+            const db = parseFloat(val);
+            if (type === 'low' && state.lowFilter) state.lowFilter.gain.value = db;
+            if (type === 'mid' && state.midFilter) state.midFilter.gain.value = db;
+            if (type === 'high' && state.highFilter) state.highFilter.gain.value = db;
+
+            document.getElementById(`${type}Val`).textContent = (db > 0 ? '+' : '') + db + 'dB';
+        };
+
+        el.eqLow.addEventListener('input', e => updateEQ('low', e.target.value));
+        el.eqMid.addEventListener('input', e => updateEQ('mid', e.target.value));
+        el.eqHigh.addEventListener('input', e => updateEQ('high', e.target.value));
+
+        // Canvas Click Seek
+        el.waveCanvas.addEventListener('click', (e) => {
+            if (!state.buffer) return;
+            const rect = el.waveCanvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const pct = x / rect.width;
+            const time = pct * state.buffer.duration;
+            seek(time);
+        });
+
+        // Resize
+        window.addEventListener('resize', () => {
+            if (state.buffer) drawWaveformStatic(state.buffer);
+        });
+
+        // --- Core Audio Logic ---
+
+        async function handleFile(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            // Reset
+            stop();
+            el.loader.classList.remove('hidden');
+
+            // Meta Reading
+            readTags(file);
+            el.sizeDisplay.textContent = (file.size / (1024 * 1024)).toFixed(2) + " MB";
+            el.typeDisplay.textContent = file.type.split('/')[1].toUpperCase();
+
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                state.ctx = new audioCtxClass();
+                state.buffer = await state.ctx.decodeAudioData(arrayBuffer);
+
+                // Init Nodes
+                setupAudioGraph();
+
+                // Analysis
+                el.srDisplay.textContent = state.buffer.sampleRate + "Hz";
+                el.chDisplay.textContent = state.buffer.numberOfChannels;
+                el.durationDisplay.textContent = formatTime(state.buffer.duration);
+
+                detectBPM(state.buffer); // Async
+
+                // SWITCH VIEW: Hide landing, show main
+                el.landingPage.classList.add('hidden');
+                el.appNavbar.classList.remove('hidden');
+                el.mainDashboard.classList.remove('hidden');
+
+                // FIX: Wait for layout to reflow before drawing waveform
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        drawWaveformStatic(state.buffer);
+                    });
+                });
+
+                // Ready UI
+                el.playBtn.disabled = false;
+                el.stopBtn.disabled = false;
+
+            } catch (err) {
+                console.error(err);
+                alert("Error parsing audio. Please try another file.");
+            } finally {
+                el.loader.classList.add('hidden');
+            }
+        }
+
+        function setupAudioGraph() {
+            // Create reusable nodes (except source which is one-shot)
+            state.gain = state.ctx.createGain();
+            state.gain.gain.value = el.volSlider.value;
+
+            state.analyser = state.ctx.createAnalyser();
+            state.analyser.fftSize = 2048;
+            state.analyser.smoothingTimeConstant = 0.85;
+
+            // EQ
+            state.lowFilter = state.ctx.createBiquadFilter();
+            state.lowFilter.type = "lowshelf";
+            state.lowFilter.frequency.value = 320;
+
+            state.midFilter = state.ctx.createBiquadFilter();
+            state.midFilter.type = "peaking";
+            state.midFilter.frequency.value = 1000;
+            state.midFilter.Q.value = 0.5;
+
+            state.highFilter = state.ctx.createBiquadFilter();
+            state.highFilter.type = "highshelf";
+            state.highFilter.frequency.value = 3200;
+
+            // Apply initial EQ values
+            updateEQ('low', el.eqLow.value);
+            updateEQ('mid', el.eqMid.value);
+            updateEQ('high', el.eqHigh.value);
+        }
+
+        function play() {
+            if (!state.buffer) return;
+
+            state.source = state.ctx.createBufferSource();
+            state.source.buffer = state.buffer;
+            state.source.playbackRate.value = state.playbackRate;
+
+            // Graph: Source -> Low -> Mid -> High -> Analyser -> Gain -> Dest
+            state.source.connect(state.lowFilter);
+            state.lowFilter.connect(state.midFilter);
+            state.midFilter.connect(state.highFilter);
+            state.highFilter.connect(state.analyser);
+            state.analyser.connect(state.gain);
+            state.gain.connect(state.ctx.destination);
+
+            state.source.start(0, state.pausedAt);
+            state.startTime = state.ctx.currentTime - (state.pausedAt / state.playbackRate);
+            state.isPlaying = true;
+
+            el.playBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
+            renderLoop();
+        }
+
+        function togglePlay() {
+            if (state.isPlaying) {
+                // Pause
+                if (state.source) {
+                    state.source.stop();
+                    // Calc paused time taking rate into account
+                    state.pausedAt = (state.ctx.currentTime - state.startTime) * state.playbackRate;
+                    state.source = null;
+                }
+                state.isPlaying = false;
+                cancelAnimationFrame(state.rafId);
+                el.playBtn.innerHTML = '<i class="fa-solid fa-play ml-1"></i>';
+            } else {
+                play();
+            }
+        }
+
+        function stop() {
+            if (state.source) {
+                try { state.source.stop(); } catch (e) { }
+                state.source = null;
+            }
+            state.isPlaying = false;
+            state.pausedAt = 0;
+            cancelAnimationFrame(state.rafId);
+            el.playBtn.innerHTML = '<i class="fa-solid fa-play ml-1"></i>';
+            updatePlayhead(0);
+
+            // Clear Visualizer
+            const ctx = el.specCanvas.getContext('2d');
+            ctx.clearRect(0, 0, el.specCanvas.width, el.specCanvas.height);
+        }
+
+        function seek(time) {
+            const wasPlaying = state.isPlaying;
+            if (state.isPlaying) {
+                state.source.stop();
+                state.source = null;
+            }
+            state.pausedAt = time;
+            updatePlayhead(time / state.buffer.duration);
+            el.timeDisplay.textContent = formatTime(time);
+
+            if (wasPlaying) play();
+        }
+
+        // --- Visualization Engine ---
+
+        function renderLoop() {
+            if (!state.isPlaying) return;
+
+            // 1. Time Update
+            // Because playbackRate affects ctx.currentTime diff, we adjust
+            const elapsed = (state.ctx.currentTime - state.startTime) * state.playbackRate;
+
+            if (elapsed >= state.buffer.duration) {
+                stop();
+                return;
+            }
+
+            el.timeDisplay.textContent = formatTime(elapsed);
+            updatePlayhead(elapsed / state.buffer.duration);
+
+            // 2. Spectrogram
+            drawSpectrum();
+
+            state.rafId = requestAnimationFrame(renderLoop);
+        }
+
+        function drawSpectrum() {
+            const cvs = el.specCanvas;
+            const ctx = cvs.getContext('2d');
+
+            // Dynamic resizing
+            if (cvs.width !== cvs.clientWidth) {
+                cvs.width = cvs.clientWidth;
+                cvs.height = cvs.clientHeight;
+            }
+
+            const w = cvs.width;
+            const h = cvs.height;
+            const bufferLen = state.analyser.frequencyBinCount; // 1024
+            const data = new Uint8Array(bufferLen);
+            state.analyser.getByteFrequencyData(data);
+
+            // Clear with fade effect for trails
+            ctx.fillStyle = 'rgba(5, 5, 17, 0.2)';
+            ctx.fillRect(0, 0, w, h);
+
+            // Settings
+            const bars = 100; // number of bars to draw
+            const barWidth = (w / bars);
+            const step = Math.floor(bufferLen / bars);
+
+            // Mirror Effect: Draw from center out
+            const cx = w / 2;
+            const cy = h / 2;
+
+            ctx.lineCap = 'round';
+
+            for (let i = 0; i < bars; i++) {
+                // Average amplitude for this bin
+                let sum = 0;
+                for (let j = 0; j < step; j++) {
+                    sum += data[(i * step) + j];
+                }
+                const val = sum / step;
+                const percent = val / 255;
+                const barH = percent * (h * 0.8);
+
+                // Color Gradient based on height
+                const hue = 180 + (percent * 140); // Cyan to Pink/Red
+                ctx.fillStyle = `hsl(${hue}, 100%, 60%)`;
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = `hsl(${hue}, 100%, 50%)`;
+
+                // Draw Dual Mirror (Top/Bottom mirrored around center)
+
+                // X position for left and right
+                const xRight = cx + (i * (barWidth / 2)) + 1;
+                const xLeft = cx - (i * (barWidth / 2)) - 1;
+
+                // Draw Bars
+
+                const barX_R = cx + (i * (w / 2 / bars));
+                const barX_L = cx - (i * (w / 2 / bars)) - (w / 2 / bars);
+
+                // Height scaling
+                const visualH = Math.max(2, barH);
+
+                // Draw right
+                ctx.fillRect(barX_R, cy - visualH / 2, (w / 2 / bars) - 1, visualH);
+                // Draw left
+                ctx.fillRect(barX_L, cy - visualH / 2, (w / 2 / bars) - 1, visualH);
+            }
+
+            // Peak frequency detection for UI
+            // Simple max search
+            let maxIdx = 0;
+            let maxVal = 0;
+            for (let i = 0; i < bufferLen; i++) {
+                if (data[i] > maxVal) { maxVal = data[i]; maxIdx = i; }
+            }
+            if (maxVal > 128) { // Threshold
+                const nyquist = state.ctx.sampleRate / 2;
+                const freq = maxIdx * (nyquist / bufferLen);
+                el.hzDisplay.textContent = Math.round(freq) + " Hz";
+            }
+        }
+
+        function drawWaveformStatic(buffer) {
+            const cvs = el.waveCanvas;
+            const container = el.waveContainer;
+            const dpr = window.devicePixelRatio || 1;
+
+            cvs.width = container.clientWidth * dpr;
+            cvs.height = container.clientHeight * dpr;
+
+            const ctx = cvs.getContext('2d');
+            ctx.scale(dpr, dpr);
+
+            const w = container.clientWidth;
+            const h = container.clientHeight;
+            const data = buffer.getChannelData(0);
+            const step = Math.ceil(data.length / w);
+            const amp = h / 2;
+
+            ctx.clearRect(0, 0, w, h);
+
+            // Draw Center Line
+            ctx.beginPath();
+            ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+            ctx.moveTo(0, h / 2);
+            ctx.lineTo(w, h / 2);
+            ctx.stroke();
+
+            // Draw Wave
+            ctx.beginPath();
+
+            // Gradient
+            const grad = ctx.createLinearGradient(0, 0, 0, h);
+            grad.addColorStop(0, '#bc13fe');
+            grad.addColorStop(0.5, '#00f3ff');
+            grad.addColorStop(1, '#bc13fe');
+
+            ctx.fillStyle = grad;
+
+            for (let i = 0; i < w; i++) {
+                let min = 1.0;
+                let max = -1.0;
+                for (let j = 0; j < step; j++) {
+                    const datum = data[(i * step) + j];
+                    if (datum < min) min = datum;
+                    if (datum > max) max = datum;
+                }
+                // Rounded bars aesthetic
+                const yTop = (1 + min) * amp;
+                const yBot = (1 + max) * amp;
+                const height = Math.max(1, yBot - yTop);
+
+                ctx.fillRect(i, yTop, 1, height);
+            }
+        }
+
+        function updatePlayhead(pct) {
+            if (!el.playhead || !el.waveContainer) return;
+            const w = el.waveContainer.clientWidth;
+            el.playhead.style.transform = `translateX(${pct * w}px)`;
+        }
+
+        // --- Helpers ---
+        function formatTime(s) {
+            const m = Math.floor(s / 60);
+            const sec = Math.floor(s % 60);
+            const ms = Math.floor((s % 1) * 100);
+            return `${m}:${sec.toString().padStart(2, '0')}.${ms.toString().padStart(2, '0')}`;
+        }
+
+        function readTags(file) {
+            // Reset
+            el.mTitle.textContent = file.name;
+            el.mArtist.textContent = "Unknown Artist";
+            el.mAlbum.textContent = "Unknown Album";
+            el.manualTitle.value = "";
+            el.manualArtist.value = "";
+            el.coverArt.classList.add('hidden');
+            el.coverIcon.classList.remove('hidden');
+
+            jsmediatags.read(file, {
+                onSuccess: function (tag) {
+                    const t = tag.tags;
+                    if (t.title) {
+                        el.mTitle.textContent = t.title;
+                        el.manualTitle.value = t.title;
+                    }
+                    if (t.artist) {
+                        el.mArtist.textContent = t.artist;
+                        el.manualArtist.value = t.artist;
+                    }
+                    if (t.album) el.mAlbum.textContent = t.album;
+
+                    if (t.picture) {
+                        const { data, format } = t.picture;
+                        let base64 = "";
+                        for (let i = 0; i < data.length; i++) base64 += String.fromCharCode(data[i]);
+                        el.coverArt.src = `data:${format};base64,${window.btoa(base64)}`;
+                        el.coverArt.classList.remove('hidden');
+                        el.coverIcon.classList.add('hidden');
+                    }
+                },
+                onError: (e) => console.log(e)
+            });
+        }
+
+        // Manual Metadata Update
+        el.manualTitle.addEventListener('input', (e) => el.mTitle.textContent = e.target.value || "No Track Loaded");
+        el.manualArtist.addEventListener('input', (e) => el.mArtist.textContent = e.target.value || "--");
+
+        // Simplified BPM (same logic, cleaner code)
+        async function detectBPM(buffer) {
+            el.bpmDisplay.textContent = "--";
+
+            // Run offline
+            const offlineCtx = new OfflineAudioContext(1, buffer.length, buffer.sampleRate);
+            const src = offlineCtx.createBufferSource();
+            src.buffer = buffer;
+            const filter = offlineCtx.createBiquadFilter();
+            filter.type = "lowpass";
+            filter.frequency.value = 150;
+            src.connect(filter);
+            filter.connect(offlineCtx.destination);
+            src.start(0);
+
+            const rendered = await offlineCtx.startRendering();
+            const data = rendered.getChannelData(0);
+
+            // Peak finding
+            let peaks = [];
+            const threshold = 0.8;
+            // Scan 30s in middle
+            const mid = Math.floor(data.length / 2);
+            const range = 44100 * 10;
+            const start = Math.max(0, mid - range);
+            const end = Math.min(data.length, mid + range);
+
+            let maxVol = 0;
+            for (let i = start; i < end; i++) {
+                if (Math.abs(data[i]) > maxVol) maxVol = Math.abs(data[i]);
+            }
+
+            for (let i = start; i < end; i++) {
+                if (Math.abs(data[i]) > maxVol * 0.9) {
+                    peaks.push(i);
+                    i += 10000; // Skip ~0.25s
+                }
+            }
+
+            // Interval counting
+            const intervals = [];
+            for (let i = 0; i < peaks.length - 1; i++) {
+                intervals.push(peaks[i + 1] - peaks[i]);
+            }
+
+            // Count most common interval
+            const counts = {};
+            intervals.forEach(int => {
+                const bpm = Math.round(60 * buffer.sampleRate / int);
+                if (bpm > 60 && bpm < 180) {
+                    counts[bpm] = (counts[bpm] || 0) + 1;
+                }
+            });
+
+            const topBPM = Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b, 0);
+
+            if (topBPM > 0) {
+                el.bpmDisplay.textContent = topBPM;
+            } else {
+                el.bpmDisplay.textContent = "???";
+            }
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fade In/Out - Shadow Audio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;500;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="../../styles.css">
+</head>
+
+<body class="bg-gray-900 text-white font-sans antialiased overflow-x-hidden">
+
+    <nav
+        class="sticky top-0 z-50 glass-effect border-b border-white/5 px-6 py-4 flex items-center justify-between backdrop-blur-md">
+        <div class="flex items-center gap-3">
+            <a href="../index.html" class="flex items-center gap-2 group">
+                <div
+                    class="relative w-10 h-10 flex items-center justify-center bg-purple-600/20 rounded-lg border border-purple-500/30 group-hover:border-purple-500/50 transition-all">
+                    <i
+                        class="fas fa-sort-amount-up-alt text-purple-400 text-xl group-hover:scale-110 transition-transform"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-orbitron font-bold tracking-widest text-white">SHADOW<span
+                            class="text-purple-500">AUDIO</span></h1>
+                    <span class="text-xs text-slate-400 font-mono tracking-wider">FADE FX</span>
+                </div>
+            </a>
+        </div>
+        <a href="../index.html" class="text-slate-400 hover:text-white transition-colors"><i
+                class="fas fa-times text-xl"></i></a>
+    </nav>
+
+    <main class="container mx-auto px-4 py-12 max-w-4xl">
+        <div class="text-center mb-10">
+            <h2 class="text-4xl font-bold font-orbitron mb-2">Fade Generator</h2>
+            <p class="text-slate-400 text-sm">Apply smooth Fade In and Fade Out effects.</p>
+        </div>
+
+        <div class="glass p-8 rounded-3xl border border-white/5 shadow-2xl">
+            <!-- File Upload -->
+            <div id="upload-area"
+                class="border-2 border-dashed border-white/10 rounded-2xl p-10 text-center hover:border-purple-500/50 transition-colors cursor-pointer mb-8 bg-black/20">
+                <input type="file" id="file-input" accept="audio/*" class="hidden">
+                <i class="fas fa-cloud-upload-alt text-4xl text-slate-500 mb-4"></i>
+                <p class="text-lg font-bold text-slate-300">Drop Audio File Here</p>
+                <p class="text-sm text-slate-500">or click to browse</p>
+            </div>
+
+            <div id="controls" class="hidden space-y-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-2xl mx-auto">
+                    <!-- Fade In -->
+                    <div class="bg-black/40 p-6 rounded-2xl border border-white/5">
+                        <h3 class="font-orbitron text-green-400 mb-4 flex items-center gap-2"><i
+                                class="fas fa-arrow-up"></i> FADE IN</h3>
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-xs text-slate-400">Duration</span>
+                            <span class="font-mono text-white" id="in-val">2.0s</span>
+                        </div>
+                        <input type="range" id="in-slider" min="0" max="10" value="2" step="0.5"
+                            class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-green-500">
+                    </div>
+
+                    <!-- Fade Out -->
+                    <div class="bg-black/40 p-6 rounded-2xl border border-white/5">
+                        <h3 class="font-orbitron text-red-400 mb-4 flex items-center gap-2"><i
+                                class="fas fa-arrow-down"></i> FADE OUT</h3>
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-xs text-slate-400">Duration</span>
+                            <span class="font-mono text-white" id="out-val">2.0s</span>
+                        </div>
+                        <input type="range" id="out-slider" min="0" max="10" value="2" step="0.5"
+                            class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-red-500">
+                    </div>
+                </div>
+
+                <div class="flex justify-center gap-4">
+                    <button id="play-btn"
+                        class="px-8 py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl transition-all flex items-center gap-2 shadow-[0_0_20px_rgba(147,51,234,0.3)]">
+                        <i class="fas fa-play"></i> PREVIEW EFFECTS
+                    </button>
+                    <button id="stop-btn"
+                        class="px-8 py-3 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-xl transition-all flex items-center gap-2"
+                        disabled>
+                        <i class="fas fa-stop"></i> STOP
+                    </button>
+                </div>
+
+                <div id="now-playing" class="text-center text-purple-400 font-mono text-sm"></div>
+                <canvas id="visualizer" width="600" height="100"
+                    class="w-full h-24 bg-black/40 rounded-lg border border-white/5"></canvas>
+            </div>
+        </div>
+    </main>
+
+    <script type="module">
+        import { audioEngine } from '../shared/audio-utils.js';
+
+        const uploadArea = document.getElementById('upload-area');
+        const fileInput = document.getElementById('file-input');
+        const controls = document.getElementById('controls');
+
+        const inSlider = document.getElementById('in-slider');
+        const outSlider = document.getElementById('out-slider');
+        const inVal = document.getElementById('in-val');
+        const outVal = document.getElementById('out-val');
+
+        const playBtn = document.getElementById('play-btn');
+        const stopBtn = document.getElementById('stop-btn');
+
+        let audioBuffer = null;
+        let sourceNode = null;
+        let gainNode = null;
+        let isPlaying = false;
+
+        uploadArea.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+
+        async function handleFile(file) {
+            if (!file) return;
+            controls.classList.remove('hidden');
+            uploadArea.classList.add('hidden');
+            document.getElementById('now-playing').textContent = `LOADED: ${file.name}`;
+
+            const ctx = audioEngine.init();
+            const arrayBuffer = await file.arrayBuffer();
+            audioBuffer = await ctx.decodeAudioData(arrayBuffer);
+        }
+
+        inSlider.addEventListener('input', (e) => inVal.textContent = e.target.value + 's');
+        outSlider.addEventListener('input', (e) => outVal.textContent = e.target.value + 's');
+
+        playBtn.addEventListener('click', () => {
+            if (!audioBuffer) return;
+            if (isPlaying) return;
+            startPlayback();
+        });
+
+        stopBtn.addEventListener('click', () => {
+            if (sourceNode) {
+                sourceNode.stop();
+                isPlaying = false;
+                playBtn.disabled = false;
+                stopBtn.disabled = true;
+                audioEngine.stop();
+            }
+        });
+
+        function startPlayback() {
+            const ctx = audioEngine.init();
+            sourceNode = ctx.createBufferSource();
+            sourceNode.buffer = audioBuffer;
+
+            gainNode = ctx.createGain();
+
+            const fadeIn = parseFloat(inSlider.value);
+            const fadeOut = parseFloat(outSlider.value);
+            const duration = audioBuffer.duration;
+            const now = ctx.currentTime;
+
+            // Initial silence
+            gainNode.gain.setValueAtTime(0, now);
+
+            // Fade In
+            if (fadeIn > 0) {
+                gainNode.gain.linearRampToValueAtTime(1, now + fadeIn);
+            } else {
+                gainNode.gain.setValueAtTime(1, now);
+            }
+
+            // Fade Out
+            if (fadeOut > 0) {
+                // Determine start of fade out (end of track - fadeOut duration)
+                let fadeStart = now + duration - fadeOut;
+                if (fadeStart < now + fadeIn) fadeStart = now + fadeIn; // Avoid conflict if track too short
+
+                gainNode.gain.setValueAtTime(1, fadeStart);
+                gainNode.gain.linearRampToValueAtTime(0, now + duration);
+            }
+
+            sourceNode.connect(gainNode);
+            const analyser = audioEngine.createAnalyser(gainNode); // We passed gainNode, helper connects it
+
+            sourceNode.onended = () => {
+                isPlaying = false;
+                playBtn.disabled = false;
+                stopBtn.disabled = true;
+            };
+
+            sourceNode.start(0);
+            isPlaying = true;
+            playBtn.disabled = true;
+            stopBtn.disabled = false;
+
+            audioEngine.drawVisualizer('visualizer', 'frequency', '#a855f7');
+        }
+    </script>
+</body>
+
+</html>

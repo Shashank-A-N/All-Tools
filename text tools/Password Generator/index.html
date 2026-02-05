@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shadow Text - Password Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;500;600;700&display=swap"
+        rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link rel="stylesheet" href="../../styles.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        mono: ['Courier New', 'monospace'],
+                        sans: ['Rajdhani', 'sans-serif'],
+                        orbitron: ['Orbitron', 'sans-serif']
+                    },
+                    colors: {
+                        cyber: {
+                            accent: '#10b981', // Emerald-500
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body
+    class="min-h-screen flex flex-col font-sans overflow-x-hidden bg-slate-900 text-white selection:bg-emerald-500 selection:text-black">
+
+    <!-- 3D Background -->
+    <div id="bg-3d-container"></div>
+
+    <!-- Navigation -->
+    <nav
+        class="sticky top-0 z-50 glass-effect border-b border-white/5 px-4 md:px-6 py-3 flex items-center justify-between backdrop-blur-md">
+        <a href="../index.html" class="flex items-center gap-3 text-slate-300 hover:text-white transition-colors group">
+            <div
+                class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center border border-white/10 group-hover:border-emerald-500/50 transition-all">
+                <i class="fas fa-chevron-left text-xs group-hover:-translate-x-0.5 transition-transform"></i>
+            </div>
+            <span class="font-orbitron font-bold tracking-wider hidden md:block">BACK</span>
+        </a>
+
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded bg-emerald-500/20 flex items-center justify-center text-emerald-400">
+                <i class="fas fa-key"></i>
+            </div>
+            <h1 class="text-lg md:text-xl font-orbitron font-bold tracking-widest text-white">SHADOW<span
+                    class="text-emerald-500">KEY</span></h1>
+        </div>
+
+        <div class="w-8"></div>
+    </nav>
+
+    <!-- Main Content -->
+    <main
+        class="flex-grow container mx-auto px-4 py-8 relative z-10 flex flex-col items-center justify-center h-[calc(100vh-80px)] min-h-[600px]">
+
+        <div class="w-full max-w-2xl flex flex-col gap-8">
+
+            <!-- Result Card -->
+            <div class="glass p-6 rounded-2xl border border-white/5 shadow-2xl flex flex-col gap-4">
+                <label class="text-xs font-bold text-slate-400 uppercase tracking-widest">Generated Password</label>
+                <div class="relative group">
+                    <input type="text" id="passwordOutput" readonly
+                        class="w-full bg-slate-950/50 border border-white/10 rounded-xl px-6 py-4 text-xl md:text-3xl font-mono text-emerald-400 text-center focus:outline-none tracking-wider"
+                        value="CLICK GENERATE">
+                    <button onclick="copy('passwordOutput')"
+                        class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-emerald-400 transition-colors p-2">
+                        <i class="fas fa-copy text-xl"></i>
+                    </button>
+                </div>
+                <div class="flex justify-center">
+                    <div id="strengthBar" class="h-1 w-full max-w-xs bg-slate-800 rounded-full overflow-hidden mt-2">
+                        <div id="strengthFill" class="h-full bg-red-500 w-0 transition-all duration-500"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Controls Card -->
+            <div class="glass p-8 rounded-2xl border border-white/5 shadow-xl flex flex-col gap-8">
+
+                <!-- Length Slider -->
+                <div class="flex flex-col gap-4">
+                    <div class="flex justify-between items-center">
+                        <label class="text-sm font-bold text-slate-300 uppercase tracking-wider">Length</label>
+                        <span id="lengthVal" class="text-xl font-orbitron text-emerald-400">16</span>
+                    </div>
+                    <input type="range" id="length" min="4" max="64" value="16" oninput="updateLen()"
+                        class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500">
+                </div>
+
+                <!-- Options Grid -->
+                <div class="grid grid-cols-2 gap-4">
+                    <label
+                        class="flex items-center gap-3 cursor-pointer group bg-slate-900/40 p-3 rounded-xl border border-white/5 hover:border-emerald-500/30 transition-all">
+                        <div class="relative flex items-center">
+                            <input type="checkbox" id="uppercase" checked class="peer sr-only">
+                            <div
+                                class="w-10 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500">
+                            </div>
+                        </div>
+                        <span
+                            class="text-sm font-bold text-slate-400 group-hover:text-white transition-colors">Uppercase
+                            (A-Z)</span>
+                    </label>
+
+                    <label
+                        class="flex items-center gap-3 cursor-pointer group bg-slate-900/40 p-3 rounded-xl border border-white/5 hover:border-emerald-500/30 transition-all">
+                        <div class="relative flex items-center">
+                            <input type="checkbox" id="lowercase" checked class="peer sr-only">
+                            <div
+                                class="w-10 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500">
+                            </div>
+                        </div>
+                        <span
+                            class="text-sm font-bold text-slate-400 group-hover:text-white transition-colors">Lowercase
+                            (a-z)</span>
+                    </label>
+
+                    <label
+                        class="flex items-center gap-3 cursor-pointer group bg-slate-900/40 p-3 rounded-xl border border-white/5 hover:border-emerald-500/30 transition-all">
+                        <div class="relative flex items-center">
+                            <input type="checkbox" id="numbers" checked class="peer sr-only">
+                            <div
+                                class="w-10 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500">
+                            </div>
+                        </div>
+                        <span class="text-sm font-bold text-slate-400 group-hover:text-white transition-colors">Numbers
+                            (0-9)</span>
+                    </label>
+
+                    <label
+                        class="flex items-center gap-3 cursor-pointer group bg-slate-900/40 p-3 rounded-xl border border-white/5 hover:border-emerald-500/30 transition-all">
+                        <div class="relative flex items-center">
+                            <input type="checkbox" id="symbols" checked class="peer sr-only">
+                            <div
+                                class="w-10 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500">
+                            </div>
+                        </div>
+                        <span class="text-sm font-bold text-slate-400 group-hover:text-white transition-colors">Symbols
+                            (@#$)</span>
+                    </label>
+                </div>
+
+                <button onclick="generate()"
+                    class="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl shadow-lg shadow-emerald-500/20 font-orbitron font-bold text-lg tracking-widest transition-all transform hover:scale-[1.02]">
+                    GENERATE
+                </button>
+
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Shared Script -->
+    <script type="module" src="../../shared/bg-particles.js"></script>
+
+    <script>
+        const upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        const lower = "abcdefghijklmnopqrstuvwxyz";
+        const nums = "0123456789";
+        const syms = "!@#$%^&*()_+-=[]{}|;:,.<>?";
+
+        function updateLen() {
+            document.getElementById('lengthVal').innerText = document.getElementById('length').value;
+        }
+
+        function generate() {
+            const len = document.getElementById('length').value;
+            const hasUpper = document.getElementById('uppercase').checked;
+            const hasLower = document.getElementById('lowercase').checked;
+            const hasNums = document.getElementById('numbers').checked;
+            const hasSyms = document.getElementById('symbols').checked;
+
+            let chars = "";
+            if (hasUpper) chars += upper;
+            if (hasLower) chars += lower;
+            if (hasNums) chars += nums;
+            if (hasSyms) chars += syms;
+
+            if (chars === "") {
+                document.getElementById('passwordOutput').value = "SELECT OPTION";
+                return;
+            }
+
+            let password = "";
+            // Ensure at least one of each selected
+            if (hasUpper) password += upper[Math.floor(Math.random() * upper.length)];
+            if (hasLower) password += lower[Math.floor(Math.random() * lower.length)];
+            if (hasNums) password += nums[Math.floor(Math.random() * nums.length)];
+            if (hasSyms) password += syms[Math.floor(Math.random() * syms.length)];
+
+            for (let i = password.length; i < len; i++) {
+                password += chars[Math.floor(Math.random() * chars.length)];
+            }
+
+            // Shuffle
+            password = password.split('').sort(() => 0.5 - Math.random()).join('');
+
+            document.getElementById('passwordOutput').value = password;
+            calculateStrength(password);
+        }
+
+        function calculateStrength(password) {
+            let strength = 0;
+            if (password.length > 8) strength += 20;
+            if (password.length > 12) strength += 20;
+            if (/[A-Z]/.test(password)) strength += 15;
+            if (/[a-z]/.test(password)) strength += 15;
+            if (/[0-9]/.test(password)) strength += 15;
+            if (/[^A-Za-z0-9]/.test(password)) strength += 15;
+
+            const bar = document.getElementById('strengthFill');
+            bar.style.width = strength + '%';
+
+            if (strength < 40) bar.className = 'h-full bg-red-500 transition-all duration-500';
+            else if (strength < 70) bar.className = 'h-full bg-yellow-500 transition-all duration-500';
+            else bar.className = 'h-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)] transition-all duration-500';
+        }
+
+        function copy(id) {
+            const el = document.getElementById(id);
+            el.select();
+            document.execCommand('copy');
+            // Checkmark logic suppressed
+        }
+
+        // Initial
+        window.addEventListener('load', generate);
+    </script>
+</body>
+
+</html>

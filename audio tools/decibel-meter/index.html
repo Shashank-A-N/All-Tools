@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Decibel Meter - Shadow Audio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;500;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="../../styles.css">
+</head>
+
+<body class="bg-gray-900 text-white font-sans antialiased overflow-x-hidden">
+
+    <nav
+        class="sticky top-0 z-50 glass-effect border-b border-white/5 px-6 py-4 flex items-center justify-between backdrop-blur-md">
+        <div class="flex items-center gap-3">
+            <a href="../index.html" class="flex items-center gap-2 group">
+                <div
+                    class="relative w-10 h-10 flex items-center justify-center bg-purple-600/20 rounded-lg border border-purple-500/30 group-hover:border-purple-500/50 transition-all">
+                    <i
+                        class="fas fa-microphone-lines text-purple-400 text-xl group-hover:scale-110 transition-transform"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-orbitron font-bold tracking-widest text-white">SHADOW<span
+                            class="text-purple-500">AUDIO</span></h1>
+                    <span class="text-xs text-slate-400 font-mono tracking-wider">DB METER</span>
+                </div>
+            </a>
+        </div>
+        <a href="../index.html" class="text-slate-400 hover:text-white transition-colors"><i
+                class="fas fa-times text-xl"></i></a>
+    </nav>
+
+    <main class="container mx-auto px-4 py-12 max-w-lg">
+        <div class="text-center mb-10">
+            <h2 class="text-4xl font-bold font-orbitron mb-2">Decibel Meter</h2>
+            <p class="text-slate-400 text-sm">Measure ambient noise levels using your microphone.</p>
+        </div>
+
+        <div class="glass p-8 rounded-3xl border border-white/5 shadow-2xl flex flex-col items-center">
+
+            <button id="start-btn"
+                class="mb-8 w-48 h-48 rounded-full border-4 border-slate-700 bg-black/40 hover:bg-black/60 hover:scale-105 active:scale-95 transition-all flex flex-col items-center justify-center shadow-[0_0_50px_rgba(0,0,0,0.5)] group z-10 relative overflow-hidden">
+                <div class="absolute inset-0 bg-gradient-to-t from-green-500/20 to-transparent opacity-0 transition-opacity"
+                    id="meter-fill"></div>
+                <i class="fas fa-power-off text-4xl text-slate-500 group-hover:text-white transition-colors mb-2 z-10"
+                    id="power-icon"></i>
+                <span class="font-bold text-slate-500 group-hover:text-white z-10" id="btn-text">START</span>
+                <div class="text-4xl font-mono font-bold text-white z-10 mt-2 hidden" id="db-val">0.0</div>
+                <span class="text-xs text-slate-400 z-10 hidden" id="db-unit">dBFS</span>
+            </button>
+
+            <div class="text-center space-y-2 opacity-0 transition-opacity" id="stats">
+                <div class="flex gap-8 justify-center">
+                    <div>
+                        <div class="text-xs text-slate-500">MIN</div>
+                        <div class="font-mono text-green-400" id="min-val">--</div>
+                    </div>
+                    <div>
+                        <div class="text-xs text-slate-500">MAX</div>
+                        <div class="font-mono text-red-400" id="max-val">--</div>
+                    </div>
+                </div>
+                <p class="text-xs text-slate-600 mt-4">Note: Values are relative (dBFS).<br>0 dB is max volume,
+                    -infinity is silence.</p>
+            </div>
+
+        </div>
+    </main>
+
+    <script type="module">
+        import { audioEngine } from '../shared/audio-utils.js';
+
+        const startBtn = document.getElementById('start-btn');
+        const powerIcon = document.getElementById('power-icon');
+        const btnText = document.getElementById('btn-text');
+        const dbVal = document.getElementById('db-val');
+        const dbUnit = document.getElementById('db-unit');
+        const stats = document.getElementById('stats');
+        const minDisplay = document.getElementById('min-val');
+        const maxDisplay = document.getElementById('max-val');
+        const meterFill = document.getElementById('meter-fill');
+
+        let isRunning = false;
+        let stream = null;
+        let source = null;
+        let analyser = null;
+        let frameId = null;
+
+        let min = -100;
+        let max = -100;
+
+        startBtn.onclick = async () => {
+            if (isRunning) {
+                stop();
+                return;
+            }
+
+            try {
+                const ctx = audioEngine.init();
+                stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                source = ctx.createMediaStreamSource(stream);
+                analyser = ctx.createAnalyser();
+                analyser.fftSize = 256;
+                source.connect(analyser);
+
+                isRunning = true;
+                updateUIState(true);
+                min = 0; max = -100;
+                measure();
+            } catch (e) {
+                alert("Microphone access denied or error: " + e.message);
+            }
+        };
+
+        function stop() {
+            if (stream) {
+                stream.getTracks().forEach(t => t.stop());
+                stream = null;
+            }
+            if (frameId) cancelAnimationFrame(frameId);
+            isRunning = false;
+            updateUIState(false);
+        }
+
+        function updateUIState(active) {
+            if (active) {
+                powerIcon.classList.add('hidden');
+                btnText.classList.add('hidden');
+                dbVal.classList.remove('hidden');
+                dbUnit.classList.remove('hidden');
+                startBtn.classList.add('border-green-500/50', 'shadow-[0_0_30px_#22c55e]');
+                startBtn.classList.remove('border-slate-700');
+                stats.classList.remove('opacity-0');
+            } else {
+                powerIcon.classList.remove('hidden');
+                btnText.classList.remove('hidden');
+                dbVal.classList.add('hidden');
+                dbUnit.classList.add('hidden');
+                startBtn.classList.remove('border-green-500/50', 'shadow-[0_0_30px_#22c55e]');
+                startBtn.classList.add('border-slate-700');
+                meterFill.style.opacity = 0;
+            }
+        }
+
+        function measure() {
+            if (!isRunning) return;
+            frameId = requestAnimationFrame(measure);
+
+            const bufferLen = analyser.frequencyBinCount;
+            const data = new Uint8Array(bufferLen);
+            analyser.getByteTimeDomainData(data);
+
+            let sum = 0;
+            for (let i = 0; i < bufferLen; i++) {
+                const x = (data[i] - 128) / 128.0;
+                sum += x * x;
+            }
+            const rms = Math.sqrt(sum / bufferLen);
+            const db = 20 * Math.log10(rms);
+
+            // Display
+            // db is usually negative. -Infinity if silent. 
+            // Range usually -60 to 0
+
+            let displayDb = Math.max(-60, db);
+            dbVal.textContent = displayDb.toFixed(1);
+
+            if (displayDb > max) max = displayDb;
+            // logic for min needs to ignore initial silence or be careful
+            if (displayDb < min && displayDb > -60) min = displayDb;
+
+            maxDisplay.textContent = max.toFixed(1);
+            minDisplay.textContent = min === 0 ? '--' : min.toFixed(1);
+
+            // Visual Fill
+            // Map -60..0 to 0..1
+            const pct = (displayDb + 60) / 60;
+            meterFill.style.height = (pct * 100) + '%';
+            meterFill.style.opacity = Math.max(0.2, pct);
+
+            // Color shift based on level
+            if (displayDb > -5) {
+                startBtn.classList.replace('shadow-[0_0_30px_#22c55e]', 'shadow-[0_0_30px_#ef4444]');
+                dbVal.classList.replace('text-white', 'text-red-500');
+            } else {
+                startBtn.classList.replace('shadow-[0_0_30px_#ef4444]', 'shadow-[0_0_30px_#22c55e]');
+                dbVal.classList.replace('text-red-500', 'text-white');
+            }
+        }
+    </script>
+</body>
+
+</html>

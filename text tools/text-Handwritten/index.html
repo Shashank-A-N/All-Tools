@@ -1,0 +1,1091 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Handwriter - Text to Document Converter</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Dancing+Script:wght@400;700&family=Gloria+Hallelujah&family=Indie+Flower&family=Kalam:wght@300;400;700&family=Pacifico&family=Patrick+Hand&family=Shadows+Into+Light&family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="../../styles.css">
+
+    <!-- Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        /* Base Settings */
+        :root {
+            --primary: #4f46e5;
+            --primary-dark: #4338ca;
+        }
+
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background-color: #0f172a;
+            /* Slate-900 */
+            color: #fff;
+            -webkit-tap-highlight-color: transparent;
+            overscroll-behavior-y: none;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes scaleIn {
+            from {
+                transform: scale(0.95);
+                opacity: 0;
+            }
+
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .animate-fade-in-up {
+            animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .animate-scale-in {
+            animation: scaleIn 0.3s ease-out forwards;
+        }
+
+        /* Interactive Elements */
+        .btn-hover {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .btn-hover:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.15);
+        }
+
+        .btn-hover:active {
+            transform: translateY(1px);
+        }
+
+        .paper-btn {
+            position: relative;
+            overflow: hidden;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            border-width: 2px;
+            border-color: transparent;
+        }
+
+        .paper-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px -4px rgba(0, 0, 0, 0.1);
+        }
+
+        .paper-btn.active {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px var(--primary), 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Range Sliders */
+        input[type=range] {
+            -webkit-appearance: none;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 18px;
+            width: 18px;
+            border-radius: 50%;
+            background: var(--primary);
+            border: 2px solid white;
+            margin-top: -7px;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            transition: transform 0.1s;
+        }
+
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #e2e8f0;
+            border-radius: 2px;
+        }
+
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        /* Layout Utilities */
+        .canvas-shadow {
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            transition: transform 0.3s ease;
+        }
+
+        /* Fullscreen / Maximize Mode Logic */
+        body.fullscreen-mode aside {
+            display: none !important;
+        }
+
+        body.fullscreen-mode header .logo-area {
+            display: none !important;
+        }
+
+        body.fullscreen-mode #bottomNavContainer {
+            display: none !important;
+        }
+
+        body.fullscreen-mode main {
+            padding-bottom: 0 !important;
+        }
+
+        /* When in fullscreen on mobile, ensure preview is fully expanded */
+        body.fullscreen-mode #previewPanel {
+            height: 100vh;
+            padding-top: 1rem;
+        }
+
+        /* Adjust floating tools position when in fullscreen (since nav is gone) */
+        body.fullscreen-mode #mobilePreviewTools {
+            bottom: 2rem !important;
+        }
+
+        .pages-layout-list {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2rem;
+            width: 100%;
+        }
+
+        /* Responsive Grid Logic */
+        .pages-layout-grid {
+            display: flex;
+            flex-direction: row;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1rem;
+            /* Smaller gap for mobile */
+            align-items: flex-start;
+            width: 100%;
+        }
+
+        /* Default Grid (Mobile): 2 columns */
+        .pages-layout-grid .page-canvas {
+            width: calc(50% - 0.5rem);
+            max-width: none;
+            background-color: white;
+            border-radius: 4px;
+        }
+
+        .pages-layout-list .page-canvas {
+            width: 100%;
+            max-width: 800px;
+            background-color: white;
+            border-radius: 4px;
+        }
+
+        /* Enable larger grid on Tablet Landscape & Desktop */
+        @media (min-width: 768px) {
+            .pages-layout-grid {
+                gap: 2rem;
+            }
+
+            .pages-layout-grid .page-canvas {
+                width: calc(50% - 1.5rem);
+                max-width: none;
+            }
+        }
+
+        /* Larger grid on desktop */
+        @media (min-width: 1280px) {
+            .pages-layout-grid .page-canvas {
+                width: calc(50% - 2rem);
+            }
+        }
+
+        /* Mobile Nav Styles */
+        #bottomNav {
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Floating Nav Effect */
+        @media (max-width: 767px) {
+            #bottomNavContainer {
+                padding: 0 1rem 1rem 1rem;
+                pointer-events: none;
+                /* Let clicks pass through padding */
+            }
+
+            #bottomNav {
+                border-radius: 1rem;
+                pointer-events: auto;
+                /* Re-enable clicks */
+            }
+        }
+
+        .active-nav-btn {
+            color: var(--primary);
+            background-color: #eef2ff;
+        }
+
+        .active-nav-btn::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 4px;
+            height: 4px;
+            background-color: var(--primary);
+            border-radius: 50%;
+            margin-bottom: 4px;
+        }
+
+        /* Mobile Preview Tools Animation */
+        .tools-visible {
+            opacity: 1 !important;
+            transform: translateY(0) !important;
+            pointer-events: auto !important;
+        }
+
+        /* Print Styles */
+        @media print {
+            @page {
+                margin: 0;
+                size: auto;
+            }
+
+            body * {
+                visibility: hidden;
+            }
+
+            /* Make sure the preview panel and all its contents are visible */
+            #previewPanel,
+            #previewPanel * {
+                visibility: visible !important;
+            }
+
+            #previewPanel {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                background: white;
+                display: block !important;
+                overflow: visible !important;
+                height: auto !important;
+            }
+
+            /* Force standard block layout for printing to stack pages */
+            #pagesContainer {
+                display: block !important;
+                width: 100% !important;
+                height: auto !important;
+                gap: 0 !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+
+            canvas {
+                display: block !important;
+                width: 100% !important;
+                height: auto !important;
+                max-width: none !important;
+                box-shadow: none !important;
+                margin: 0 auto !important;
+                page-break-after: always;
+                break-after: page;
+            }
+
+            /* Hide UI elements specifically to be safe */
+            header,
+            aside,
+            #bottomNavContainer,
+            #mobilePreviewTools {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+
+<body
+    class="h-screen flex flex-col overflow-hidden text-slate-200 bg-slate-900 selection:bg-indigo-500 selection:text-white">
+    <div id="bg-3d-container"
+        style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none;"></div>
+    <!-- Shared Script -->
+    <script type="module" src="../../shared/bg-particles.js"></script>
+
+    <!-- Header -->
+    <header
+        class="glass-effect border-b border-white/5 px-4 py-2 flex items-center justify-between z-20 shrink-0 sticky top-0 shadow-lg transition-all h-14 md:h-16 relative">
+        <div class="logo-area flex items-center gap-2.5">
+            <div class="p-1.5 md:p-2 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-lg shadow-md text-white">
+                <i data-lucide="pen-tool" class="w-5 h-5"></i>
+            </div>
+            <h1 class="text-lg md:text-xl font-bold text-slate-900 tracking-tight block">Handwriter</h1>
+        </div>
+
+        <!-- Top Toolbar -->
+        <div class="flex gap-2 items-center w-auto justify-end">
+
+            <!-- View Controls (Hidden on Mobile) -->
+            <div class="hidden md:flex items-center bg-slate-100 rounded-lg p-1 border border-slate-200">
+                <button onclick="toggleView('list')" id="btnViewList"
+                    class="p-1.5 rounded transition-all text-indigo-600 bg-white shadow-sm" title="List View">
+                    <i data-lucide="scroll" class="w-4 h-4"></i>
+                </button>
+                <button onclick="toggleView('grid')" id="btnViewGrid"
+                    class="p-1.5 rounded transition-all text-slate-400 hover:text-slate-600" title="Grid View">
+                    <i data-lucide="layout-grid" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <button id="btnFullscreen" onclick="toggleFullscreen()"
+                class="hidden md:flex items-center gap-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 px-2 py-1.5 md:px-3 md:py-2 rounded-lg font-medium transition-colors text-sm btn-hover"
+                title="Maximize">
+                <i data-lucide="expand" class="w-4 h-4"></i>
+                <span class="hidden md:inline">Max</span>
+            </button>
+
+            <!-- File Upload (Icon only on mobile) -->
+            <input type="file" id="fileUpload" class="hidden" accept=".txt">
+            <button onclick="document.getElementById('fileUpload').click()"
+                class="flex items-center justify-center w-9 h-9 md:w-auto md:h-auto md:px-3 md:py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg transition-all btn-hover"
+                title="Upload Text">
+                <i data-lucide="upload" class="w-4 h-4 md:mr-2"></i>
+                <span class="hidden md:inline text-sm font-medium">Upload</span>
+            </button>
+
+            <!-- Print/Download -->
+            <button onclick="printDocument()"
+                class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 md:px-4 md:py-2 rounded-lg font-medium transition-colors shadow-sm text-sm btn-hover">
+                <i data-lucide="printer" class="w-4 h-4"></i>
+                <span class="hidden sm:inline">PDF</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col md:flex-row overflow-hidden relative pb-0">
+
+        <!-- Left Panel: Controls & Input -->
+        <aside id="sidebarPanel"
+            class="w-full md:w-72 lg:w-96 glass border-r border-white/5 flex flex-col h-full z-10 shadow-2xl transition-all duration-300 absolute md:relative top-0 bottom-0 md:translate-x-0 bg-slate-900/80 backdrop-blur-md">
+
+            <!-- Controls Section -->
+            <div id="controlsSection" class="flex-1 flex flex-col h-full overflow-hidden">
+                <div id="settingsContainer" class="p-4 space-y-6 overflow-y-auto custom-scrollbar flex-1 pb-24 md:pb-5">
+
+                    <!-- Font Style -->
+                    <div class="space-y-2 animate-scale-in" style="animation-delay: 0.05s;">
+                        <label
+                            class="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                            <i data-lucide="type" class="w-3 h-3"></i> Font Style
+                        </label>
+                        <div class="relative">
+                            <select id="fontSelect"
+                                class="w-full appearance-none bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-shadow cursor-pointer">
+                                <option value="'Kalam', cursive" selected>Kalam (Casual)</option>
+                                <option value="'Caveat', cursive">Caveat (Sharp)</option>
+                                <option value="'Indie Flower', cursive">Indie Flower (Round)</option>
+                                <option value="'Dancing Script', cursive">Dancing (Cursive)</option>
+                                <option value="'Shadows Into Light', cursive">Shadows (Neat)</option>
+                                <option value="'Pacifico', cursive">Pacifico (Bold)</option>
+                                <option value="'Patrick Hand', cursive">Patrick (Marker)</option>
+                                <option value="'Gloria Hallelujah', cursive">Gloria (Messy)</option>
+                            </select>
+                            <i data-lucide="chevron-down"
+                                class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none"></i>
+                        </div>
+                    </div>
+
+                    <!-- Ink Color -->
+                    <div class="space-y-2 animate-scale-in" style="animation-delay: 0.1s;">
+                        <label
+                            class="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                            <i data-lucide="droplet" class="w-3 h-3"></i> Ink Color
+                        </label>
+                        <div class="flex gap-3">
+                            <button onclick="setInk('#1e293b')"
+                                class="w-9 h-9 rounded-full bg-slate-800 border-2 border-slate-200 hover:scale-110 transition-transform ring-offset-2 focus:ring-2 ring-slate-400 shadow-sm"
+                                title="Black"></button>
+                            <button onclick="setInk('#1d4ed8')"
+                                class="w-9 h-9 rounded-full bg-blue-700 border-2 border-slate-200 hover:scale-110 transition-transform ring-offset-2 focus:ring-2 ring-blue-400 shadow-sm"
+                                title="Blue"></button>
+                            <button onclick="setInk('#b91c1c')"
+                                class="w-9 h-9 rounded-full bg-red-700 border-2 border-slate-200 hover:scale-110 transition-transform ring-offset-2 focus:ring-2 ring-red-400 shadow-sm"
+                                title="Red"></button>
+                            <button onclick="setInk('#15803d')"
+                                class="w-9 h-9 rounded-full bg-green-700 border-2 border-slate-200 hover:scale-110 transition-transform ring-offset-2 focus:ring-2 ring-green-400 shadow-sm"
+                                title="Green"></button>
+                        </div>
+                    </div>
+
+                    <!-- Paper Design Grid -->
+                    <div class="space-y-3 animate-scale-in" style="animation-delay: 0.15s;">
+                        <label
+                            class="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                            <i data-lucide="sticky-note" class="w-3 h-3"></i> Paper Design
+                        </label>
+                        <div class="grid grid-cols-5 gap-2.5">
+                            <!-- Paper buttons generated here -->
+                            <button onclick="setPaper('plain')" class="paper-btn h-11 border rounded-lg bg-white active"
+                                data-type="plain" title="Plain">
+                                <span class="text-[10px] text-slate-400 font-medium">Plain</span>
+                            </button>
+                            <button onclick="setPaper('lined')" class="paper-btn h-11 border rounded-lg bg-white"
+                                data-type="lined" title="Lined">
+                                <div class="absolute inset-0"
+                                    style="background: linear-gradient(#e2e8f0 1px, transparent 1px); background-size: 100% 12px;">
+                                </div>
+                                <div class="absolute left-1.5 top-0 bottom-0 w-[1px] bg-red-200"></div>
+                            </button>
+                            <button onclick="setPaper('rough')" class="paper-btn h-11 border rounded-lg"
+                                data-type="rough" style="background-color: #f3f3e9;" title="Rough">
+                                <div class="absolute inset-0"
+                                    style="background: linear-gradient(#cbd5e1 1px, transparent 1px); background-size: 100% 12px;">
+                                </div>
+                            </button>
+                            <button onclick="setPaper('hindi')" class="paper-btn h-11 border rounded-lg bg-white"
+                                data-type="hindi" title="Hindi">
+                                <div class="absolute inset-0 flex flex-col justify-center gap-1 opacity-50 p-1">
+                                    <div class="h-[1px] bg-slate-400"></div>
+                                    <div class="h-[1px] bg-slate-400"></div>
+                                </div>
+                            </button>
+                            <button onclick="setPaper('english')" class="paper-btn h-11 border rounded-lg bg-white"
+                                data-type="english" title="English">
+                                <div class="absolute inset-0 flex flex-col justify-center gap-[2px] opacity-50 p-1">
+                                    <div class="h-[1px] bg-red-300"></div>
+                                    <div class="h-[1px] bg-blue-300"></div>
+                                    <div class="h-[1px] bg-blue-300"></div>
+                                    <div class="h-[1px] bg-red-300"></div>
+                                </div>
+                            </button>
+                            <button onclick="setPaper('maths')" class="paper-btn h-11 border rounded-lg bg-white"
+                                data-type="maths" title="Maths">
+                                <div class="absolute inset-0"
+                                    style="background-image: linear-gradient(#e2e8f0 1px, transparent 1px), linear-gradient(90deg, #e2e8f0 1px, transparent 1px); background-size: 4px 4px;">
+                                </div>
+                            </button>
+                            <button onclick="setPaper('graph')" class="paper-btn h-11 border rounded-lg"
+                                data-type="graph" style="background-color: #f0fdf4;" title="Graph">
+                                <div class="absolute inset-0"
+                                    style="background-image: linear-gradient(#bbf7d0 1px, transparent 1px), linear-gradient(90deg, #bbf7d0 1px, transparent 1px); background-size: 4px 4px;">
+                                </div>
+                            </button>
+                            <button onclick="setPaper('ledger')" class="paper-btn h-11 border rounded-lg"
+                                data-type="ledger" style="background-color: #fef9c3;" title="Ledger">
+                                <div class="absolute left-2 top-0 bottom-0 w-[1px] bg-red-300"></div>
+                                <div class="absolute left-3 top-0 bottom-0 w-[1px] bg-red-300"></div>
+                            </button>
+                            <button onclick="setPaper('vintage')" class="paper-btn h-11 border rounded-lg"
+                                data-type="vintage" style="background-color: #fde68a;" title="Vintage">
+                                <span class="text-[10px] text-amber-800 opacity-50">Old</span>
+                            </button>
+                            <button onclick="setPaper('blueprint')" class="paper-btn h-11 border rounded-lg"
+                                data-type="blueprint" style="background-color: #eff6ff;" title="Blueprint">
+                                <div class="absolute inset-0"
+                                    style="background-image: linear-gradient(#bfdbfe 1px, transparent 1px), linear-gradient(90deg, #bfdbfe 1px, transparent 1px); background-size: 6px 6px;">
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Fine Tuning Sliders -->
+                    <div class="space-y-5 animate-scale-in" style="animation-delay: 0.2s;">
+                        <div class="grid grid-cols-2 gap-5">
+                            <div class="space-y-2">
+                                <div class="flex justify-between text-xs font-semibold text-slate-600">
+                                    <span>Size</span>
+                                    <span id="fontSizeVal" class="text-indigo-600">24px</span>
+                                </div>
+                                <input type="range" id="fontSize" min="10" max="60" value="24" class="w-full">
+                            </div>
+                            <div class="space-y-2">
+                                <div class="flex justify-between text-xs font-semibold text-slate-600">
+                                    <span>Spacing</span>
+                                    <span id="lineHeightVal" class="text-indigo-600">1.5</span>
+                                </div>
+                                <input type="range" id="lineHeight" min="1.0" max="4.0" step="0.1" value="1.5"
+                                    class="w-full">
+                            </div>
+                        </div>
+
+                        <div class="space-y-2">
+                            <div class="flex justify-between text-xs font-semibold text-slate-600">
+                                <span>Humanize (Randomness)</span>
+                                <span id="humanizeVal" class="text-indigo-600">Medium</span>
+                            </div>
+                            <input type="range" id="humanize" min="0" max="10" value="4" class="w-full">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Text Input Area -->
+                <div id="textInputContainer"
+                    class="flex-1 border-t border-slate-200 bg-slate-50 flex flex-col min-h-[250px] md:min-h-[200px]">
+                    <div class="px-4 py-2 border-b border-slate-100 flex justify-between items-center bg-white">
+                        <label
+                            class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                            <i data-lucide="keyboard" class="w-3 h-3"></i> Your Text
+                        </label>
+                        <span class="text-[10px] text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">Auto-saves</span>
+                    </div>
+                    <textarea id="textInput"
+                        class="flex-1 w-full bg-white p-4 text-slate-700 text-sm leading-relaxed focus:outline-none focus:bg-indigo-50/10 resize-none transition-colors"
+                        placeholder="Start typing here..." spellcheck="false"></textarea>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Right Panel: Canvas Preview -->
+        <section id="previewPanel"
+            class="flex-1 bg-transparent overflow-auto p-4 md:p-6 lg:p-12 flex items-start justify-center relative custom-scrollbar w-full h-full md:h-auto z-0 hidden md:flex">
+            <!-- Pages Container -->
+            <div id="pagesContainer"
+                class="pages-layout-list w-full max-w-full transition-all duration-300 pb-32 md:pb-0">
+                <!-- Canvases injected by JS -->
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Mobile Preview Toolbar (Visible only on mobile when Preview tab is active) -->
+    <div id="mobilePreviewTools"
+        class="md:hidden fixed bottom-24 right-4 z-50 flex flex-col gap-3 transition-all duration-300 translate-y-20 opacity-0 pointer-events-none">
+        <button onclick="toggleView(state.viewMode === 'list' ? 'grid' : 'list')" id="mobileViewBtn"
+            class="w-12 h-12 bg-white rounded-full shadow-lg border border-slate-200 text-indigo-600 flex items-center justify-center hover:bg-slate-50 active:scale-95 transition-all">
+            <i data-lucide="layout-grid" class="w-5 h-5"></i>
+        </button>
+        <button onclick="toggleFullscreen()" id="mobileFullscreenBtn"
+            class="w-12 h-12 bg-indigo-600 rounded-full shadow-lg text-white flex items-center justify-center hover:bg-indigo-700 active:scale-95 transition-all">
+            <i data-lucide="expand" class="w-5 h-5"></i>
+        </button>
+    </div>
+
+    <!-- Bottom Navigation Bar (Mobile Only) -->
+    <div id="bottomNavContainer"
+        class="md:hidden fixed bottom-0 left-0 right-0 z-50 pb-safe safe-area-inset-bottom pointer-events-none">
+        <nav id="bottomNav"
+            class="bg-white/80 backdrop-blur-xl border border-white/50 mx-4 mb-4 rounded-2xl flex justify-between items-stretch h-16 shadow-lg pointer-events-auto">
+            <button onclick="setMobileTab('settings')" id="navSettings"
+                class="flex-1 flex flex-col items-center justify-center gap-1 text-slate-400 transition-all active-nav-btn rounded-l-2xl touch-manipulation relative overflow-hidden group">
+                <i data-lucide="sliders-horizontal" class="w-5 h-5 group-hover:scale-110 transition-transform"></i>
+                <span class="text-[10px] font-semibold">Design</span>
+            </button>
+            <button onclick="setMobileTab('text')" id="navText"
+                class="flex-1 flex flex-col items-center justify-center gap-1 text-slate-400 transition-all touch-manipulation relative overflow-hidden group">
+                <i data-lucide="pen-line" class="w-5 h-5 group-hover:scale-110 transition-transform"></i>
+                <span class="text-[10px] font-semibold">Write</span>
+            </button>
+            <button onclick="setMobileTab('preview')" id="navPreview"
+                class="flex-1 flex flex-col items-center justify-center gap-1 text-slate-400 transition-all touch-manipulation relative overflow-hidden group rounded-r-2xl">
+                <i data-lucide="eye" class="w-5 h-5 group-hover:scale-110 transition-transform"></i>
+                <span class="text-[10px] font-semibold">Preview</span>
+            </button>
+        </nav>
+    </div>
+
+    <script>
+        // --- State & Config ---
+        const screenWidth = window.innerWidth;
+        // Adjusted minimization: 14px is the sweet spot for mobile readability on scaled canvas
+        const initialFontSize = screenWidth < 640 ? 14 : 24;
+
+        const state = {
+            text: `Dear Friend,\n\nI hope this letter finds you well. This text has been auto-sized for your device.\n\nEverything is fully responsive. Use the bottom navigation to switch between Designing, Writing, and Previewing on mobile.\n\nOn Tablets and Desktop, you get a full split-screen view!\n\nBest regards,\nHandwriter App`,
+            font: "'Kalam', cursive",
+            inkColor: '#1e293b',
+            paperType: 'lined',
+            fontSize: initialFontSize,
+            humanize: 4,
+            lineHeight: 1.5,
+            canvasWidth: 800,
+            viewMode: 'list',
+            activeTab: 'settings' // Track active tab
+        };
+
+        // --- DOM Elements ---
+        const pagesContainer = document.getElementById('pagesContainer');
+        const textInput = document.getElementById('textInput');
+        const fontSelect = document.getElementById('fontSelect');
+        const fontSizeInput = document.getElementById('fontSize');
+        const humanizeInput = document.getElementById('humanize');
+        const lineHeightInput = document.getElementById('lineHeight');
+        const sidebarPanel = document.getElementById('sidebarPanel');
+        const previewPanel = document.getElementById('previewPanel');
+        const controlsSection = document.getElementById('controlsSection');
+        const settingsContainer = document.getElementById('settingsContainer');
+        const textInputContainer = document.getElementById('textInputContainer');
+        const mobilePreviewTools = document.getElementById('mobilePreviewTools');
+
+        // Initialize inputs
+        fontSizeInput.value = initialFontSize;
+        document.getElementById('fontSizeVal').textContent = initialFontSize + 'px';
+
+        // --- Mobile Tab Logic (Revised for MD breakpoint) ---
+        function setMobileTab(tab) {
+            state.activeTab = tab;
+
+            // Allow state to set, but only manipulate DOM if currently in mobile mode (< 768px)
+            if (window.innerWidth >= 768) return;
+
+            // Update Nav UI
+            ['settings', 'text', 'preview'].forEach(t => {
+                const btn = document.getElementById(`nav${t.charAt(0).toUpperCase() + t.slice(1)}`);
+                if (t === tab) {
+                    btn.classList.add('active-nav-btn');
+                    btn.classList.remove('text-slate-400');
+                } else {
+                    btn.classList.remove('active-nav-btn');
+                    btn.classList.add('text-slate-400');
+                }
+            });
+
+            // Visibility Logic - Direct Class Manipulation
+            if (tab === 'preview') {
+                // HIDE Sidebar
+                sidebarPanel.classList.add('hidden');
+
+                // SHOW Preview
+                previewPanel.classList.remove('hidden');
+                previewPanel.classList.add('flex');
+
+                // SHOW Mobile Tools
+                mobilePreviewTools.classList.add('tools-visible');
+
+                // Force Scroll to Top & Render
+                setTimeout(() => {
+                    render();
+                    previewPanel.scrollTop = 0;
+                }, 10);
+            } else {
+                // HIDE Preview
+                previewPanel.classList.add('hidden');
+                previewPanel.classList.remove('flex');
+
+                // HIDE Mobile Tools
+                mobilePreviewTools.classList.remove('tools-visible');
+
+                // SHOW Sidebar
+                sidebarPanel.classList.remove('hidden');
+
+                if (tab === 'settings') {
+                    settingsContainer.style.display = 'block';
+                    textInputContainer.style.display = 'none';
+                } else if (tab === 'text') {
+                    settingsContainer.style.display = 'none';
+                    textInputContainer.style.display = 'flex';
+                }
+            }
+        }
+
+        // Handle Resize events to reset layout style
+        window.addEventListener('resize', () => {
+            // Updated Breakpoint Check: 768px (MD)
+            if (window.innerWidth >= 768) {
+                // Reset to desktop layout
+                sidebarPanel.classList.remove('hidden');
+                previewPanel.classList.remove('hidden');
+                previewPanel.classList.add('flex');
+
+                // Hide Mobile Tools
+                mobilePreviewTools.classList.remove('tools-visible');
+
+                settingsContainer.style.display = 'block';
+                textInputContainer.style.display = 'flex';
+                textInputContainer.style.height = 'auto';
+            } else {
+                // Re-apply current tab from state
+                setMobileTab(state.activeTab);
+            }
+        });
+
+        // --- Init & Listeners ---
+        lucide.createIcons();
+        textInput.value = state.text;
+
+        textInput.addEventListener('input', (e) => {
+            state.text = e.target.value;
+            if (window.renderTimeout) clearTimeout(window.renderTimeout);
+            window.renderTimeout = setTimeout(render, 50);
+        });
+
+        fontSelect.addEventListener('change', (e) => {
+            state.font = e.target.value;
+            const fontName = state.font.split(',')[0].replace(/['"]/g, '');
+            document.fonts.load(`1em ${fontName}`).then(render).catch(render);
+        });
+
+        fontSizeInput.addEventListener('input', (e) => {
+            state.fontSize = parseInt(e.target.value);
+            document.getElementById('fontSizeVal').textContent = state.fontSize + 'px';
+            render();
+        });
+
+        humanizeInput.addEventListener('input', (e) => {
+            state.humanize = parseInt(e.target.value);
+            const labels = ['None', 'Low', 'Medium', 'High', 'Messy'];
+            const idx = Math.min(Math.floor(state.humanize / 2.5), 4);
+            document.getElementById('humanizeVal').textContent = labels[idx] || "Medium";
+            render();
+        });
+
+        lineHeightInput.addEventListener('input', (e) => {
+            state.lineHeight = parseFloat(e.target.value);
+            document.getElementById('lineHeightVal').textContent = state.lineHeight;
+            render();
+        });
+
+        document.getElementById('fileUpload').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                textInput.value = event.target.result;
+                state.text = event.target.result;
+                render();
+            };
+            reader.readAsText(file);
+            e.target.value = '';
+        });
+
+        // --- View Actions ---
+        function toggleFullscreen() {
+            document.body.classList.toggle('fullscreen-mode');
+            const isFullscreen = document.body.classList.contains('fullscreen-mode');
+
+            // Desktop Button
+            const btn = document.getElementById('btnFullscreen');
+            const text = isFullscreen ? 'Min' : 'Max';
+            const icon = isFullscreen ? 'minimize' : 'expand';
+            btn.innerHTML = `<i data-lucide="${icon}" class="w-4 h-4"></i><span class="hidden md:inline">${text}</span>`;
+
+            // Mobile Button
+            const mobileBtn = document.getElementById('mobileFullscreenBtn');
+            mobileBtn.innerHTML = `<i data-lucide="${icon}" class="w-5 h-5"></i>`;
+
+            lucide.createIcons();
+            setTimeout(render, 100);
+        }
+
+        function toggleView(mode) {
+            state.viewMode = mode;
+            // FIXED: Do not overwrite entire className, just toggle specific classes
+            if (mode === 'grid') {
+                pagesContainer.classList.remove('pages-layout-list');
+                pagesContainer.classList.add('pages-layout-grid');
+            } else {
+                pagesContainer.classList.remove('pages-layout-grid');
+                pagesContainer.classList.add('pages-layout-list');
+            }
+
+            // Desktop Buttons
+            document.getElementById('btnViewList').classList.toggle('bg-white', mode === 'list');
+            document.getElementById('btnViewList').classList.toggle('text-indigo-600', mode === 'list');
+            document.getElementById('btnViewList').classList.toggle('text-slate-400', mode !== 'list');
+
+            document.getElementById('btnViewGrid').classList.toggle('bg-white', mode === 'grid');
+            document.getElementById('btnViewGrid').classList.toggle('text-indigo-600', mode === 'grid');
+            document.getElementById('btnViewGrid').classList.toggle('text-slate-400', mode !== 'grid');
+
+            // Mobile Button Toggle
+            const mobileBtn = document.getElementById('mobileViewBtn');
+            const icon = mode === 'grid' ? 'scroll' : 'layout-grid'; // Shows icon for the *other* option
+            mobileBtn.innerHTML = `<i data-lucide="${icon}" class="w-5 h-5"></i>`;
+            // Update onclick to toggle to the other state
+            mobileBtn.onclick = () => toggleView(mode === 'grid' ? 'list' : 'grid');
+
+            lucide.createIcons();
+        }
+
+        function setInk(color) {
+            state.inkColor = color;
+            render();
+        }
+
+        function setPaper(type) {
+            state.paperType = type;
+            document.querySelectorAll('.paper-btn').forEach(btn => {
+                if (btn.dataset.type === type) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+
+            if (type === 'english' && state.lineHeight < 2.0) {
+                state.lineHeight = 2.0;
+                lineHeightInput.value = 2.0;
+                document.getElementById('lineHeightVal').textContent = "2.0";
+            } else if (type === 'lined' && state.lineHeight > 1.8) {
+                state.lineHeight = 1.5;
+                lineHeightInput.value = 1.5;
+                document.getElementById('lineHeightVal').textContent = "1.5";
+            }
+            render();
+        }
+
+        function seededRandom(seed) {
+            var x = Math.sin(seed++) * 10000;
+            return x - Math.floor(x);
+        }
+
+        function printDocument() {
+            window.print();
+        }
+
+        // --- Render Logic ---
+
+        function drawBackground(ctx, width, height, scale, pageNum) {
+            const rowHeight = state.fontSize * state.lineHeight * scale;
+            const paperColors = {
+                'plain': '#ffffff', 'lined': '#ffffff', 'rough': '#f4f4f5',
+                'hindi': '#ffffff', 'english': '#ffffff', 'maths': '#ffffff',
+                'graph': '#f0fdf4', 'ledger': '#fefce8', 'vintage': '#fde68a',
+                'blueprint': '#eff6ff'
+            };
+
+            ctx.fillStyle = paperColors[state.paperType] || '#ffffff';
+            ctx.fillRect(0, 0, width, height);
+
+            const topMargin = 80 * scale;
+            const leftMargin = 50 * scale;
+            ctx.lineWidth = 1;
+
+            if (state.paperType === 'lined') {
+                ctx.beginPath(); ctx.strokeStyle = '#94a3b8';
+                for (let y = topMargin; y < height; y += rowHeight) {
+                    ctx.moveTo(0, y); ctx.lineTo(width, y);
+                }
+                ctx.stroke();
+                ctx.beginPath(); ctx.strokeStyle = '#f87171'; ctx.lineWidth = 2;
+                ctx.moveTo(leftMargin, 0); ctx.lineTo(leftMargin, height);
+                ctx.stroke(); ctx.lineWidth = 1;
+
+                if (pageNum === 1) {
+                    const boxW = 100 * scale, boxH = 30 * scale;
+                    const boxX = width - boxW - (20 * scale), boxY = 20 * scale;
+                    ctx.beginPath(); ctx.strokeStyle = '#94a3b8';
+                    ctx.rect(boxX, boxY, boxW, boxH); ctx.stroke();
+                    ctx.font = `${10 * scale}px Inter, sans-serif`; ctx.fillStyle = '#94a3b8';
+                    ctx.fillText("Date: ____/____", boxX + (10 * scale), boxY + (20 * scale));
+                }
+            } else if (state.paperType === 'english') {
+                const gap = rowHeight / 4;
+                for (let y = topMargin; y < height; y += rowHeight) {
+                    const base = y;
+                    ctx.beginPath(); ctx.strokeStyle = '#fca5a5'; ctx.moveTo(0, base); ctx.lineTo(width, base); ctx.stroke();
+                    ctx.beginPath(); ctx.strokeStyle = '#93c5fd'; ctx.moveTo(0, base - gap); ctx.lineTo(width, base - gap); ctx.stroke();
+                    ctx.beginPath(); ctx.strokeStyle = '#93c5fd'; ctx.moveTo(0, base - (gap * 2)); ctx.lineTo(width, base - (gap * 2)); ctx.stroke();
+                    ctx.beginPath(); ctx.strokeStyle = '#fca5a5'; ctx.moveTo(0, base - (gap * 3)); ctx.lineTo(width, base - (gap * 3)); ctx.stroke();
+                }
+                ctx.beginPath(); ctx.strokeStyle = '#fca5a5';
+                ctx.moveTo(leftMargin, 0); ctx.lineTo(leftMargin, height); ctx.stroke();
+            } else if (state.paperType === 'rough') {
+                ctx.beginPath(); ctx.strokeStyle = '#cbd5e1';
+                for (let y = topMargin; y < height; y += rowHeight) { ctx.moveTo(0, y); ctx.lineTo(width, y); }
+                ctx.stroke();
+            } else if (state.paperType === 'hindi') {
+                ctx.strokeStyle = '#64748b'; ctx.beginPath();
+                for (let y = topMargin; y < height; y += rowHeight) {
+                    ctx.moveTo(0, y); ctx.lineTo(width, y);
+                    ctx.moveTo(0, y - (rowHeight * 0.35)); ctx.lineTo(width, y - (rowHeight * 0.35));
+                }
+                ctx.stroke();
+                ctx.beginPath(); ctx.strokeStyle = '#f87171';
+                ctx.moveTo(leftMargin, 0); ctx.lineTo(leftMargin, height); ctx.stroke();
+            } else if (state.paperType === 'maths') {
+                const sq = rowHeight / 2;
+                ctx.beginPath(); ctx.strokeStyle = '#e2e8f0';
+                for (let x = 0; x < width; x += sq) { ctx.moveTo(x, 0); ctx.lineTo(x, height); }
+                for (let y = 0; y < height; y += sq) { ctx.moveTo(0, y); ctx.lineTo(width, y); }
+                ctx.stroke();
+            } else if (state.paperType === 'graph') {
+                const minor = 10 * scale, major = 50 * scale;
+                ctx.beginPath(); ctx.strokeStyle = '#dcfce7';
+                for (let x = 0; x < width; x += minor) { ctx.moveTo(x, 0); ctx.lineTo(x, height); }
+                for (let y = 0; y < height; y += minor) { ctx.moveTo(0, y); ctx.lineTo(width, y); }
+                ctx.stroke();
+                ctx.beginPath(); ctx.strokeStyle = '#86efac';
+                for (let x = 0; x < width; x += major) { ctx.moveTo(x, 0); ctx.lineTo(x, height); }
+                for (let y = 0; y < height; y += major) { ctx.moveTo(0, y); ctx.lineTo(width, y); }
+                ctx.stroke();
+            } else if (state.paperType === 'ledger') {
+                ctx.beginPath(); ctx.strokeStyle = '#94a3b8';
+                for (let y = topMargin; y < height; y += rowHeight) { ctx.moveTo(0, y); ctx.lineTo(width, y); }
+                ctx.stroke();
+                ctx.beginPath(); ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 2;
+                ctx.moveTo(100 * scale, 0); ctx.lineTo(100 * scale, height);
+                ctx.moveTo(width - 200 * scale, 0); ctx.lineTo(width - 200 * scale, height);
+                ctx.moveTo(width - 100 * scale, 0); ctx.lineTo(width - 100 * scale, height);
+                ctx.stroke(); ctx.lineWidth = 1;
+            } else if (state.paperType === 'blueprint') {
+                const bp = 30 * scale;
+                ctx.beginPath(); ctx.strokeStyle = '#bfdbfe';
+                for (let x = 0; x < width; x += bp) { ctx.moveTo(x, 0); ctx.lineTo(x, height); }
+                for (let y = 0; y < height; y += bp) { ctx.moveTo(0, y); ctx.lineTo(width, y); }
+                ctx.stroke();
+            }
+
+            // Page No
+            ctx.font = `${10 * scale}px Inter, sans-serif`;
+            ctx.fillStyle = '#94a3b8';
+            ctx.fillText(`Page ${pageNum}`, width - (50 * scale), height - (20 * scale));
+        }
+
+        const measureCtx = document.createElement('canvas').getContext('2d');
+
+        function render() {
+            pagesContainer.innerHTML = '';
+            const scale = 2;
+            const baseWidth = state.canvasWidth;
+            const baseHeight = baseWidth * 1.414;
+
+            measureCtx.font = `${state.fontSize * scale}px ${state.font}`;
+            const marginX = (['lined', 'hindi', 'english'].includes(state.paperType)) ? 70 * scale : 60 * scale;
+            const maxWidth = (baseWidth * scale) - (marginX * 1.5);
+
+            const layout = calculateLayout(measureCtx, state.text, maxWidth);
+            const lineHeight = state.fontSize * state.lineHeight * scale;
+            const topMargin = 80 * scale;
+            const bottomMargin = 50 * scale;
+
+            let linesProcessed = 0;
+            let pageNum = 1;
+
+            while (linesProcessed < layout.lines.length) {
+                const canvas = document.createElement('canvas');
+                canvas.width = baseWidth * scale;
+                canvas.height = baseHeight * scale;
+                canvas.className = 'canvas-shadow page-canvas animate-fade-in-up';
+                canvas.style.animationDelay = `${(pageNum - 1) * 0.1}s`;
+
+                const ctx = canvas.getContext('2d');
+                drawBackground(ctx, canvas.width, canvas.height, scale, pageNum);
+
+                ctx.font = `${state.fontSize * scale}px ${state.font}`;
+                ctx.fillStyle = state.inkColor;
+                ctx.textBaseline = 'bottom';
+
+                let cursorY = topMargin + lineHeight;
+
+                while (linesProcessed < layout.lines.length) {
+                    if (cursorY > (baseHeight * scale) - bottomMargin) break;
+
+                    const line = layout.lines[linesProcessed];
+                    let cursorX = marginX;
+
+                    if (state.humanize > 0) {
+                        cursorX += (seededRandom(linesProcessed * 123) - 0.5) * (state.humanize * 4);
+                    }
+
+                    const chars = line.split('');
+                    chars.forEach((char, charIndex) => {
+                        const seed = (linesProcessed * 100) + charIndex;
+                        let rotate = 0, offsetY = 0, offsetX = 0;
+
+                        if (state.humanize > 0) {
+                            const factor = state.humanize * 0.5;
+                            rotate = (seededRandom(seed) - 0.5) * (factor * 0.1);
+                            offsetY = (seededRandom(seed + 1) - 0.5) * (factor * 4);
+                            offsetX = (seededRandom(seed + 2) - 0.5) * (factor * 2);
+                        }
+
+                        ctx.save();
+                        ctx.translate(cursorX + offsetX, cursorY + offsetY);
+                        ctx.rotate(rotate);
+                        ctx.fillText(char, 0, 0);
+                        ctx.restore();
+                        cursorX += ctx.measureText(char).width;
+                    });
+
+                    cursorY += lineHeight;
+                    linesProcessed++;
+                }
+
+                pagesContainer.appendChild(canvas);
+                pageNum++;
+            }
+        }
+
+        function calculateLayout(ctx, text, maxWidth) {
+            const lines = [];
+            text.split('\n').forEach(paragraph => {
+                if (paragraph === '') { lines.push(''); return; }
+                const words = paragraph.split(' ');
+                let currentLine = '', currentWidth = 0, spaceWidth = ctx.measureText(' ').width;
+                words.forEach(word => {
+                    const wordWidth = ctx.measureText(word).width;
+                    if (currentLine === '' || currentWidth + spaceWidth + wordWidth <= maxWidth) {
+                        currentLine += (currentLine === '' ? '' : ' ') + word;
+                        currentWidth += (currentLine === '' ? 0 : spaceWidth) + wordWidth;
+                    } else {
+                        lines.push(currentLine); currentLine = word; currentWidth = wordWidth;
+                    }
+                });
+                lines.push(currentLine);
+            });
+            return { lines };
+        }
+
+        // Initialize mobile state safely
+        if (window.innerWidth < 768) {
+            setMobileTab('settings');
+        } else {
+            // Ensure desktop classes are present initially
+            sidebarPanel.classList.remove('hidden');
+            previewPanel.classList.remove('hidden');
+            previewPanel.classList.add('flex');
+        }
+
+        document.fonts.ready.then(() => setPaper('lined'));
+
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shadow Text - Email Extractor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;500;600;700&display=swap"
+        rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link rel="stylesheet" href="../../styles.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        mono: ['Courier New', 'monospace'],
+                        sans: ['Rajdhani', 'sans-serif'],
+                        orbitron: ['Orbitron', 'sans-serif']
+                    },
+                    colors: {
+                        cyber: {
+                            accent: '#6366f1', // Indigo-500
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body
+    class="min-h-screen flex flex-col font-sans overflow-x-hidden bg-slate-900 text-white selection:bg-indigo-500 selection:text-white">
+
+    <!-- 3D Background -->
+    <div id="bg-3d-container"></div>
+
+    <!-- Navigation -->
+    <nav
+        class="sticky top-0 z-50 glass-effect border-b border-white/5 px-4 md:px-6 py-3 flex items-center justify-between backdrop-blur-md">
+        <a href="../index.html" class="flex items-center gap-3 text-slate-300 hover:text-white transition-colors group">
+            <div
+                class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center border border-white/10 group-hover:border-indigo-500/50 transition-all">
+                <i class="fas fa-chevron-left text-xs group-hover:-translate-x-0.5 transition-transform"></i>
+            </div>
+            <span class="font-orbitron font-bold tracking-wider hidden md:block">BACK</span>
+        </a>
+
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded bg-indigo-500/20 flex items-center justify-center text-indigo-400">
+                <i class="fas fa-envelope-open-text"></i>
+            </div>
+            <h1 class="text-lg md:text-xl font-orbitron font-bold tracking-widest text-white">SHADOW<span
+                    class="text-indigo-500">EMAIL</span></h1>
+        </div>
+
+        <div class="w-8"></div>
+    </nav>
+
+    <!-- Main Content -->
+    <main
+        class="flex-grow container mx-auto px-4 py-8 relative z-10 flex flex-col gap-6 h-[calc(100vh-80px)] min-h-[600px]">
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
+
+            <!-- Input Panel -->
+            <div class="flex flex-col glass rounded-2xl border border-white/5 shadow-xl overflow-hidden h-full group">
+                <div class="px-6 py-4 border-b border-white/5 bg-slate-900/50 flex justify-between items-center">
+                    <span class="text-xs font-bold text-slate-400 tracking-widest uppercase"><i
+                            class="fas fa-paragraph mr-2"></i>Source Text</span>
+                    <button onclick="document.getElementById('textInput').value=''; extract()"
+                        class="text-[10px] text-slate-500 hover:text-white transition-colors uppercase font-bold tracking-wider">Clear</button>
+                </div>
+                <textarea id="textInput" oninput="extract()"
+                    class="flex-1 w-full bg-transparent p-6 text-sm md:text-base font-mono text-slate-300 focus:outline-none resize-none custom-scrollbar placeholder-slate-700"
+                    placeholder="Paste text containing emails here..."></textarea>
+            </div>
+
+            <!-- Output Panel -->
+            <div class="flex flex-col glass rounded-2xl border border-white/5 shadow-xl overflow-hidden h-full">
+                <div
+                    class="px-6 py-4 border-b border-white/5 bg-slate-900/50 flex justify-between items-center bg-indigo-900/10">
+                    <span class="text-xs font-bold text-indigo-400 tracking-widest uppercase"><i
+                            class="fas fa-at mr-2"></i>Extracted Emails <span id="count"
+                            class="ml-2 bg-indigo-500/20 px-2 py-0.5 rounded text-white text-[10px]">0</span></span>
+
+                    <div class="flex gap-2">
+                        <select id="separator" onchange="extract()"
+                            class="bg-slate-900 mb-0.5 text-[10px] border border-white/10 rounded px-2 text-slate-400 focus:outline-none">
+                            <option value="\n">New Line</option>
+                            <option value=", ">Comma</option>
+                            <option value="; ">Semi-colon</option>
+                            <option value=" | ">Pipe</option>
+                        </select>
+                        <button onclick="copy('textOutput')"
+                            class="text-[10px] text-indigo-400 hover:text-white transition-colors uppercase font-bold tracking-wider ml-2"><i
+                                class="fas fa-copy mr-1"></i>Copy</button>
+                    </div>
+                </div>
+                <textarea id="textOutput" readonly
+                    class="flex-1 w-full bg-slate-950/30 p-6 text-sm md:text-base font-mono text-indigo-300 focus:outline-none resize-none custom-scrollbar placeholder-indigo-900/30"
+                    placeholder="Found emails will appear here..."></textarea>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Shared Script -->
+    <script type="module" src="../../shared/bg-particles.js"></script>
+
+    <script>
+        function extract() {
+            const text = document.getElementById('textInput').value;
+            const separator = document.getElementById('separator').value;
+
+            // Regex for email
+            const emailRegex = /([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9._-]+)/gi;
+            const matches = text.match(emailRegex);
+
+            const uniqueEmails = matches ? [...new Set(matches)] : [];
+
+            document.getElementById('textOutput').value = uniqueEmails.join(separator);
+            document.getElementById('count').innerText = uniqueEmails.length;
+        }
+
+        function copy(id) {
+            const el = document.getElementById(id);
+            el.select();
+            document.execCommand('copy');
+            const btn = document.querySelector(`button[onclick="copy('${id}')"]`);
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-check mr-1"></i>COPIED';
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+            }, 1500);
+        }
+    </script>
+</body>
+
+</html>

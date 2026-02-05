@@ -1,0 +1,1173 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AI Background Remover | Pro Studio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                    },
+                    animation: {
+                        'fade-in': 'fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                        'pop': 'popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards',
+                        'slide-up': 'slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                        'toast-in': 'toastIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                        'toast-out': 'toastOut 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                    },
+                    keyframes: {
+                        fadeInUp: {
+                            'from': { opacity: 0, transform: 'translateY(10px)' },
+                            'to': { opacity: 1, transform: 'translateY(0)' }
+                        },
+                        popIn: {
+                            '0%': { transform: 'scale(0.9)', opacity: 0 },
+                            '100%': { transform: 'scale(1)', opacity: 1 }
+                        },
+                        slideUp: {
+                            'from': { transform: 'translateY(100%)' },
+                            'to': { transform: 'translateY(0)' }
+                        },
+                        toastIn: {
+                            'from': { transform: 'translateY(20px) scale(0.9)', opacity: 0 },
+                            'to': { transform: 'translateY(0) scale(1)', opacity: 1 }
+                        },
+                        toastOut: {
+                            'from': { transform: 'translateY(0) scale(1)', opacity: 1 },
+                            'to': { transform: 'translateY(-20px) scale(0.9)', opacity: 0 }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* --- GLOBAL UTILS --- */
+        body {
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .checkerboard-bg {
+            background-color: #ffffff;
+            background-image:
+                linear-gradient(45deg, #f1f5f9 25%, transparent 25%),
+                linear-gradient(-45deg, #f1f5f9 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, #f1f5f9 75%),
+                linear-gradient(-45deg, transparent 75%, #f1f5f9 75%);
+            background-size: 16px 16px;
+            background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 20px;
+        }
+
+        /* --- LAYOUT STABILITY & ZOOM --- */
+        #main-canvas-area {
+            overflow: hidden;
+            cursor: grab;
+        }
+
+        #main-canvas-area.grabbing {
+            cursor: grabbing;
+        }
+
+        .view-wrapper {
+            position: relative;
+            width: auto;
+            height: auto;
+            max-width: 100%;
+            max-height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.2);
+            border-radius: 0px;
+            /* Reset for circular mode handling */
+            transition: box-shadow 0.3s ease;
+            transform-origin: center center;
+            will-change: transform;
+        }
+
+        /* Profile Preview Mode */
+        .view-wrapper.profile-mode {
+            border-radius: 50% !important;
+            overflow: hidden;
+            box-shadow: 0 0 0 100vmax rgba(255, 255, 255, 0.85);
+            /* Overlay mask */
+            z-index: 50;
+        }
+
+        .anchor-image {
+            display: block;
+            max-height: 55vh;
+            width: auto;
+            max-width: 100%;
+            object-fit: contain;
+            pointer-events: none;
+            transition: filter 0.2s ease, transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        @media (min-width: 640px) {
+            .anchor-image {
+                max-height: 65vh;
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .anchor-image {
+                max-height: 75vh;
+            }
+        }
+
+        .layer-absolute {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .slider-handle {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 36px;
+            height: 36px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            transform: translate(-50%, -50%);
+            z-index: 30;
+            pointer-events: none;
+            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .compare-container:active .slider-handle {
+            transform: translate(-50%, -50%) scale(1.15);
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+
+        /* Input Range Styling */
+        input[type=range] {
+            -webkit-appearance: none;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #4f46e5;
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 2px 6px rgba(79, 70, 229, 0.4);
+            transition: transform 0.1s;
+        }
+
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #e2e8f0;
+            border-radius: 2px;
+        }
+
+        /* Gradient Presets */
+        .grad-preset-1 {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .grad-preset-2 {
+            background: linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%);
+        }
+
+        .grad-preset-3 {
+            background: linear-gradient(120deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .grad-preset-4 {
+            background: linear-gradient(to top, #cfd9df 0%, #e2ebf0 100%);
+        }
+    </style>
+</head>
+
+<body
+    class="bg-slate-50 text-slate-800 h-[100dvh] flex flex-col overflow-hidden selection:bg-indigo-100 selection:text-indigo-700 font-sans"
+    ondrop="handleGlobalDrop(event)" ondragover="handleGlobalDragOver(event)"
+    ondragleave="handleGlobalDragLeave(event)">
+
+    <!-- Global Drag Overlay -->
+    <div id="global-drag-overlay"
+        class="fixed inset-0 z-[100] bg-indigo-600/90 hidden flex-col items-center justify-center text-white backdrop-blur-sm transition-opacity duration-300 pointer-events-none">
+        <i class="fa-solid fa-cloud-arrow-up text-6xl mb-4 animate-bounce"></i>
+        <h2 class="text-2xl font-bold">Drop Image Here</h2>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container"
+        class="fixed top-6 left-1/2 -translate-x-1/2 z-[110] flex flex-col gap-2 pointer-events-none w-full max-w-sm px-4">
+    </div>
+
+    <!-- Navbar -->
+    <nav
+        class="bg-white/90 backdrop-blur-xl border-b border-slate-200/60 z-50 flex-shrink-0 transition-all duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-14 sm:h-16 items-center">
+                <!-- Brand -->
+                <div class="flex items-center gap-2">
+                    <div
+                        class="bg-gradient-to-br from-indigo-600 to-violet-600 text-white p-1.5 rounded-lg shadow-lg shadow-indigo-500/20">
+                        <i class="fa-solid fa-layer-group text-sm sm:text-base"></i>
+                    </div>
+                    <span class="font-bold text-base sm:text-xl text-slate-900 tracking-tight leading-none">
+                        Remove<span
+                            class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600">BG</span>
+                    </span>
+                </div>
+
+                <!-- Actions -->
+                <div class="flex items-center gap-2 sm:gap-3">
+                    <button id="nav-download-btn"
+                        class="hidden sm:hidden w-9 h-9 items-center justify-center rounded-full bg-indigo-600 text-white shadow-indigo-200 active:scale-90 transition-all animate-pop">
+                        <i class="fa-solid fa-download text-xs"></i>
+                    </button>
+
+                    <button id="reset-btn" onclick="handleReset()"
+                        class="group flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-transparent hover:bg-slate-100 text-slate-500 transition-all duration-300 relative overflow-hidden">
+                        <i
+                            class="fa-solid fa-rotate-right text-xs sm:text-sm transition-transform duration-500 group-hover:rotate-180"></i>
+                        <span class="text-[11px] sm:text-sm font-medium">Reset</span>
+                    </button>
+
+                    <div
+                        class="hidden sm:flex items-center gap-1.5 px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full border border-indigo-100 text-[10px] sm:text-xs font-bold tracking-wide">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> 2.0
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- App Layout -->
+    <div class="flex flex-col lg:flex-row flex-grow h-full overflow-hidden relative">
+
+        <!-- MAIN VIEWER -->
+        <main id="main-canvas-area"
+            class="order-1 lg:order-2 flex-grow bg-slate-50/50 relative flex items-center justify-center p-4 lg:p-8 min-h-0 w-full select-none">
+
+            <!-- Zoom/Pan Controls Overlay -->
+            <div id="canvas-controls"
+                class="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 flex gap-2 bg-white/90 backdrop-blur shadow-lg rounded-full p-1.5 opacity-0 pointer-events-none transition-opacity duration-300 scale-90">
+                <button onclick="zoomCanvas(-0.1)"
+                    class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-600"><i
+                        class="fa-solid fa-minus text-xs"></i></button>
+                <button onclick="resetZoom()"
+                    class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-600 font-bold text-xs"
+                    title="Reset View">100%</button>
+                <button onclick="zoomCanvas(0.1)"
+                    class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-600"><i
+                        class="fa-solid fa-plus text-xs"></i></button>
+                <div class="w-px h-4 bg-slate-200 my-auto mx-1"></div>
+                <button onclick="toggleProfileMode()" id="btn-profile-mode"
+                    class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-400"
+                    title="Profile Preview"><i class="fa-regular fa-circle-user"></i></button>
+            </div>
+
+            <!-- Empty State -->
+            <div id="viewer-empty" class="text-center opacity-40 animate-fade-in px-4">
+                <div
+                    class="w-16 h-16 sm:w-24 sm:h-24 bg-white border border-slate-200 rounded-2xl flex items-center justify-center mx-auto mb-4 text-slate-300 shadow-sm transform rotate-3">
+                    <i class="fa-regular fa-image text-2xl sm:text-4xl"></i>
+                </div>
+                <h3 class="text-slate-900 font-semibold text-sm sm:text-lg mb-1">No Image Loaded</h3>
+                <p class="text-slate-400 text-xs sm:text-sm">Drag & Drop anywhere to start</p>
+            </div>
+
+            <!-- Canvas Wrapper -->
+            <div id="view-wrapper" class="view-wrapper hidden animate-pop bg-white ring-1 ring-black/5">
+                <!-- Layers -->
+                <div id="bg-layer" class="layer-absolute z-0 overflow-hidden rounded-[inherit]">
+                    <div class="absolute inset-0 checkerboard-bg"></div>
+                    <div id="bg-color-fill" class="absolute inset-0 transition-all duration-300 bg-cover bg-center">
+                    </div>
+                    <img id="bg-image-element"
+                        class="absolute transform-gpu transition-transform duration-100 origin-center hidden"
+                        alt="Background">
+                </div>
+
+                <!-- Main Subject -->
+                <img id="anchor-img" class="anchor-image relative z-10 select-none" draggable="false">
+
+                <!-- Compare Slider -->
+                <div id="compare-overlay-container"
+                    class="absolute inset-0 z-20 hidden overflow-hidden rounded-[inherit] cursor-col-resize touch-none">
+                    <div id="compare-clipper"
+                        class="absolute top-0 left-0 bottom-0 w-1/2 overflow-hidden border-r-2 border-white bg-white shadow-2xl">
+                        <img id="compare-img-original"
+                            class="absolute top-0 left-0 h-full max-w-none w-auto select-none pointer-events-none"
+                            draggable="false">
+                    </div>
+                    <div id="slider-handle" class="slider-handle">
+                        <i class="fa-solid fa-left-right text-indigo-600 text-[10px]"></i>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- TOOLS PANEL -->
+        <aside
+            class="order-2 lg:order-1 w-full lg:w-[380px] bg-white border-t lg:border-t-0 lg:border-r border-slate-200 shadow-[0_-8px_30px_rgba(0,0,0,0.04)] z-40 flex flex-col flex-shrink-0 transition-all duration-500 relative glass-panel h-[auto] max-h-[50vh] lg:max-h-full lg:h-full animate-slide-up"
+            id="sidebar">
+
+            <!-- Loading Overlay -->
+            <div id="loading-overlay"
+                class="absolute inset-0 bg-white/90 z-50 flex flex-col items-center justify-center hidden backdrop-blur-md animate-fade-in">
+                <div class="relative">
+                    <div class="w-12 h-12 border-[3px] border-indigo-100 border-t-indigo-600 rounded-full animate-spin">
+                    </div>
+                    <div
+                        class="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-indigo-600 animate-pulse">
+                        AI</div>
+                </div>
+                <span class="mt-3 text-xs font-semibold text-slate-600">Removing Background...</span>
+            </div>
+
+            <!-- 1. UPLOAD VIEW -->
+            <div id="view-upload"
+                class="flex-grow flex flex-col p-5 lg:p-8 h-full justify-center lg:justify-start animate-fade-in">
+                <div class="mb-4 lg:mb-8 text-center lg:text-left">
+                    <h1 class="text-xl sm:text-3xl font-bold text-slate-900 mb-1.5 tracking-tight">Studio Editor</h1>
+                    <p class="text-slate-500 text-[11px] sm:text-sm leading-relaxed max-w-[280px] mx-auto lg:mx-0">
+                        Drop anywhere. Edit everywhere. Pro-grade tools.
+                    </p>
+                </div>
+
+                <div id="drop-zone"
+                    class="w-full border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/50 hover:bg-indigo-50/50 hover:border-indigo-400 transition-all cursor-pointer relative group flex flex-col items-center justify-center text-center py-8 px-4 sm:p-10 active:scale-[0.98] duration-200">
+                    <input type="file" id="file-input"
+                        class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20" accept="image/*">
+                    <div
+                        class="w-14 h-14 sm:w-16 sm:h-16 bg-white text-indigo-600 rounded-2xl flex items-center justify-center mb-3 shadow-lg shadow-indigo-100 group-hover:-translate-y-1 transition-transform duration-300">
+                        <i class="fa-solid fa-cloud-arrow-up text-xl sm:text-2xl"></i>
+                    </div>
+                    <h3 class="font-bold text-slate-800 text-sm sm:text-base mb-0.5">Tap to Upload</h3>
+                    <p class="text-[10px] sm:text-xs text-slate-400 font-medium">PNG, JPG • Max 10MB</p>
+                </div>
+            </div>
+
+            <!-- 2. TOOLS VIEW -->
+            <div id="view-tools" class="hidden flex-col h-full overflow-hidden">
+
+                <!-- Tab Switcher -->
+                <div class="px-4 pt-3 pb-2 flex-shrink-0">
+                    <div class="flex p-1 bg-slate-100 rounded-xl relative">
+                        <div id="tab-indicator"
+                            class="absolute top-1 bottom-1 w-[33.33%] bg-white rounded-[10px] shadow-sm transition-all duration-300 ease-out left-1">
+                        </div>
+                        <button onclick="setTab('editor')" id="tab-editor"
+                            class="flex-1 relative z-10 py-2 text-[10px] sm:text-[11px] font-bold uppercase tracking-wide text-center transition-colors duration-200 text-indigo-600">Background</button>
+                        <button onclick="setTab('adjust')" id="tab-adjust"
+                            class="flex-1 relative z-10 py-2 text-[10px] sm:text-[11px] font-bold uppercase tracking-wide text-center transition-colors duration-200 text-slate-400">Subject</button>
+                        <button onclick="setTab('compare')" id="tab-compare"
+                            class="flex-1 relative z-10 py-2 text-[10px] sm:text-[11px] font-bold uppercase tracking-wide text-center transition-colors duration-200 text-slate-400">Compare</button>
+                    </div>
+                </div>
+
+                <!-- Scrollable Content -->
+                <div class="flex-grow overflow-y-auto px-5 py-4 custom-scrollbar bg-slate-50/30">
+
+                    <!-- BACKGROUND EDITOR -->
+                    <div id="panel-editor" class="tool-panel space-y-5 animate-fade-in pb-20 lg:pb-0">
+                        <!-- Colors/Gradients -->
+                        <div>
+                            <label
+                                class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2.5 block">Colors
+                                & Gradients</label>
+                            <div class="grid grid-cols-5 gap-2 sm:gap-3 mb-3">
+                                <button onclick="setBackground('transparent')"
+                                    class="aspect-square rounded-xl border-2 border-indigo-500 ring-2 ring-indigo-100 shadow-sm checkerboard-bg relative overflow-hidden group focus:outline-none transition-all active:scale-90"
+                                    id="btn-bg-transparent">
+                                    <div
+                                        class="absolute inset-0 flex items-center justify-center bg-white/60 backdrop-blur-[1px]">
+                                        <i class="fa-solid fa-ban text-slate-500 text-xs"></i>
+                                    </div>
+                                </button>
+                                <button onclick="setBackground('#ffffff')"
+                                    class="aspect-square rounded-xl border border-slate-200 bg-white active:scale-90 transition-all"></button>
+                                <button onclick="setBackground('#000000')"
+                                    class="aspect-square rounded-xl border border-slate-200 bg-black active:scale-90 transition-all"></button>
+                                <button onclick="setBackgroundGradient('grad-preset-1')"
+                                    class="aspect-square rounded-xl border border-slate-200 grad-preset-1 active:scale-90 transition-all"></button>
+                                <button onclick="setBackgroundGradient('grad-preset-2')"
+                                    class="aspect-square rounded-xl border border-slate-200 grad-preset-2 active:scale-90 transition-all"></button>
+                                <button onclick="setBackgroundGradient('grad-preset-3')"
+                                    class="aspect-square rounded-xl border border-slate-200 grad-preset-3 active:scale-90 transition-all"></button>
+                                <button onclick="setBackgroundGradient('grad-preset-4')"
+                                    class="aspect-square rounded-xl border border-slate-200 grad-preset-4 active:scale-90 transition-all"></button>
+                                <div
+                                    class="aspect-square rounded-xl border border-slate-200 relative overflow-hidden bg-gradient-to-br from-indigo-500 to-purple-500 cursor-pointer active:scale-90 transition-all">
+                                    <input type="color" onchange="setBackground(this.value)"
+                                        class="absolute inset-0 opacity-0 cursor-pointer w-full h-full">
+                                    <div
+                                        class="absolute inset-0 flex items-center justify-center text-white pointer-events-none">
+                                        <i class="fa-solid fa-plus text-xs"></i></div>
+                                </div>
+                            </div>
+
+                            <label
+                                class="flex items-center justify-center gap-2 w-full py-2.5 bg-white border border-slate-200 rounded-xl text-[11px] sm:text-xs font-semibold text-slate-600 hover:border-indigo-300 hover:text-indigo-600 hover:shadow-sm cursor-pointer transition-all active:scale-[0.98]">
+                                <i class="fa-solid fa-image text-sm"></i>
+                                <span>Upload Custom BG</span>
+                                <input type="file" id="bg-file-input" class="hidden" accept="image/*">
+                            </label>
+                        </div>
+
+                        <!-- BG Position (Only visible if BG Image active) -->
+                        <div id="bg-adjust-controls" class="hidden animate-fade-in border-t border-slate-100 pt-4">
+                            <label
+                                class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3">Adjust
+                                BG Image</label>
+                            <div class="space-y-4">
+                                <div class="group">
+                                    <div class="flex justify-between text-[10px] font-bold text-slate-500 mb-1.5">
+                                        <span>SCALE</span>
+                                        <span id="bg-scale-val" class="text-indigo-600">100%</span>
+                                    </div>
+                                    <input type="range" min="10" max="250" value="100" id="bg-scale"
+                                        oninput="updateBg()">
+                                </div>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div class="group">
+                                        <div class="flex justify-between text-[10px] font-bold text-slate-500 mb-1.5">
+                                            <span>POS X</span></div>
+                                        <input type="range" min="0" max="100" value="50" id="bg-x" oninput="updateBg()">
+                                    </div>
+                                    <div class="group">
+                                        <div class="flex justify-between text-[10px] font-bold text-slate-500 mb-1.5">
+                                            <span>POS Y</span></div>
+                                        <input type="range" min="0" max="100" value="50" id="bg-y" oninput="updateBg()">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SUBJECT ADJUST PANEL (New) -->
+                    <div id="panel-adjust" class="tool-panel hidden animate-fade-in pb-20 lg:pb-0 space-y-6">
+
+                        <!-- Transform -->
+                        <div>
+                            <label
+                                class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3 block">Transform</label>
+                            <div class="flex gap-2">
+                                <button onclick="toggleFlip()" id="btn-flip"
+                                    class="flex-1 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-600 hover:text-indigo-600 hover:border-indigo-300 text-xs font-semibold transition-all">
+                                    <i class="fa-solid fa-arrows-left-right mr-1"></i> Flip
+                                </button>
+                                <button onclick="rotateSubject()"
+                                    class="flex-1 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-600 hover:text-indigo-600 hover:border-indigo-300 text-xs font-semibold transition-all">
+                                    <i class="fa-solid fa-rotate-right mr-1"></i> Rotate
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Drop Shadow -->
+                        <div class="border-t border-slate-100 pt-4">
+                            <div class="flex items-center justify-between mb-3">
+                                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Drop
+                                    Shadow</label>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" id="shadow-toggle" class="sr-only peer"
+                                        onchange="updateFilters()">
+                                    <div
+                                        class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600">
+                                    </div>
+                                </label>
+                            </div>
+                            <div id="shadow-controls"
+                                class="space-y-3 opacity-50 pointer-events-none transition-opacity duration-300">
+                                <div class="flex gap-3">
+                                    <div class="flex-1">
+                                        <span class="text-[10px] text-slate-500 font-bold">Blur</span>
+                                        <input type="range" min="0" max="50" value="20" id="shadow-blur"
+                                            class="w-full h-1 bg-slate-200 rounded-full" oninput="updateFilters()">
+                                    </div>
+                                    <div class="flex-1">
+                                        <span class="text-[10px] text-slate-500 font-bold">Opacity</span>
+                                        <input type="range" min="0" max="100" value="50" id="shadow-opacity"
+                                            class="w-full h-1 bg-slate-200 rounded-full" oninput="updateFilters()">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Filters -->
+                        <div class="border-t border-slate-100 pt-4 space-y-3">
+                            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Image
+                                Filters</label>
+                            <div>
+                                <div class="flex justify-between text-[10px] font-bold text-slate-500 mb-1">
+                                    <span>Brightness</span> <span id="val-bright" class="text-indigo-600">100%</span>
+                                </div>
+                                <input type="range" min="50" max="150" value="100" id="filter-bright"
+                                    class="w-full h-1 bg-slate-200 rounded-full" oninput="updateFilters()">
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-[10px] font-bold text-slate-500 mb-1">
+                                    <span>Contrast</span> <span id="val-contrast" class="text-indigo-600">100%</span>
+                                </div>
+                                <input type="range" min="50" max="150" value="100" id="filter-contrast"
+                                    class="w-full h-1 bg-slate-200 rounded-full" oninput="updateFilters()">
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-[10px] font-bold text-slate-500 mb-1">
+                                    <span>Saturation</span> <span id="val-saturate" class="text-indigo-600">100%</span>
+                                </div>
+                                <input type="range" min="0" max="200" value="100" id="filter-saturate"
+                                    class="w-full h-1 bg-slate-200 rounded-full" oninput="updateFilters()">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- COMPARE PANEL -->
+                    <div id="panel-compare"
+                        class="tool-panel hidden animate-fade-in h-full flex flex-col items-center justify-center text-center pb-10">
+                        <div
+                            class="w-12 h-12 bg-indigo-50 rounded-full flex items-center justify-center mb-3 text-indigo-600 animate-bounce">
+                            <i class="fa-solid fa-arrows-left-right"></i>
+                        </div>
+                        <h3 class="text-xs font-bold text-slate-800">Before & After</h3>
+                        <p class="text-[10px] text-slate-400 mt-1">Drag the slider on the image</p>
+                    </div>
+                </div>
+
+                <!-- Footer / Download (Desktop only, hidden on mobile) -->
+                <div
+                    class="hidden sm:block p-4 border-t border-slate-100 bg-white z-10 shadow-[0_-10px_40px_rgba(0,0,0,0.02)] flex-shrink-0">
+                    <button id="download-btn-desktop"
+                        class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-slate-300/50 active:scale-[0.98] transition-all flex items-center justify-center gap-2 group relative overflow-hidden">
+                        <span class="text-xs sm:text-sm relative z-10">Download HD</span>
+                        <i
+                            class="fa-solid fa-download group-hover:translate-y-0.5 transition-transform text-xs relative z-10"></i>
+                    </button>
+                    <div class="text-center mt-2.5 text-[10px] text-slate-400 font-medium">
+                        <span id="img-stats" class="opacity-70 font-mono">-- x --</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Hidden Export Canvas -->
+    <canvas id="export-canvas" class="hidden"></canvas>
+
+    <script>
+        // --- State Management ---
+        const state = {
+            originalFile: null, originalUrl: null, resultBlob: null, resultUrl: null, originalImgObj: null,
+            currentBgColor: 'transparent', currentBgImage: null, bgImgObj: null,
+            bgParams: { scale: 100, x: 50, y: 50 },
+            filters: { brightness: 100, contrast: 100, saturation: 100, shadow: false, shadowBlur: 20, shadowOpacity: 0.5, flipX: 1, rotation: 0 },
+            activeTab: 'editor', isProcessing: false, resetConfirmation: false,
+            zoomLevel: 1, panX: 0, panY: 0, isDraggingCanvas: false, lastMouseX: 0, lastMouseY: 0,
+            isProfileMode: false
+        };
+
+        const els = {
+            sidebar: document.getElementById('sidebar'),
+            loading: document.getElementById('loading-overlay'),
+            viewUpload: document.getElementById('view-upload'),
+            viewTools: document.getElementById('view-tools'),
+            viewerEmpty: document.getElementById('viewer-empty'),
+            viewWrapper: document.getElementById('view-wrapper'),
+            mainCanvasArea: document.getElementById('main-canvas-area'),
+            canvasControls: document.getElementById('canvas-controls'),
+            dropZone: document.getElementById('drop-zone'),
+            fileInput: document.getElementById('file-input'),
+            bgFileInput: document.getElementById('bg-file-input'),
+            bgLayer: document.getElementById('bg-layer'),
+            bgColorFill: document.getElementById('bg-color-fill'),
+            bgImageElement: document.getElementById('bg-image-element'),
+            anchorImg: document.getElementById('anchor-img'),
+            compareContainer: document.getElementById('compare-overlay-container'),
+            compareClipper: document.getElementById('compare-clipper'),
+            compareImgOriginal: document.getElementById('compare-img-original'),
+            sliderHandle: document.getElementById('slider-handle'),
+            bgAdjust: document.getElementById('bg-adjust-controls'),
+            tabs: { editor: document.getElementById('tab-editor'), adjust: document.getElementById('tab-adjust'), compare: document.getElementById('tab-compare') },
+            panels: { editor: document.getElementById('panel-editor'), adjust: document.getElementById('panel-adjust'), compare: document.getElementById('panel-compare') },
+            tabIndicator: document.getElementById('tab-indicator'),
+            inputs: { bgScale: document.getElementById('bg-scale'), bgX: document.getElementById('bg-x'), bgY: document.getElementById('bg-y') },
+            imgStats: document.getElementById('img-stats'),
+            downloadBtnDesktop: document.getElementById('download-btn-desktop'),
+            navDownloadBtn: document.getElementById('nav-download-btn'),
+            resetBtn: document.getElementById('reset-btn'),
+            toastContainer: document.getElementById('toast-container'),
+            globalDragOverlay: document.getElementById('global-drag-overlay')
+        };
+
+        // --- GLOBAL DRAG & DROP ---
+        let dragCounter = 0;
+        function handleGlobalDragOver(e) {
+            e.preventDefault();
+            els.globalDragOverlay.classList.remove('hidden');
+            els.globalDragOverlay.classList.add('flex');
+        }
+        function handleGlobalDragLeave(e) { e.preventDefault(); }
+        // We use a counter or target check to prevent flickering, simplified here:
+        window.addEventListener('dragenter', (e) => { dragCounter++; els.globalDragOverlay.classList.remove('hidden'); els.globalDragOverlay.classList.add('flex'); });
+        window.addEventListener('dragleave', (e) => { dragCounter--; if (dragCounter === 0) els.globalDragOverlay.classList.add('hidden'); });
+        window.addEventListener('dragover', (e) => e.preventDefault());
+        function handleGlobalDrop(e) {
+            e.preventDefault();
+            dragCounter = 0;
+            els.globalDragOverlay.classList.add('hidden');
+            if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+        }
+
+        // --- TOAST SYSTEM ---
+        function showToast(msg, type = 'info') {
+            const toast = document.createElement('div');
+            const colorClass = type === 'error' ? 'bg-rose-500' : (type === 'success' ? 'bg-emerald-500' : 'bg-slate-800');
+            const icon = type === 'error' ? 'fa-circle-exclamation' : (type === 'success' ? 'fa-circle-check' : 'fa-info-circle');
+
+            toast.className = `${colorClass} text-white px-4 py-3 rounded-xl shadow-xl flex items-center gap-3 text-sm font-medium animate-toast-in`;
+            toast.innerHTML = `<i class="fa-solid ${icon}"></i> <span>${msg}</span>`;
+
+            els.toastContainer.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.remove('animate-toast-in');
+                toast.classList.add('animate-toast-out');
+                setTimeout(() => toast.remove(), 400);
+            }, 3000);
+        }
+
+        // --- Event Listeners ---
+        els.fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+        els.bgFileInput.addEventListener('change', (e) => {
+            if (e.target.files[0]) {
+                const reader = new FileReader();
+                reader.onload = (evt) => {
+                    state.currentBgImage = evt.target.result;
+                    state.currentBgColor = 'image';
+                    state.bgImgObj = new Image();
+                    state.bgImgObj.onload = () => {
+                        renderBackground();
+                        showToast('Custom background loaded', 'success');
+                    };
+                    state.bgImgObj.src = state.currentBgImage;
+                }
+                reader.readAsDataURL(e.target.files[0]);
+            }
+        });
+
+        els.downloadBtnDesktop.addEventListener('click', downloadComposite);
+        els.navDownloadBtn.addEventListener('click', downloadComposite);
+
+        // --- KEYBOARD SHORTCUTS ---
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 's') { e.preventDefault(); downloadComposite(); }
+            if (e.key === 'Escape') handleReset();
+            if (e.key === '=' || e.key === '+') zoomCanvas(0.1);
+            if (e.key === '-') zoomCanvas(-0.1);
+        });
+
+        // --- ZOOM & PAN LOGIC ---
+        function updateTransform() {
+            els.viewWrapper.style.transform = `scale(${state.zoomLevel}) translate(${state.panX}px, ${state.panY}px)`;
+        }
+
+        window.zoomCanvas = (amount) => {
+            if (state.activeTab === 'compare') return;
+            const newZoom = Math.min(Math.max(0.5, state.zoomLevel + amount), 3);
+            state.zoomLevel = newZoom;
+            updateTransform();
+        };
+
+        window.resetZoom = () => {
+            state.zoomLevel = 1; state.panX = 0; state.panY = 0;
+            updateTransform();
+        };
+
+        els.mainCanvasArea.addEventListener('wheel', (e) => {
+            if (state.activeTab === 'compare') return;
+            e.preventDefault();
+            zoomCanvas(e.deltaY * -0.001);
+        });
+
+        els.mainCanvasArea.addEventListener('mousedown', (e) => {
+            if (state.activeTab === 'compare' || e.target.closest('.slider-handle')) return;
+            state.isDraggingCanvas = true;
+            els.mainCanvasArea.classList.add('grabbing');
+            state.lastMouseX = e.clientX;
+            state.lastMouseY = e.clientY;
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!state.isDraggingCanvas) return;
+            const deltaX = e.clientX - state.lastMouseX;
+            const deltaY = e.clientY - state.lastMouseY;
+            state.panX += deltaX / state.zoomLevel;
+            state.panY += deltaY / state.zoomLevel;
+            state.lastMouseX = e.clientX;
+            state.lastMouseY = e.clientY;
+            updateTransform();
+        });
+
+        window.addEventListener('mouseup', () => {
+            state.isDraggingCanvas = false;
+            els.mainCanvasArea.classList.remove('grabbing');
+        });
+
+
+        // --- COMPARE SLIDER LOGIC ---
+        let isCompareSliding = false;
+
+        const updateCompareSlider = (clientX) => {
+            const rect = els.viewWrapper.getBoundingClientRect();
+            let x = clientX - rect.left;
+
+            if (x < 0) x = 0;
+            if (x > rect.width) x = rect.width;
+
+            const percent = (x / rect.width) * 100;
+            els.compareClipper.style.width = `${percent}%`;
+            els.sliderHandle.style.left = `${percent}%`;
+        };
+
+        els.compareContainer.addEventListener('mousedown', (e) => {
+            isCompareSliding = true;
+            updateCompareSlider(e.clientX);
+        });
+
+        els.compareContainer.addEventListener('touchstart', (e) => {
+            isCompareSliding = true;
+            updateCompareSlider(e.touches[0].clientX);
+        }, { passive: false });
+
+        window.addEventListener('mousemove', (e) => {
+            if (isCompareSliding && state.activeTab === 'compare') {
+                e.preventDefault();
+                updateCompareSlider(e.clientX);
+            }
+        });
+
+        window.addEventListener('touchmove', (e) => {
+            if (isCompareSliding && state.activeTab === 'compare') {
+                e.preventDefault();
+                updateCompareSlider(e.touches[0].clientX);
+            }
+        }, { passive: false });
+
+        window.addEventListener('mouseup', () => isCompareSliding = false);
+        window.addEventListener('touchend', () => isCompareSliding = false);
+
+
+        // --- MAIN LOGIC ---
+
+        async function handleFile(file) {
+            if (!file || state.isProcessing) return;
+            if (!file.type.match('image.*')) return showToast('Please upload a valid image (PNG/JPG)', 'error');
+
+            state.isProcessing = true;
+            state.originalFile = file;
+            state.originalUrl = URL.createObjectURL(file);
+            state.originalImgObj = new Image();
+            state.originalImgObj.src = state.originalUrl;
+
+            els.loading.classList.remove('hidden');
+
+            try {
+                const formData = new FormData();
+                formData.append('image', file);
+                const response = await fetch('/remove-bg', { method: 'POST', body: formData });
+                if (!response.ok) throw new Error('Server Error');
+                state.resultBlob = await response.blob();
+                state.resultUrl = URL.createObjectURL(state.resultBlob);
+                showToast('Background removed successfully!', 'success');
+                initializeEditor();
+            } catch (error) {
+                console.error(error);
+                setTimeout(() => {
+                    state.resultUrl = state.originalUrl;
+                    state.resultBlob = file;
+                    showToast('Demo Mode: Background not removed (Backend missing)', 'info');
+                    initializeEditor();
+                }, 1500);
+            }
+        }
+
+        function initializeEditor() {
+            state.isProcessing = false;
+            els.loading.classList.add('hidden');
+
+            els.viewUpload.classList.add('hidden');
+            els.viewTools.classList.remove('hidden');
+            els.viewTools.style.display = 'flex';
+
+            els.viewerEmpty.classList.add('hidden');
+            els.viewWrapper.classList.remove('hidden');
+            els.canvasControls.classList.remove('opacity-0', 'scale-90', 'pointer-events-none');
+
+            els.navDownloadBtn.classList.remove('hidden');
+            els.navDownloadBtn.classList.add('flex', 'sm:hidden');
+
+            els.anchorImg.src = state.resultUrl;
+            els.compareImgOriginal.src = state.originalUrl;
+
+            state.originalImgObj.onload = () => {
+                const w = state.originalImgObj.width;
+                const h = state.originalImgObj.height;
+                els.imgStats.textContent = `RES: ${w}x${h}px • ${(state.originalFile.size / 1024 / 1024).toFixed(2)}MB`;
+            };
+            setTab('editor');
+            resetZoom();
+        }
+
+        // --- FILTER & SUBJECT LOGIC ---
+        window.updateFilters = () => {
+            const bright = document.getElementById('filter-bright').value;
+            const contrast = document.getElementById('filter-contrast').value;
+            const saturate = document.getElementById('filter-saturate').value;
+            const shadowOn = document.getElementById('shadow-toggle').checked;
+            const shadowBlur = document.getElementById('shadow-blur').value;
+            const shadowOp = document.getElementById('shadow-opacity').value / 100;
+
+            document.getElementById('val-bright').innerText = bright + '%';
+            document.getElementById('val-contrast').innerText = contrast + '%';
+            document.getElementById('val-saturate').innerText = saturate + '%';
+
+            state.filters.brightness = bright;
+            state.filters.contrast = contrast;
+            state.filters.saturation = saturate;
+            state.filters.shadow = shadowOn;
+            state.filters.shadowBlur = shadowBlur;
+            state.filters.shadowOpacity = shadowOp;
+
+            const shadowControls = document.getElementById('shadow-controls');
+            if (shadowOn) {
+                shadowControls.classList.remove('opacity-50', 'pointer-events-none');
+            } else {
+                shadowControls.classList.add('opacity-50', 'pointer-events-none');
+            }
+
+            applyStylesToImage();
+        };
+
+        window.toggleFlip = () => {
+            state.filters.flipX = state.filters.flipX === 1 ? -1 : 1;
+            document.getElementById('btn-flip').classList.toggle('bg-indigo-50');
+            document.getElementById('btn-flip').classList.toggle('text-indigo-600');
+            document.getElementById('btn-flip').classList.toggle('border-indigo-200');
+            applyStylesToImage();
+        };
+
+        window.rotateSubject = () => {
+            state.filters.rotation = (state.filters.rotation + 90) % 360;
+            applyStylesToImage();
+        };
+
+        window.toggleProfileMode = () => {
+            state.isProfileMode = !state.isProfileMode;
+            els.viewWrapper.classList.toggle('profile-mode');
+            const btn = document.getElementById('btn-profile-mode');
+            btn.classList.toggle('text-indigo-600');
+            btn.classList.toggle('bg-indigo-50');
+            showToast(state.isProfileMode ? 'Profile Preview: ON' : 'Profile Preview: OFF');
+        };
+
+        function applyStylesToImage() {
+            const { brightness, contrast, saturation, shadow, shadowBlur, shadowOpacity, flipX, rotation } = state.filters;
+
+            let filterString = `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturation}%)`;
+            if (shadow) {
+                // Drop shadow via CSS filter is convenient for the preview
+                // Color calculation: black with opacity
+                filterString += ` drop-shadow(10px 10px ${shadowBlur}px rgba(0,0,0,${shadowOpacity}))`;
+            }
+
+            els.anchorImg.style.filter = filterString;
+            els.anchorImg.style.transform = `scaleX(${flipX}) rotate(${rotation}deg)`;
+        }
+
+
+        // --- EDITOR TABS ---
+        window.setTab = (mode) => {
+            state.activeTab = mode;
+
+            const indicator = els.tabIndicator;
+            const tEd = els.tabs.editor, tAdj = els.tabs.adjust, tComp = els.tabs.compare;
+
+            // Reset classes
+            [tEd, tAdj, tComp].forEach(t => { t.className = t.className.replace('text-indigo-600', 'text-slate-400'); });
+
+            if (mode === 'editor') {
+                indicator.style.transform = 'translateX(0%)';
+                tEd.className = tEd.className.replace('text-slate-400', 'text-indigo-600');
+            } else if (mode === 'adjust') {
+                indicator.style.transform = 'translateX(100%)';
+                tAdj.className = tAdj.className.replace('text-slate-400', 'text-indigo-600');
+            } else {
+                indicator.style.transform = 'translateX(200%)';
+                tComp.className = tComp.className.replace('text-slate-400', 'text-indigo-600');
+            }
+
+            els.panels.editor.classList.add('hidden');
+            els.panels.adjust.classList.add('hidden');
+            els.panels.compare.classList.add('hidden');
+            els.panels[mode].classList.remove('hidden');
+
+            els.compareContainer.classList.add('hidden');
+            els.anchorImg.classList.remove('invisible');
+
+            if (mode === 'compare') {
+                els.compareContainer.classList.remove('hidden');
+                resetZoom(); // Reset zoom for accurate comparison
+            }
+        };
+
+        // --- BACKGROUND LOGIC ---
+        window.setBackground = (color) => {
+            state.currentBgColor = color;
+            state.currentBgImage = null;
+            resetBgUI();
+            if (color !== 'transparent' && color !== 'image') {
+                // Highlight color picker container if using custom color (approximation)
+            }
+            if (color === 'transparent') document.getElementById('btn-bg-transparent').classList.add('ring-2', 'ring-indigo-500', 'ring-offset-1', 'border-indigo-500');
+
+            renderBackground();
+        };
+
+        window.setBackgroundGradient = (presetClass) => {
+            state.currentBgColor = 'gradient';
+            state.currentBgGradientClass = presetClass;
+            state.currentBgImage = null;
+            resetBgUI();
+
+            // Highlight the specific gradient button (simple implementation: iterate to find match)
+            const btn = document.querySelector(`.${presetClass}`);
+            if (btn) btn.classList.add('ring-2', 'ring-indigo-500', 'ring-offset-1');
+
+            renderBackground();
+        };
+
+        function resetBgUI() {
+            document.querySelectorAll('.aspect-square').forEach(btn => {
+                btn.classList.remove('ring-2', 'ring-indigo-500', 'ring-offset-1', 'border-indigo-500');
+                if (btn.id !== 'btn-bg-transparent') btn.classList.add('border-slate-200');
+            });
+        }
+
+        window.updateBg = () => {
+            state.bgParams.scale = parseInt(els.inputs.bgScale.value);
+            state.bgParams.x = parseInt(els.inputs.bgX.value);
+            state.bgParams.y = parseInt(els.inputs.bgY.value);
+            document.getElementById('bg-scale-val').textContent = state.bgParams.scale + '%';
+            renderBackground();
+        };
+
+        function renderBackground() {
+            if (state.currentBgColor === 'image') els.bgAdjust.classList.remove('hidden');
+            else els.bgAdjust.classList.add('hidden');
+
+            // Reset
+            els.bgColorFill.style.background = '';
+            els.bgColorFill.className = 'absolute inset-0 transition-all duration-300 bg-cover bg-center';
+            els.bgImageElement.classList.add('hidden');
+
+            if (state.currentBgColor === 'transparent') {
+                // transparent
+            } else if (state.currentBgColor === 'gradient') {
+                els.bgColorFill.classList.add(state.currentBgGradientClass);
+            } else if (state.currentBgColor === 'image') {
+                if (state.currentBgImage && state.bgImgObj) {
+                    els.bgImageElement.src = state.currentBgImage;
+                    els.bgImageElement.classList.remove('hidden');
+
+                    const wrapperRect = els.viewWrapper.getBoundingClientRect();
+                    const { w, h } = calculateCoverDimensions(wrapperRect.width, wrapperRect.height, state.bgImgObj.width, state.bgImgObj.height);
+
+                    els.bgImageElement.style.width = `${w}px`;
+                    els.bgImageElement.style.height = `${h}px`;
+
+                    const { scale, x, y } = state.bgParams;
+                    els.bgImageElement.style.transform = `translate(-50%, -50%) scale(${scale / 100})`;
+                    els.bgImageElement.style.left = `${x}%`;
+                    els.bgImageElement.style.top = `${y}%`;
+                }
+            } else {
+                els.bgColorFill.style.backgroundColor = state.currentBgColor;
+            }
+        }
+
+        function calculateCoverDimensions(containerW, containerH, imgW, imgH) {
+            const containerRatio = containerW / containerH;
+            const imgRatio = imgW / imgH;
+            if (imgRatio > containerRatio) return { w: containerH * imgRatio, h: containerH };
+            else return { w: containerW, h: containerW / imgRatio };
+        }
+
+        // --- RESET LOGIC ---
+        window.handleReset = () => {
+            const btn = els.resetBtn;
+            if (!state.resetConfirmation) {
+                state.resetConfirmation = true;
+                btn.classList.add('bg-rose-50', 'text-rose-600', 'border-rose-200', 'ring-2', 'ring-rose-100');
+                btn.querySelector('span').innerText = "Sure?";
+                state.resetTimeout = setTimeout(() => { if (state.resetConfirmation) revertResetBtn(); }, 3000);
+            } else {
+                location.reload();
+            }
+        };
+
+        function revertResetBtn() {
+            state.resetConfirmation = false;
+            const btn = els.resetBtn;
+            btn.classList.remove('bg-rose-50', 'text-rose-600', 'border-rose-200', 'ring-2', 'ring-rose-100');
+            btn.querySelector('span').innerText = "Reset";
+        }
+
+        // --- DOWNLOAD & CONFETTI ---
+        async function downloadComposite() {
+            if (!state.resultUrl) return;
+            showToast('Preparing download...', 'info');
+
+            const canvas = document.getElementById('export-canvas');
+            const ctx = canvas.getContext('2d', { alpha: state.currentBgColor === 'transparent' });
+
+            const cWidth = state.originalImgObj.naturalWidth;
+            const cHeight = state.originalImgObj.naturalHeight;
+            canvas.width = cWidth;
+            canvas.height = cHeight;
+
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+
+            // 1. Draw Background
+            if (state.currentBgColor !== 'transparent') {
+                if (state.currentBgColor === 'image' && state.bgImgObj) {
+                    const { w: bgDrawW, h: bgDrawH } = calculateCoverDimensions(cWidth, cHeight, state.bgImgObj.width, state.bgImgObj.height);
+                    const { scale, x, y } = state.bgParams;
+                    const finalW = bgDrawW * (scale / 100);
+                    const finalH = bgDrawH * (scale / 100);
+                    ctx.drawImage(state.bgImgObj, (cWidth * (x / 100)) - (finalW / 2), (cHeight * (y / 100)) - (finalH / 2), finalW, finalH);
+                } else if (state.currentBgColor === 'gradient') {
+                    // Create gradient on canvas based on preset
+                    const grad = ctx.createLinearGradient(0, 0, cWidth, cHeight);
+                    if (state.currentBgGradientClass === 'grad-preset-1') { grad.addColorStop(0, '#667eea'); grad.addColorStop(1, '#764ba2'); }
+                    else if (state.currentBgGradientClass === 'grad-preset-2') { grad.addColorStop(0, '#84fab0'); grad.addColorStop(1, '#8fd3f4'); }
+                    else if (state.currentBgGradientClass === 'grad-preset-3') { grad.addColorStop(0, '#f093fb'); grad.addColorStop(1, '#f5576c'); }
+                    else { grad.addColorStop(0, '#cfd9df'); grad.addColorStop(1, '#e2ebf0'); }
+                    ctx.fillStyle = grad;
+                    ctx.fillRect(0, 0, cWidth, cHeight);
+                } else {
+                    ctx.fillStyle = state.currentBgColor;
+                    ctx.fillRect(0, 0, cWidth, cHeight);
+                }
+            }
+
+            // 2. Draw Subject with Filters & Transforms
+            ctx.save();
+
+            // Translate to center for rotation/flip
+            ctx.translate(cWidth / 2, cHeight / 2);
+            ctx.rotate(state.filters.rotation * Math.PI / 180);
+            ctx.scale(state.filters.flipX, 1);
+
+            // Move back
+            ctx.translate(-cWidth / 2, -cHeight / 2);
+
+            // Filters
+            const { brightness, contrast, saturation, shadow, shadowBlur, shadowOpacity } = state.filters;
+            ctx.filter = `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturation}%)`;
+
+            if (shadow) {
+                ctx.shadowColor = `rgba(0, 0, 0, ${shadowOpacity})`;
+                ctx.shadowBlur = (shadowBlur / 50) * 40; // Scale approx
+                ctx.shadowOffsetX = 15;
+                ctx.shadowOffsetY = 15;
+            }
+
+            const img = new Image();
+            img.crossOrigin = "anonymous";
+            img.src = state.resultUrl;
+            await new Promise(r => img.onload = r);
+            ctx.drawImage(img, 0, 0, cWidth, cHeight);
+
+            ctx.restore();
+
+            const link = document.createElement('a');
+            const isJpg = state.currentBgColor !== 'transparent';
+            link.download = `ProStudio_Export_${Date.now()}.${isJpg ? 'jpg' : 'png'}`;
+            link.href = canvas.toDataURL(isJpg ? 'image/jpeg' : 'image/png', 0.95);
+            link.click();
+
+            showToast('Download started!', 'success');
+            fireConfetti();
+        }
+
+        // --- SIMPLE CONFETTI ---
+        function fireConfetti() {
+            // Extremely simple DOM confetti to avoid heavy libraries
+            const colors = ['#4f46e5', '#f43f5e', '#10b981', '#f59e0b'];
+            for (let i = 0; i < 30; i++) {
+                const conf = document.createElement('div');
+                conf.style.position = 'fixed';
+                conf.style.zIndex = '9999';
+                conf.style.left = '50%';
+                conf.style.top = '50%';
+                conf.style.width = '8px';
+                conf.style.height = '8px';
+                conf.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                conf.style.borderRadius = '50%';
+                document.body.appendChild(conf);
+
+                const angle = Math.random() * Math.PI * 2;
+                const velocity = 5 + Math.random() * 10;
+                const tx = Math.cos(angle) * velocity * 20;
+                const ty = Math.sin(angle) * velocity * 20;
+
+                conf.animate([
+                    { transform: 'translate(0,0) scale(1)', opacity: 1 },
+                    { transform: `translate(${tx}px, ${ty}px) scale(0)`, opacity: 0 }
+                ], { duration: 800, easing: 'ease-out' }).onfinish = () => conf.remove();
+            }
+        }
+    </script>
+</body>
+
+</html>

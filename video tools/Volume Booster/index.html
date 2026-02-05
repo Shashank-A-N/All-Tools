@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shadow Video - Volume Booster</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;500;600;700&display=swap"
+        rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link rel="stylesheet" href="../../styles.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Rajdhani', 'sans-serif'],
+                        orbitron: ['Orbitron', 'sans-serif']
+                    },
+                    colors: {
+                        cyber: {
+                            primary: '#ec4899', // Pink
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body
+    class="min-h-screen flex flex-col font-sans overflow-x-hidden bg-slate-900 text-white selection:bg-pink-500 selection:text-white">
+
+    <!-- 3D Background -->
+    <div id="bg-3d-container"></div>
+
+    <!-- Navigation -->
+    <nav
+        class="sticky top-0 z-50 glass-effect border-b border-white/5 px-4 md:px-6 py-3 flex items-center justify-between backdrop-blur-md">
+        <a href="../index.html" class="flex items-center gap-3 text-slate-300 hover:text-white transition-colors group">
+            <div
+                class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center border border-white/10 group-hover:border-pink-500/50 transition-all">
+                <i class="fas fa-chevron-left text-xs group-hover:-translate-x-0.5 transition-transform"></i>
+            </div>
+            <span class="font-orbitron font-bold tracking-wider hidden md:block">BACK</span>
+        </a>
+
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded bg-pink-500/20 flex items-center justify-center text-pink-500">
+                <i class="fas fa-volume-up"></i>
+            </div>
+            <h1 class="text-lg md:text-xl font-orbitron font-bold tracking-widest text-white">SHADOW<span
+                    class="text-pink-500">BOOST</span></h1>
+        </div>
+
+        <div class="w-8"></div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="flex-grow container mx-auto px-4 py-8 relative z-10 flex flex-col items-center gap-6">
+
+        <!-- Upload -->
+        <div id="uploadArea"
+            class="w-full max-w-2xl p-12 glass rounded-3xl border-2 border-dashed border-white/10 hover:border-pink-500/50 transition-all flex flex-col items-center justify-center cursor-pointer group"
+            onclick="document.getElementById('fileInput').click()"
+            ondragover="event.preventDefault(); this.classList.add('border-pink-500')"
+            ondragleave="this.classList.remove('border-pink-500')">
+            <input type="file" id="fileInput" accept="video/*" class="hidden" onchange="handleFile(this.files[0])">
+            <div
+                class="w-20 h-20 rounded-2xl bg-pink-500/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                <i class="fas fa-cloud-upload-alt text-4xl text-pink-400"></i>
+            </div>
+            <h3 class="text-2xl font-orbitron font-bold text-white mb-2">Upload Video</h3>
+            <p class="text-slate-400 text-sm">Drag & drop or click to browse</p>
+        </div>
+
+        <!-- Editor -->
+        <div id="editorArea" class="w-full max-w-5xl hidden flex-col gap-6 animate-fade-in-up">
+
+            <div class="relative w-full bg-black/50 rounded-2xl border border-white/10 overflow-hidden">
+                <video id="videoPreview" controls class="w-full max-h-[50vh] mx-auto"></video>
+            </div>
+
+            <div class="glass p-6 rounded-2xl border border-white/5 flex flex-col items-center gap-6">
+
+                <div class="w-full max-w-md space-y-2">
+                    <div class="flex justify-between text-sm font-bold text-slate-300">
+                        <span>Volume Level</span>
+                        <span id="volVal" class="text-pink-400">100%</span>
+                    </div>
+                    <input type="range" id="volume" min="0" max="500" value="100" oninput="updateVolume()"
+                        class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-pink-500">
+                    <div class="flex justify-between text-xs text-slate-500 uppercase font-bold tracking-wider">
+                        <span>Mute</span>
+                        <span>Normal</span>
+                        <span>Boost (5x)</span>
+                    </div>
+                </div>
+
+                <button onclick="processAudio()" id="processBtn"
+                    class="px-10 py-4 bg-pink-600 hover:bg-pink-500 text-white font-bold font-orbitron tracking-wider rounded-xl shadow-lg shadow-pink-900/40 transition-transform hover:-translate-y-1">
+                    APPLY BOOST & SAVE
+                </button>
+            </div>
+
+        </div>
+
+    </main>
+
+    <script type="module" src="../../shared/bg-particles.js"></script>
+    <script>
+        const uploadArea = document.getElementById('uploadArea');
+        const editorArea = document.getElementById('editorArea');
+        const video = document.getElementById('videoPreview');
+        const processBtn = document.getElementById('processBtn');
+        let audioCtx, source, gainNode, dest;
+
+        function handleFile(file) {
+            if (!file) return;
+            const url = URL.createObjectURL(file);
+            video.src = url;
+            uploadArea.classList.add('hidden');
+            editorArea.classList.remove('hidden');
+            editorArea.classList.add('flex');
+
+            // Init Audio Context for Preview (Visual only, real processing happens on save)
+            // Actually, for "saving" the boosted audio we need to re-record the stream.
+        }
+
+        function updateVolume() {
+            const val = document.getElementById('volume').value;
+            document.getElementById('volVal').textContent = val + '%';
+            if (gainNode) gainNode.gain.value = val / 100;
+        }
+
+        async function processAudio() {
+            processBtn.disabled = true;
+            processBtn.textContent = "PROCESSING...";
+
+            // We need to capture the stream, run it through Web Audio API, and record it.
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                source = audioCtx.createMediaElementSource(video);
+                gainNode = audioCtx.createGain();
+                dest = audioCtx.createMediaStreamDestination();
+
+                source.connect(gainNode);
+                gainNode.connect(audioCtx.destination); // For hearing
+                gainNode.connect(dest); // For recording
+            }
+
+            const boost = document.getElementById('volume').value / 100;
+            gainNode.gain.value = boost;
+
+            // Combine video track + new audio track
+            const videoTrack = video.captureStream().getVideoTracks()[0];
+            const audioTrack = dest.stream.getAudioTracks()[0];
+            const combinedStream = new MediaStream([videoTrack, audioTrack]);
+
+            const recorder = new MediaRecorder(combinedStream, { mimeType: 'video/webm;codecs=vp9' });
+            const chunks = [];
+
+            recorder.ondataavailable = e => chunks.push(e.data);
+            recorder.onstop = () => {
+                const blob = new Blob(chunks, { type: 'video/webm' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'boosted_video.webm';
+                a.click();
+                processBtn.disabled = false;
+                processBtn.textContent = "APPLY BOOST & SAVE";
+            };
+
+            video.currentTime = 0;
+            video.volume = 0; // Mute element so we don't hear double (we hear via gainNode -> destination)
+            // Wait, createMediaElementSource usually handles routing. 
+            // If we connect to destination, we hear it. 
+
+            video.play();
+            recorder.start();
+
+            video.onended = () => {
+                recorder.stop();
+                video.pause();
+                video.currentTime = 0;
+            };
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shadow Text - Text Operations</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;500;700&display=swap"
+        rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link rel="stylesheet" href="../styles.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        cyber: {
+                            primary: '#00ff41',
+                            secondary: '#008f11',
+                            dark: '#0d0208',
+                            light: '#e0e0e0',
+                            accent: '#ff003c',
+                            muted: '#4a4a4a',
+                            glass: 'rgba(255, 255, 255, 0.05)',
+                        }
+                    },
+                    fontFamily: {
+                        mono: ['Courier New', 'monospace'],
+                        sans: ['Rajdhani', 'sans-serif'],
+                        orbitron: ['Orbitron', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body
+    class="min-h-screen flex flex-col font-sans overflow-x-hidden selection:bg-purple-500 selection:text-white bg-slate-900 text-white">
+
+    <!-- 3D Background Container -->
+    <div id="bg-3d-container"></div>
+
+    <!-- Navigation -->
+    <nav
+        class="sticky top-0 z-50 glass-effect border-b border-white/5 px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4 md:gap-0 backdrop-blur-md">
+        <div class="flex items-center gap-3">
+            <div
+                class="relative w-10 h-10 flex items-center justify-center bg-purple-600/20 rounded-lg border border-purple-500/30">
+                <i class="fas fa-keyboard text-purple-400 text-xl"></i>
+            </div>
+            <h1 class="text-2xl font-orbitron font-bold tracking-widest text-white">SHADOW<span
+                    class="text-purple-500">TEXT</span></h1>
+        </div>
+
+        <div class="flex flex-wrap justify-center gap-4 md:gap-6 w-full md:w-auto">
+            <a href="../index.html" class="nav-link text-slate-300 hover:text-white transition-colors">
+                <i class="fas fa-home"></i> Home
+            </a>
+            <div class="hidden md:block h-6 w-px bg-white/10 mx-2"></div>
+            <a href="../audio tools/index.html"
+                class="nav-link text-slate-400 hover:text-purple-400 transition-colors">Audio</a>
+            <a href="../video tools/index.html"
+                class="nav-link text-slate-400 hover:text-purple-400 transition-colors">Video</a>
+            <a href="../image tools/index.html"
+                class="nav-link text-slate-400 hover:text-purple-400 transition-colors">Image</a>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="relative pt-20 pb-12 overflow-hidden text-center z-10">
+        <div class="hero-glow"></div>
+        <div class="container mx-auto px-4 relative z-10">
+            <h1 class="text-5xl md:text-7xl font-extrabold tracking-tight text-white mb-6 font-orbitron">
+                Text <span class="hero-text-gradient">Reforged</span>
+            </h1>
+            <p class="text-xl text-slate-400 mb-10 max-w-2xl mx-auto leading-relaxed">
+                Transform, analyze, and encode text. <span class="text-purple-400 font-bold">Secure & Instant.</span>
+            </p>
+        </div>
+    </section>
+
+    <!-- Tools Grid -->
+    <main class="flex-grow container mx-auto px-4 relative z-10 pb-20">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+            <!-- ASCII Art -->
+            <a href="./ASCII Art Generator/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-400 group-hover:scale-110 transition-transform duration-300 gap-4 shrink-0">
+                    <i class="fas fa-font text-2xl"></i>
+                </div>
+                <div class="revolving-border">
+                    <svg class="w-full h-full">
+                        <rect class="dash-path" width="100%" height="100%" rx="16" ry="16" />
+                    </svg>
+                </div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-purple-400 transition-colors">ASCII
+                        Art</h4>
+                    <p class="text-sm text-slate-400">Convert text into ASCII art.</p>
+                </div>
+            </a>
+
+            <!-- Base64 -->
+            <a href="./Base64 Encoder/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400 group-hover:scale-110 transition-transform duration-300 gap-4 shrink-0">
+                    <i class="fas fa-code text-2xl"></i>
+                </div>
+                <div class="revolving-border">
+                    <svg class="w-full h-full">
+                        <rect class="dash-path" width="100%" height="100%" rx="16" ry="16" />
+                    </svg>
+                </div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-blue-400 transition-colors">Base64
+                        Encoder</h4>
+                    <p class="text-sm text-slate-400">Encode and decode Base64 text.</p>
+                </div>
+            </a>
+
+            <!-- Binary Converter -->
+            <a href="./Binary Converter/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-green-500/10 flex items-center justify-center text-green-400 group-hover:scale-110 transition-transform duration-300 gap-4 shrink-0">
+                    <i class="fas fa-terminal text-2xl"></i>
+                </div>
+                <div class="revolving-border">
+                    <svg class="w-full h-full">
+                        <rect class="dash-path" width="100%" height="100%" rx="16" ry="16" />
+                    </svg>
+                </div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-green-400 transition-colors">Binary
+                        Converter</h4>
+                    <p class="text-sm text-slate-400">Text to Binary and back.</p>
+                </div>
+            </a>
+
+            <!-- CSV to JSON -->
+            <a href="./CSV to JSON/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-400 group-hover:scale-110 transition-transform duration-300 gap-4 shrink-0">
+                    <i class="fas fa-file-csv text-2xl"></i>
+                </div>
+                <div class="revolving-border">
+                    <svg class="w-full h-full">
+                        <rect class="dash-path" width="100%" height="100%" rx="16" ry="16" />
+                    </svg>
+                </div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-orange-400 transition-colors">CSV to
+                        JSON</h4>
+                    <p class="text-sm text-slate-400">Convert CSV data to JSON format.</p>
+                </div>
+            </a>
+
+            <!-- Character Frequency -->
+            <a href="./Character Frequency/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-pink-500/10 flex items-center justify-center text-pink-400 group-hover:scale-110 transition-transform duration-300 gap-4 shrink-0">
+                    <i class="fas fa-chart-bar text-2xl"></i>
+                </div>
+                <div class="revolving-border">
+                    <svg class="w-full h-full">
+                        <rect class="dash-path" width="100%" height="100%" rx="16" ry="16" />
+                    </svg>
+                </div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-pink-400 transition-colors">Char
+                        Frequency</h4>
+                    <p class="text-sm text-slate-400">Analyze character usage count.</p>
+                </div>
+            </a>
+
+            <!-- Duplicate Line Remover -->
+            <a href="./Duplicate Line Remover/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-red-500/10 flex items-center justify-center text-red-400 group-hover:scale-110 transition-transform duration-300 gap-4 shrink-0">
+                    <i class="fas fa-remove-format text-2xl"></i>
+                </div>
+                <div class="revolving-border">
+                    <svg class="w-full h-full">
+                        <rect class="dash-path" width="100%" height="100%" rx="16" ry="16" />
+                    </svg>
+                </div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-red-400 transition-colors">Duplicate
+                        Remover</h4>
+                    <p class="text-sm text-slate-400">Remove duplicate lines instantly.</p>
+                </div>
+            </a>
+
+            <!-- Email Extractor -->
+            <a href="./Email Extractor/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 group-hover:scale-110 transition-transform duration-300 gap-4 shrink-0">
+                    <i class="fas fa-envelope text-2xl"></i>
+                </div>
+                <div class="revolving-border">
+                    <svg class="w-full h-full">
+                        <rect class="dash-path" width="100%" height="100%" rx="16" ry="16" />
+                    </svg>
+                </div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-indigo-400 transition-colors">Email
+                        Extractor</h4>
+                    <p class="text-sm text-slate-400">Extract emails from large text.</p>
+                </div>
+            </a>
+
+            <!-- Find & Replace -->
+            <a href="./Find & Replace Tool/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-teal-500/10 flex items-center justify-center text-teal-400 group-hover:scale-110 transition-transform duration-300 gap-4 shrink-0">
+                    <i class="fas fa-search text-2xl"></i>
+                </div>
+                <div class="revolving-border">
+                    <svg class="w-full h-full">
+                        <rect class="dash-path" width="100%" height="100%" rx="16" ry="16" />
+                    </svg>
+                </div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-teal-400 transition-colors">Find &
+                        Replace</h4>
+                    <p class="text-sm text-slate-400">Bulk text replacement tool.</p>
+                </div>
+            </a>
+
+            <!-- Hex Converter -->
+            <a href="./Hex Converter/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-cyan-500/10 flex items-center justify-center text-cyan-400 group-hover:scale-110 transition-transform duration-300 gap-4 shrink-0">
+                    <i class="fas fa-hashtag text-2xl"></i>
+                </div>
+                <div class="revolving-border">
+                    <svg class="w-full h-full">
+                        <rect class="dash-path" width="100%" height="100%" rx="16" ry="16" />
+                    </svg>
+                </div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-cyan-400 transition-colors">Hex
+                        Converter</h4>
+                    <p class="text-sm text-slate-400">Text to Hexadecimal conversion.</p>
+                </div>
+            </a>
+
+            <!-- Line Sorter -->
+            <a href="./Line Sorter/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-yellow-500/10 flex items-center justify-center text-yellow-400 group-hover:scale-110 transition-transform duration-300 gap-4 shrink-0">
+                    <i class="fas fa-sort-alpha-down text-2xl"></i>
+                </div>
+                <div class="revolving-border">
+                    <svg class="w-full h-full">
+                        <rect class="dash-path" width="100%" height="100%" rx="16" ry="16" />
+                    </svg>
+                </div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-yellow-400 transition-colors">Line
+                        Sorter</h4>
+                    <p class="text-sm text-slate-400">Sort lines alphabetically or numerically.</p>
+                </div>
+            </a>
+
+            <!-- Lorem Ipsum -->
+            <a href="./Lorem Ipsum Generator/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-gray-500/10 flex items-center justify-center text-gray-400 group-hover:scale-110 transition-transform duration-300 gap-4 shrink-0">
+                    <i class="fas fa-paragraph text-2xl"></i>
+                </div>
+                <div class="revolving-border">
+                    <svg class="w-full h-full">
+                        <rect class="dash-path" width="100%" height="100%" rx="16" ry="16" />
+                    </svg>
+                </div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-gray-400 transition-colors">Lorem
+                        Ipsum</h4>
+                    <p class="text-sm text-slate-400">Generate dummy placeholder text.</p>
+                </div>
+            </a>
+
+            <!-- Morse Code -->
+            <a href="./Morse Code Translator/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-lime-500/10 flex items-center justify-center text-lime-400 group-hover:scale-110 transition-transform duration-300 gap-4 shrink-0">
+                    <i class="fas fa-broadcast-tower text-2xl"></i>
+                </div>
+                <div class="revolving-border">
+                    <svg class="w-full h-full">
+                        <rect class="dash-path" width="100%" height="100%" rx="16" ry="16" />
+                    </svg>
+                </div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-lime-400 transition-colors">Morse Code
+                    </h4>
+                    <p class="text-sm text-slate-400">Translate text to Morse code.</p>
+                </div>
+            </a>
+
+            <!-- Password Gen -->
+            <a href="./Password Generator/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 group-hover:scale-110 transition-transform duration-300 gap-4 shrink-0">
+                    <i class="fas fa-key text-2xl"></i>
+                </div>
+                <div class="revolving-border">
+                    <svg class="w-full h-full">
+                        <rect class="dash-path" width="100%" height="100%" rx="16" ry="16" />
+                    </svg>
+                </div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-emerald-400 transition-colors">
+                        Password Gen</h4>
+                    <p class="text-sm text-slate-400">Create secure, random passwords.</p>
+                </div>
+            </a>
+
+            <!-- Slug Gen -->
+            <a href="./Slug Generator/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-400 group-hover:scale-110 transition-transform duration-300 gap-4 shrink-0">
+                    <i class="fas fa-link text-2xl"></i>
+                </div>
+                <div class="revolving-border">
+                    <svg class="w-full h-full">
+                        <rect class="dash-path" width="100%" height="100%" rx="16" ry="16" />
+                    </svg>
+                </div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-amber-400 transition-colors">Slug
+                        Generator</h4>
+                    <p class="text-sm text-slate-400">URL-friendly text converter.</p>
+                </div>
+            </a>
+
+            <!-- Text Cleaner -->
+            <a href="./Text Cleaner/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400 group-hover:scale-110 transition-transform duration-300 gap-4 shrink-0">
+                    <i class="fas fa-broom text-2xl"></i>
+                </div>
+                <div class="revolving-border">
+                    <svg class="w-full h-full">
+                        <rect class="dash-path" width="100%" height="100%" rx="16" ry="16" />
+                    </svg>
+                </div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-blue-400 transition-colors">Text
+                        Cleaner</h4>
+                    <p class="text-sm text-slate-400">Remove extra spaces and formatting.</p>
+                </div>
+            </a>
+
+            <!-- Text Diff -->
+            <a href="./Text Diff Checker/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-rose-500/10 flex items-center justify-center text-rose-400 group-hover:scale-110 transition-transform duration-300 gap-4 shrink-0">
+                    <i class="fas fa-columns text-2xl"></i>
+                </div>
+                <div class="revolving-border">
+                    <svg class="w-full h-full">
+                        <rect class="dash-path" width="100%" height="100%" rx="16" ry="16" />
+                    </svg>
+                </div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-rose-400 transition-colors">Diff
+                        Checker</h4>
+                    <p class="text-sm text-slate-400">Compare two blocks of text.</p>
+                </div>
+            </a>
+
+            <!-- Text Repeater -->
+            <a href="./Text Repeater/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-violet-500/10 flex items-center justify-center text-violet-400 group-hover:scale-110 transition-transform duration-300 gap-4 shrink-0">
+                    <i class="fas fa-redo text-2xl"></i>
+                </div>
+                <div class="revolving-border">
+                    <svg class="w-full h-full">
+                        <rect class="dash-path" width="100%" height="100%" rx="16" ry="16" />
+                    </svg>
+                </div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-violet-400 transition-colors">Text
+                        Repeater</h4>
+                    <p class="text-sm text-slate-400">Repeat text X times.</p>
+                </div>
+            </a>
+
+            <!-- URL Encoder -->
+            <a href="./URL Encoder/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-fuchsia-500/10 flex items-center justify-center text-fuchsia-400 group-hover:scale-110 transition-transform duration-300 gap-4 shrink-0">
+                    <i class="fas fa-globe text-2xl"></i>
+                </div>
+                <div class="revolving-border">
+                    <svg class="w-full h-full">
+                        <rect class="dash-path" width="100%" height="100%" rx="16" ry="16" />
+                    </svg>
+                </div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-fuchsia-400 transition-colors">URL
+                        Encoder</h4>
+                    <p class="text-sm text-slate-400">Encode/Decode URLs.</p>
+                </div>
+            </a>
+
+            <!-- Upside Down -->
+            <a href="./Upside Down Text/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-sky-500/10 flex items-center justify-center text-sky-400 group-hover:scale-110 transition-transform duration-300 gap-4 shrink-0">
+                    <i class="fas fa-retweet text-2xl"></i>
+                </div>
+                <div class="revolving-border">
+                    <svg class="w-full h-full">
+                        <rect class="dash-path" width="100%" height="100%" rx="16" ry="16" />
+                    </svg>
+                </div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-sky-400 transition-colors">Upside Down
+                    </h4>
+                    <p class="text-sm text-slate-400">Flip text upside down.</p>
+                </div>
+            </a>
+
+            <!-- Zalgo -->
+            <a href="./Zalgo Glitch Text/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-purple-900/40 flex items-center justify-center text-purple-400 group-hover:scale-110 transition-transform duration-300 gap-4 shrink-0">
+                    <i class="fas fa-bug text-2xl"></i>
+                </div>
+                <div class="revolving-border">
+                    <svg class="w-full h-full">
+                        <rect class="dash-path" width="100%" height="100%" rx="16" ry="16" />
+                    </svg>
+                </div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-purple-400 transition-colors">Zalgo
+                        Glitch</h4>
+                    <p class="text-sm text-slate-400">Generate chaotic glitch text.</p>
+                </div>
+            </a>
+
+            <!-- Handwritten -->
+            <a href="./text-Handwritten/index.html"
+                class="tool-card glass p-6 rounded-2xl border border-white/5 flex items-start gap-4 group">
+                <div
+                    class="w-12 h-12 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 group-hover:scale-110 transition-transform duration-300 gap-4 shrink-0">
+                    <i class="fas fa-pen-nib text-2xl"></i>
+                </div>
+                <div class="revolving-border">
+                    <svg class="w-full h-full">
+                        <rect class="dash-path" width="100%" height="100%" rx="16" ry="16" />
+                    </svg>
+                </div>
+                <div class="tool-card-content">
+                    <h4 class="text-xl font-bold text-white mb-1 group-hover:text-indigo-400 transition-colors">
+                        Handwritten</h4>
+                    <p class="text-sm text-slate-400">Convert text to handwriting.</p>
+                </div>
+            </a>
+
+        </div>
+    </main>
+
+    <!-- Shared Background Script -->
+    <script type="module" src="../shared/bg-particles.js"></script>
+</body>
+
+</html>

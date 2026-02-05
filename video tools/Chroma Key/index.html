@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shadow Video - Chroma Key</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;500;600;700&display=swap"
+        rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link rel="stylesheet" href="../../styles.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Rajdhani', 'sans-serif'],
+                        orbitron: ['Orbitron', 'sans-serif']
+                    },
+                    colors: {
+                        cyber: {
+                            primary: '#4ade80', // Green for green screen
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body
+    class="min-h-screen flex flex-col font-sans overflow-x-hidden bg-slate-900 text-white selection:bg-green-500 selection:text-black">
+
+    <!-- 3D Background -->
+    <div id="bg-3d-container"></div>
+
+    <!-- Navigation -->
+    <nav
+        class="sticky top-0 z-50 glass-effect border-b border-white/5 px-4 md:px-6 py-3 flex items-center justify-between backdrop-blur-md">
+        <a href="../index.html" class="flex items-center gap-3 text-slate-300 hover:text-white transition-colors group">
+            <div
+                class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center border border-white/10 group-hover:border-green-500/50 transition-all">
+                <i class="fas fa-chevron-left text-xs group-hover:-translate-x-0.5 transition-transform"></i>
+            </div>
+            <span class="font-orbitron font-bold tracking-wider hidden md:block">BACK</span>
+        </a>
+
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded bg-green-500/20 flex items-center justify-center text-green-500">
+                <i class="fas fa-layer-group"></i>
+            </div>
+            <h1 class="text-lg md:text-xl font-orbitron font-bold tracking-widest text-white">SHADOW<span
+                    class="text-green-500">CHROMA</span></h1>
+        </div>
+
+        <div class="w-8"></div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="flex-grow container mx-auto px-4 py-8 relative z-10 flex flex-col items-center gap-6">
+
+        <!-- Upload -->
+        <div id="uploadArea"
+            class="w-full max-w-2xl p-12 glass rounded-3xl border-2 border-dashed border-white/10 hover:border-green-500/50 transition-all flex flex-col items-center justify-center cursor-pointer group"
+            onclick="document.getElementById('fileInput').click()"
+            ondragover="event.preventDefault(); this.classList.add('border-green-500')"
+            ondragleave="this.classList.remove('border-green-500')">
+            <input type="file" id="fileInput" accept="video/*" class="hidden" onchange="handleFile(this.files[0])">
+            <div
+                class="w-20 h-20 rounded-2xl bg-green-500/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                <i class="fas fa-leaf text-4xl text-green-400"></i>
+            </div>
+            <h3 class="text-2xl font-orbitron font-bold text-white mb-2">Upload Green Screen Video</h3>
+            <p class="text-slate-400 text-sm">Drag & drop or click to browse</p>
+        </div>
+
+        <!-- Editor -->
+        <div id="editorArea" class="w-full max-w-6xl hidden flex-col gap-6 animate-fade-in-up">
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Original Hidden -->
+                <video id="sourceVideo" class="hidden" controls loop></video>
+
+                <!-- Preview Canvas -->
+                <div
+                    class="col-span-1 md:col-span-2 relative aspect-video bg-checkerboard rounded-2xl border border-white/10 overflow-hidden">
+                    <canvas id="outputCanvas" class="w-full h-full object-contain"></canvas>
+                </div>
+            </div>
+
+            <div class="glass p-6 rounded-2xl border border-white/5 flex flex-col items-center gap-6">
+
+                <div class="flex flex-col gap-4 w-full max-w-lg">
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Key Color</p>
+                    <div class="flex gap-4 items-center">
+                        <input type="color" id="keyColor" value="#00ff00"
+                            class="w-12 h-12 bg-transparent border-0 rounded cursor-pointer">
+                        <span class="text-slate-300 text-sm">Select the background color to remove</span>
+                    </div>
+
+                    <div class="space-y-2">
+                        <div class="flex justify-between text-xs font-bold text-slate-400">
+                            <span>Tolerance</span>
+                            <span id="tolVal">100</span>
+                        </div>
+                        <input type="range" id="tolerance" min="0" max="255" value="100" class="w-full">
+                    </div>
+                </div>
+
+                <div class="text-xs text-slate-500 text-center bg-black/20 p-2 rounded">
+                    Tip: Click the background color picker above to match your video's green/blue screen precisely.
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <script type="module" src="../../shared/bg-particles.js"></script>
+    <style>
+        .bg-checkerboard {
+            background-image: linear-gradient(45deg, #1e293b 25%, transparent 25%), linear-gradient(-45deg, #1e293b 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #1e293b 75%), linear-gradient(-45deg, transparent 75%, #1e293b 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+        }
+    </style>
+    <script>
+        const uploadArea = document.getElementById('uploadArea');
+        const editorArea = document.getElementById('editorArea');
+        const video = document.getElementById('sourceVideo');
+        const canvas = document.getElementById('outputCanvas');
+        const ctx = canvas.getContext('2d');
+        const toleranceInput = document.getElementById('tolerance');
+        const colorInput = document.getElementById('keyColor');
+
+        let isPlaying = false;
+
+        function handleFile(file) {
+            if (!file) return;
+            const url = URL.createObjectURL(file);
+            video.src = url;
+            uploadArea.classList.add('hidden');
+            editorArea.classList.remove('hidden');
+            editorArea.classList.add('flex');
+
+            video.onloadedmetadata = () => {
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                video.play();
+                isPlaying = true;
+                processFrame();
+            }
+        }
+
+        // Hex to RGB
+        function hexToRgb(hex) {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? {
+                r: parseInt(result[1], 16),
+                g: parseInt(result[2], 16),
+                b: parseInt(result[3], 16)
+            } : null;
+        }
+
+        function processFrame() {
+            if (!isPlaying) return;
+            if (video.paused || video.ended) {
+                requestAnimationFrame(processFrame);
+                return;
+            }
+
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            const frame = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const l = frame.data.length / 4;
+            const tol = parseInt(toleranceInput.value);
+            const keyColor = hexToRgb(colorInput.value);
+
+            for (let i = 0; i < l; i++) {
+                const r = frame.data[i * 4 + 0];
+                const g = frame.data[i * 4 + 1];
+                const b = frame.data[i * 4 + 2];
+
+                // Simple Euclidean distance
+                const diff = Math.sqrt(
+                    Math.pow(r - keyColor.r, 2) +
+                    Math.pow(g - keyColor.g, 2) +
+                    Math.pow(b - keyColor.b, 2)
+                );
+
+                if (diff < tol) {
+                    frame.data[i * 4 + 3] = 0; // Alpha 0
+                }
+            }
+
+            ctx.putImageData(frame, 0, 0);
+
+            requestAnimationFrame(processFrame);
+        }
+
+        toleranceInput.oninput = () => {
+            document.getElementById('tolVal').innerText = toleranceInput.value;
+        };
+    </script>
+</body>
+
+</html>

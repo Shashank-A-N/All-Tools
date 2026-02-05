@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SECURE.SYSTEM // Forensic Analyzer v2.2</title>
+    <style>
+        :root {
+            --bg-color: #050505;
+            --panel-bg: #0a0f0a;
+            --terminal-green: #0f0;
+            --terminal-dim: #004400;
+            --alert-red: #ff3333;
+            --alert-orange: #ffaa33;
+            --border-color: #333;
+
+            /* Fluid Spacing */
+            --spacing-sm: 0.5rem;
+            --spacing-md: 1rem;
+            --spacing-lg: 1.5rem;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--terminal-green);
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            text-shadow: 0 0 2px rgba(0, 255, 0, 0.3);
+
+            /* Fluid Typography: Text scales between 12px and 16px based on viewport width */
+            font-size: clamp(12px, 2vw, 16px);
+            line-height: 1.5;
+        }
+
+        /* --- CRT EFFECT --- */
+        .scanlines {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom,
+                    rgba(255, 255, 255, 0),
+                    rgba(255, 255, 255, 0) 50%,
+                    rgba(0, 0, 0, 0.2) 50%,
+                    rgba(0, 0, 0, 0.2));
+            background-size: 100% 4px;
+            z-index: 999;
+            pointer-events: none;
+            opacity: 0.6;
+        }
+
+        .glow-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(0, 255, 0, 0.02) 0%, rgba(0, 0, 0, 0.8) 100%);
+            z-index: 998;
+            pointer-events: none;
+        }
+
+        /* --- LAYOUT & CONTAINER --- */
+        .container {
+            width: 100%;
+            max-width: 1800px;
+            margin: 0 auto;
+            padding: var(--spacing-md);
+            position: relative;
+            z-index: 10;
+        }
+
+        header {
+            border-bottom: 1px solid var(--terminal-green);
+            padding: var(--spacing-md) 0;
+            margin-bottom: var(--spacing-lg);
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: flex-end;
+            gap: 1rem;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: clamp(1.2rem, 4vw, 2rem);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .sub-header {
+            font-size: 0.75rem;
+            color: #666;
+            margin-top: 5px;
+            display: block;
+        }
+
+        .status-badge {
+            font-size: 0.75rem;
+            background: var(--terminal-green);
+            color: black;
+            padding: 2px 8px;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        /* --- UPLOAD ZONE (Responsive) --- */
+        .upload-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 50vh;
+            flex-direction: column;
+            padding: var(--spacing-md);
+        }
+
+        .upload-zone {
+            border: 2px dashed var(--terminal-dim);
+            padding: clamp(2rem, 5vw, 4rem);
+            text-align: center;
+            background: rgba(0, 20, 0, 0.3);
+            transition: 0.3s all;
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            border-radius: 4px;
+        }
+
+        .upload-zone:hover,
+        .upload-zone.dragover {
+            border-color: var(--terminal-green);
+            background: rgba(0, 40, 0, 0.4);
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.2);
+        }
+
+        .upload-icon {
+            margin-bottom: var(--spacing-md);
+            font-size: clamp(2rem, 8vw, 4rem);
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .btn-upload {
+            display: inline-block;
+            padding: 12px 30px;
+            border: 1px solid var(--terminal-green);
+            color: var(--terminal-green);
+            font-size: 1rem;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            background: rgba(0, 0, 0, 0.5);
+            transition: 0.2s;
+            width: 100%;
+            max-width: 300px;
+        }
+
+        .btn-upload:hover {
+            background: var(--terminal-green);
+            color: black;
+            box-shadow: 0 0 15px var(--terminal-green);
+        }
+
+        /* --- DASHBOARD GRID (Responsive) --- */
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: var(--spacing-lg);
+            margin-top: var(--spacing-md);
+        }
+
+        /* Desktop: 2 Columns */
+        @media (min-width: 1024px) {
+            .dashboard {
+                grid-template-columns: 2fr 1fr;
+            }
+        }
+
+        .panel {
+            background: var(--panel-bg);
+            border: 1px solid var(--terminal-dim);
+            margin-bottom: var(--spacing-lg);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel:last-child {
+            margin-bottom: 0;
+        }
+
+        .panel-header {
+            background: rgba(0, 255, 0, 0.05);
+            padding: 10px 15px;
+            border-bottom: 1px solid var(--terminal-dim);
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.9em;
+            display: flex;
+            align-items: center;
+        }
+
+        .panel-header::before {
+            content: ">> ";
+            margin-right: 10px;
+            opacity: 0.7;
+        }
+
+        .panel-body {
+            padding: var(--spacing-md);
+            overflow: hidden;
+            /* Prevent spillover */
+        }
+
+        /* --- VERDICT --- */
+        .verdict-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .verdict-banner {
+            flex-grow: 1;
+            padding: 15px;
+            text-align: center;
+            font-size: clamp(1.2rem, 3vw, 2rem);
+            font-weight: bold;
+            border: 2px solid;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+
+        .pulse-red {
+            animation: pulse-red 2s infinite;
+        }
+
+        @keyframes pulse-red {
+            0% {
+                box-shadow: 0 0 0 rgba(255, 51, 51, 0.4);
+            }
+
+            70% {
+                box-shadow: 0 0 20px rgba(255, 51, 51, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 rgba(255, 51, 51, 0);
+            }
+        }
+
+        /* --- VISUALS --- */
+        .image-compare {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2px;
+            background: var(--terminal-dim);
+            border: 1px solid var(--terminal-dim);
+        }
+
+        /* Tablet/Desktop: Side by Side visuals */
+        @media (min-width: 768px) {
+            .image-compare {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .img-container {
+            position: relative;
+            background: #000;
+            width: 100%;
+        }
+
+        .img-container img {
+            width: 100%;
+            height: auto;
+            display: block;
+            opacity: 0.9;
+        }
+
+        .img-label {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 5px 10px;
+            font-size: 0.7em;
+            border-top-right-radius: 4px;
+        }
+
+        .hist-container img {
+            width: 100%;
+            height: auto;
+            max-height: 200px;
+            object-fit: contain;
+            background: #000;
+        }
+
+        /* --- LOGS --- */
+        .log-entry {
+            font-size: 0.9em;
+            margin-bottom: 8px;
+            padding-left: 10px;
+            border-left: 2px solid;
+            word-wrap: break-word;
+            /* Handle long strings */
+        }
+
+        .log-warning {
+            border-color: var(--alert-red);
+            color: #ffcccc;
+        }
+
+        .log-info {
+            border-color: var(--alert-orange);
+            color: #ffebcc;
+        }
+
+        .log-clean {
+            border-color: var(--terminal-green);
+            color: #ccffcc;
+        }
+
+        /* --- DATA TABLES --- */
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+            /* Enable horizontal scroll on mobile */
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .metadata-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85em;
+            white-space: nowrap;
+            /* Keep rows together */
+        }
+
+        .metadata-table th,
+        .metadata-table td {
+            text-align: left;
+            padding: 8px;
+            border-bottom: 1px solid #1a2f1a;
+        }
+
+        .metadata-table th {
+            color: var(--terminal-green);
+            opacity: 0.7;
+            width: 30%;
+            min-width: 120px;
+        }
+
+        .metadata-table td {
+            color: #ddd;
+        }
+
+        .metadata-table tr:nth-child(even) {
+            background: rgba(0, 255, 0, 0.02);
+        }
+
+        .ocr-block {
+            background: #000;
+            padding: 10px;
+            font-size: 0.85em;
+            color: #ccc;
+            height: 200px;
+            overflow-y: auto;
+            border: 1px solid #333;
+            white-space: pre-wrap;
+        }
+
+        /* --- BUTTONS --- */
+        .btn-small {
+            border: 1px solid var(--terminal-green);
+            color: var(--terminal-green);
+            background: transparent;
+            padding: 8px 16px;
+            text-decoration: none;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .btn-small:hover {
+            background: var(--terminal-green);
+            color: black;
+        }
+
+        /* --- MODALS & OVERLAYS --- */
+        #loading-overlay,
+        #confirm-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            backdrop-filter: blur(2px);
+        }
+
+        .loader-text {
+            margin-top: 20px;
+            font-size: 1.2rem;
+            animation: blink 1s infinite;
+        }
+
+        .progress-bar {
+            width: 80%;
+            max-width: 300px;
+            height: 4px;
+            background: #111;
+            margin-top: 15px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 100%;
+            background: var(--terminal-green);
+            animation: progress 2s infinite;
+        }
+
+        /* Confirmation Modal Specifics */
+        .modal-box {
+            border: 1px solid var(--terminal-green);
+            background: var(--panel-bg);
+            padding: 30px;
+            text-align: center;
+            max-width: 90%;
+            width: 400px;
+            box-shadow: 0 0 30px rgba(0, 255, 0, 0.1);
+        }
+
+        .modal-actions {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .btn-cancel {
+            border: 1px solid #555;
+            color: #888;
+            background: transparent;
+            padding: 8px 16px;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+
+        .btn-cancel:hover {
+            border-color: #fff;
+            color: #fff;
+        }
+
+        @keyframes progress {
+            0% {
+                transform: translateX(-100%);
+            }
+
+            100% {
+                transform: translateX(100%);
+            }
+        }
+
+        @keyframes blink {
+            50% {
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="scanlines"></div>
+    <div class="glow-overlay"></div>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay">
+        <div class="loader-text">>> DECRYPTING BITSTREAM...</div>
+        <div class="progress-bar">
+            <div class="progress-fill"></div>
+        </div>
+        <div style="margin-top: 10px; font-size: 0.8rem; color: #888;">Checking Steganography // Generating Histogram //
+            ELA</div>
+    </div>
+
+    <!-- Confirmation Overlay (New) -->
+    <div id="confirm-overlay">
+        <div class="modal-box">
+            <h3 style="margin-top: 0; color: var(--terminal-green);">CONFIRM RESET</h3>
+            <p style="color: #ccc; font-size: 0.9em;">Current forensic data will be purged from local memory.</p>
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="closeConfirm()">Cancel</button>
+                <a href="/" class="btn-small">Proceed</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <header>
+            <div>
+                <h1>SECURE.SYSTEM <span style="font-size:0.5em; vertical-align:middle;">v2.2</span></h1>
+                <span class="sub-header">DIGITAL FORENSICS // LOCAL ENVIRONMENT</span>
+            </div>
+            <div class="status-badge">SYSTEM: SECURE</div>
+        </header>
+
+        {% if not analyzed %}
+        <div class="upload-wrapper">
+            <form method="POST" enctype="multipart/form-data" class="upload-zone" id="uploadForm">
+                <div class="upload-icon">📁</div>
+                <label for="file" class="btn-upload">Load Suspect Image</label>
+                <input type="file" name="file" id="file" onchange="triggerUpload()" accept="image/*">
+
+                <p style="margin-top: 20px; color: #666; font-size: 0.8rem;">
+                    [ACCEPTED: JPG, PNG, TIFF, BMP]
+                </p>
+                <p style="color: #444; font-size: 0.7rem;">
+                    NO EXTERNAL APIs. PROCESS IS 100% LOCAL.
+                </p>
+            </form>
+        </div>
+        {% else %}
+
+        <!-- Verdict Section -->
+        <div class="verdict-container">
+            <div class="verdict-banner {% if 'HIGH' in verdict %}pulse-red{% endif %}"
+                style="color: {{ verdict_color }}; border-color: {{ verdict_color }};">
+                {{ verdict }}
+            </div>
+            <!-- Trigger Custom Confirmation Modal -->
+            <button onclick="showConfirm()" class="btn-small" style="align-self: center;">New Scan</button>
+        </div>
+
+        <div class="dashboard">
+            <!-- Left Panel: Visuals & Logs -->
+            <div class="col-visuals">
+                <!-- ELA Visuals -->
+                <div class="panel">
+                    <div class="panel-header">Visual Forensics (ELA @ 90%)</div>
+                    <div class="image-compare">
+                        <div class="img-container">
+                            <img src="data:image/jpeg;base64,{{ original_b64 }}" alt="Original Source">
+                            <div class="img-label">ORIGINAL SOURCE</div>
+                        </div>
+                        <div class="img-container">
+                            <img src="data:image/png;base64,{{ ela_b64 }}" alt="ELA Analysis">
+                            <div class="img-label">ERROR LEVEL ARTIFACTS</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RGB Histogram -->
+                <div class="panel">
+                    <div class="panel-header">RGB Color Distribution</div>
+                    <div class="panel-body hist-container">
+                        {% if hist_b64 %}
+                        <img src="data:image/png;base64,{{ hist_b64 }}" alt="RGB Histogram">
+                        <div
+                            style="margin-top: 10px; font-size: 0.8em; color: #888; border-top: 1px solid #222; padding-top: 5px;">
+                            >> Analysis: Irregular spikes or "combing" (gaps) indicate potential color grading or
+                            manipulation.
+                        </div>
+                        {% else %}
+                        <div style="padding: 20px; color: #555; text-align: center;">[Histogram Generation Failed]</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Logs -->
+                <div class="panel">
+                    <div class="panel-header">System Logs & Anomalies</div>
+                    <div class="panel-body">
+                        {% for reason in reasons %}
+                        <div class="log-entry log-warning">! ALERT: {{ reason }}</div>
+                        {% endfor %}
+
+                        {% for p in pii %}
+                        <div class="log-entry log-info">! DATA LEAK: {{ p }}</div>
+                        {% endfor %}
+
+                        {% if not reasons and not pii %}
+                        <div class="log-entry log-clean">>> INTEGRITY CHECK PASSED.</div>
+                        <div class="log-entry log-clean">>> NO KNOWN MANIPULATION SIGNATURES.</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel: Data -->
+            <div class="col-data">
+                <div class="panel">
+                    <div class="panel-header">Metadata Headers</div>
+                    <!-- Added table-responsive wrapper for mobile -->
+                    <div class="panel-body" style="padding: 0; max-height: 500px; overflow-y: auto;">
+                        <div class="table-responsive">
+                            <table class="metadata-table">
+                                <tbody>
+                                    {% for key, value in exif.items() %}
+                                    <tr>
+                                        <th>{{ key }}</th>
+                                        <td>{{ value }}</td>
+                                    </tr>
+                                    {% else %}
+                                    <tr>
+                                        <td colspan="2" style="text-align:center; padding: 20px; color: #666;">
+                                            [NO EXIF DATA FOUND - STRIPPED?]
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">OCR Text Extraction</div>
+                    <div class="panel-body">
+                        <div class="ocr-block">{{ ocr_snippet }}...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <script>
+        // Upload Logic
+        function triggerUpload() {
+            const form = document.getElementById('uploadForm');
+            const fileInput = document.getElementById('file');
+
+            if (fileInput.files.length > 0) {
+                document.getElementById('loading-overlay').style.display = 'flex';
+                // Slight delay to ensure UI renders
+                setTimeout(() => {
+                    form.submit();
+                }, 100);
+            }
+        }
+
+        // Modal Logic
+        function showConfirm() {
+            document.getElementById('confirm-overlay').style.display = 'flex';
+        }
+
+        function closeConfirm() {
+            document.getElementById('confirm-overlay').style.display = 'none';
+        }
+
+        // Close modal if clicking outside box
+        window.onclick = function (event) {
+            const modal = document.getElementById('confirm-overlay');
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        }
+    </script>
+</body>
+
+</html>

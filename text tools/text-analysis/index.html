@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text Analysis Studio Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* Diff Colors */
+        .diff-add {
+            background-color: #dcfce7;
+            color: #14532d;
+        }
+
+        .diff-del {
+            background-color: #fee2e2;
+            color: #7f1d1d;
+        }
+
+        .diff-line-num {
+            user-select: none;
+            color: #94a3b8;
+            text-align: right;
+            padding-right: 0.5rem;
+            min-width: 2.5rem;
+            display: inline-block;
+        }
+
+        /* Loading Spinner */
+        .loader {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #6366f1;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body
+    class="bg-slate-50 text-slate-800 font-sans h-screen flex overflow-hidden selection:bg-indigo-100 selection:text-indigo-900 text-[10px] md:text-sm">
+
+    <!-- Sidebar -->
+    <aside
+        class="w-16 md:w-64 bg-white border-r border-slate-200 flex flex-col flex-shrink-0 transition-all duration-300 z-20">
+        <div class="h-16 flex items-center justify-center md:justify-start md:px-6 border-b border-slate-100 bg-white">
+            <div
+                class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white mr-0 md:mr-3 shadow-sm shadow-indigo-200 flex-shrink-0">
+                <i class="fa-solid fa-layer-group text-sm"></i>
+            </div>
+            <!-- App Name: Hidden on small screens, shown on medium+ -->
+            <span
+                class="font-bold text-sm md:text-lg text-slate-800 hidden md:block tracking-tight truncate">TextStudio<span
+                    class="text-indigo-600">Pro</span></span>
+        </div>
+
+        <nav class="flex-1 overflow-y-auto py-4 space-y-1">
+            <button onclick="switchTool('frequency')" id="nav-frequency"
+                class="w-full flex items-center px-4 py-3 text-slate-500 hover:bg-slate-50 hover:text-indigo-600 transition-colors border-r-4 border-transparent group justify-center md:justify-start">
+                <i
+                    class="fa-solid fa-chart-simple text-sm md:text-lg w-8 text-center group-hover:scale-110 transition-transform"></i>
+                <span class="hidden md:block font-medium ml-1">Frequency</span>
+            </button>
+            <button onclick="switchTool('readability')" id="nav-readability"
+                class="w-full flex items-center px-4 py-3 text-slate-500 hover:bg-slate-50 hover:text-indigo-600 transition-colors border-r-4 border-transparent group justify-center md:justify-start">
+                <i
+                    class="fa-solid fa-glasses text-sm md:text-lg w-8 text-center group-hover:scale-110 transition-transform"></i>
+                <span class="hidden md:block font-medium ml-1">Readability</span>
+            </button>
+            <button onclick="switchTool('code')" id="nav-code"
+                class="w-full flex items-center px-4 py-3 text-slate-500 hover:bg-slate-50 hover:text-indigo-600 transition-colors border-r-4 border-transparent group justify-center md:justify-start">
+                <i
+                    class="fa-solid fa-code-branch text-sm md:text-lg w-8 text-center group-hover:scale-110 transition-transform"></i>
+                <span class="hidden md:block font-medium ml-1">Code Analysis</span>
+            </button>
+            <button onclick="switchTool('logs')" id="nav-logs"
+                class="w-full flex items-center px-4 py-3 text-slate-500 hover:bg-slate-50 hover:text-indigo-600 transition-colors border-r-4 border-transparent group justify-center md:justify-start">
+                <i
+                    class="fa-solid fa-server text-sm md:text-lg w-8 text-center group-hover:scale-110 transition-transform"></i>
+                <span class="hidden md:block font-medium ml-1">Log Parsing</span>
+            </button>
+            <button onclick="switchTool('diff')" id="nav-diff"
+                class="w-full flex items-center px-4 py-3 text-slate-500 hover:bg-slate-50 hover:text-indigo-600 transition-colors border-r-4 border-transparent group justify-center md:justify-start">
+                <i
+                    class="fa-solid fa-file-contract text-sm md:text-lg w-8 text-center group-hover:scale-110 transition-transform"></i>
+                <span class="hidden md:block font-medium ml-1">Smart Diff</span>
+            </button>
+        </nav>
+
+        <div class="p-4 border-t border-slate-100 hidden md:block bg-slate-50">
+            <div class="flex items-center gap-2 text-xs text-slate-400">
+                <i class="fa-solid fa-shield-halved"></i>
+                <span>Client-side Processing</span>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col min-w-0 bg-slate-50/50 relative">
+        <!-- Toast Notification -->
+        <div id="toast"
+            class="absolute top-4 right-4 bg-slate-800 text-white px-4 py-2 rounded shadow-lg transform translate-y-[-150%] transition-transform duration-300 z-50 text-[10px] md:text-sm flex items-center gap-2">
+            <i class="fa-solid fa-circle-info text-indigo-400"></i>
+            <span id="toast-msg">Notification</span>
+        </div>
+
+        <!-- Header -->
+        <header
+            class="h-12 md:h-16 bg-white border-b border-slate-200 flex items-center justify-between px-3 md:px-6 shadow-sm z-10 flex-shrink-0">
+            <div class="flex items-center gap-3 min-w-0">
+                <h1 id="page-title" class="text-xs md:text-xl font-semibold text-slate-800 tracking-tight truncate">
+                    Frequency Analysis</h1>
+                <div id="loading-indicator"
+                    class="hidden items-center gap-2 px-2 py-0.5 md:px-3 md:py-1 bg-indigo-50 text-indigo-700 rounded-full text-[9px] md:text-xs font-medium whitespace-nowrap">
+                    <div class="loader w-2 h-2 md:w-3 md:h-3 border-2 border-indigo-200 border-t-indigo-600"></div>
+                    <span class="hidden sm:inline">Processing...</span>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2 md:gap-3">
+                <input type="file" id="file-upload" class="hidden"
+                    accept=".txt,.md,.log,.js,.jsx,.ts,.tsx,.py,.java,.c,.cpp,.h,.cs,.html,.css,.json,.xml,.csv,text/*"
+                    onchange="handleFileUpload(this)">
+
+                <!-- Buttons: Icons only on small screens, text on larger screens -->
+                <button onclick="document.getElementById('file-upload').click()"
+                    class="flex items-center gap-2 px-2 py-1 md:px-3 md:py-1.5 text-[10px] md:text-sm font-medium text-slate-600 bg-white border border-slate-300 rounded-md hover:bg-slate-50 hover:border-slate-400 transition-all shadow-sm"
+                    title="Upload File">
+                    <i class="fa-solid fa-cloud-arrow-up text-slate-400"></i>
+                    <span class="hidden sm:inline">Upload</span>
+                </button>
+
+                <button onclick="analyze()"
+                    class="flex items-center gap-2 px-3 py-1 md:px-4 md:py-1.5 text-[10px] md:text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 shadow-sm transition-all hover:shadow active:scale-95 active:shadow-inner"
+                    title="Run Analysis">
+                    <i class="fa-solid fa-bolt"></i>
+                    <span class="hidden sm:inline">Run Analysis</span>
+                </button>
+
+                <button id="btn-pdf" onclick="downloadReport()"
+                    class="flex items-center gap-2 px-2 py-1 md:px-3 md:py-1.5 text-[10px] md:text-sm font-medium text-slate-600 bg-white border border-slate-300 rounded-md hover:bg-slate-50 hover:text-red-600 hover:border-red-200 transition-all shadow-sm"
+                    title="Download Report as PDF">
+                    <i class="fa-solid fa-file-pdf"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Workspace -->
+        <!-- Responsive layout: Auto scroll on mobile, No scroll on desktop (internal panes scroll) -->
+        <div class="flex-1 overflow-y-auto min-[1160px]:overflow-hidden flex flex-col min-[1160px]:flex-row">
+
+            <!-- Input Area -->
+            <div class="flex-1 p-2 md:p-6 flex flex-col min-h-[50vh] min-[1160px]:min-h-0 min-w-0">
+                <div class="flex items-center justify-between mb-2">
+                    <label
+                        class="text-[9px] md:text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                        <i class="fa-regular fa-keyboard"></i> Input Data
+                    </label>
+                    <button onclick="clearInput()"
+                        class="text-[9px] md:text-xs text-slate-400 hover:text-red-500 font-medium transition-colors">Clear
+                        Editor</button>
+                </div>
+
+                <!-- Standard Input -->
+                <div id="standard-input-container"
+                    class="flex-1 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col focus-within:ring-2 focus-within:ring-indigo-500/20 focus-within:border-indigo-400 transition-all">
+                    <textarea id="main-input"
+                        class="w-full h-full p-3 md:p-4 resize-none focus:outline-none text-[10px] md:text-sm font-mono text-slate-700 leading-relaxed"
+                        placeholder="Paste your text, source code, or server logs here..."></textarea>
+                </div>
+
+                <!-- Diff Input -->
+                <div id="diff-input-container" class="hidden flex-1 flex-col md:flex-row gap-2 md:gap-4 h-full min-h-0">
+                    <div class="flex-1 flex flex-col h-full min-h-0">
+                        <span
+                            class="text-[9px] md:text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Original
+                            Version</span>
+                        <div
+                            class="flex-1 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden focus-within:ring-2 focus-within:ring-indigo-500/20 focus-within:border-indigo-400 transition-all">
+                            <textarea id="diff-original"
+                                class="w-full h-full p-3 md:p-4 resize-none focus:outline-none text-[10px] md:text-sm font-mono text-slate-700"
+                                placeholder="Paste original text..."></textarea>
+                        </div>
+                    </div>
+                    <div class="flex-1 flex flex-col h-full min-h-0">
+                        <span class="text-[9px] md:text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">New
+                            Version</span>
+                        <div
+                            class="flex-1 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden focus-within:ring-2 focus-within:ring-indigo-500/20 focus-within:border-indigo-400 transition-all">
+                            <textarea id="diff-modified"
+                                class="w-full h-full p-3 md:p-4 resize-none focus:outline-none text-[10px] md:text-sm font-mono text-slate-700"
+                                placeholder="Paste new text..."></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Panel -->
+            <div
+                class="w-full min-[1160px]:w-[28rem] bg-white border-t min-[1160px]:border-t-0 min-[1160px]:border-l border-slate-200 flex flex-col shadow-xl z-20 overflow-hidden h-auto min-[1160px]:h-full">
+                <div
+                    class="p-3 md:p-4 border-b border-slate-100 bg-slate-50/80 backdrop-blur-sm flex justify-between items-center sticky top-0 z-10">
+                    <h2 class="text-xs md:text-base font-semibold text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-square-poll-vertical text-indigo-500"></i> Analysis Report
+                    </h2>
+                    <span id="exec-time" class="text-[9px] md:text-[10px] text-slate-400 font-mono hidden">0ms</span>
+                </div>
+
+                <div id="results-area" class="flex-1 overflow-y-auto p-3 md:p-4 space-y-4 min-h-[300px]">
+                    <!-- Default State -->
+                    <div class="h-full flex flex-col items-center justify-center text-slate-300 py-10 md:py-0">
+                        <div class="bg-slate-50 p-6 rounded-full mb-4">
+                            <i class="fa-solid fa-wand-magic-sparkles text-3xl text-slate-300"></i>
+                        </div>
+                        <p class="text-sm font-medium text-slate-400">Ready to analyze</p>
+                        <p class="text-xs text-slate-300 mt-1">Select a tool and click Run Analysis</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Script -->
+    <script>
+        // --- Core Application State & Config ---
+        let currentTool = 'frequency';
+        const CONFIG = {
+            maxDiffLines: 3000, // Safety limit for LCS matrix
+            stopWords: new Set(['the', 'be', 'to', 'of', 'and', 'a', 'in', 'that', 'have', 'i', 'it', 'for', 'not', 'on', 'with', 'he', 'as', 'you', 'do', 'at', 'this', 'but', 'his', 'by', 'from', 'they', 'we', 'say', 'her', 'she', 'or', 'an', 'will', 'my', 'one', 'all', 'would', 'there', 'their', 'what', 'so', 'up', 'out', 'if', 'about', 'who', 'get', 'which', 'go', 'me', 'when', 'make', 'can', 'like', 'time', 'no', 'just', 'him', 'know', 'take', 'people', 'into', 'year', 'your', 'good', 'some', 'could', 'them', 'see', 'other', 'than', 'then', 'now', 'look', 'only', 'come', 'its', 'over', 'think', 'also', 'back', 'after', 'use', 'two', 'how', 'our', 'work', 'first', 'well', 'way', 'even', 'new', 'want', 'because', 'any', 'these', 'give', 'day', 'most', 'us'])
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            switchTool('frequency');
+            // Setup specialized sentence segmenter if supported
+            if (window.Intl && Intl.Segmenter) {
+                window.segmenter = new Intl.Segmenter('en', { granularity: 'sentence' });
+            }
+        });
+
+        // --- UI Interactions ---
+
+        function showToast(msg, type = 'info') {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toast-msg');
+            toastMsg.innerText = msg;
+            toast.classList.remove('translate-y-[-150%]');
+            setTimeout(() => {
+                toast.classList.add('translate-y-[-150%]');
+            }, 3000);
+        }
+
+        function switchTool(tool) {
+            currentTool = tool;
+
+            // Sidebar Active State
+            document.querySelectorAll('aside nav button').forEach(btn => {
+                btn.classList.remove('bg-indigo-50', 'text-indigo-600', 'border-indigo-600');
+                btn.classList.add('border-transparent');
+            });
+            const activeBtn = document.getElementById(`nav-${tool}`);
+            activeBtn.classList.add('bg-indigo-50', 'text-indigo-600', 'border-indigo-600');
+            activeBtn.classList.remove('border-transparent');
+
+            // Header Update
+            const titles = {
+                'frequency': 'Frequency & Keyphrase Analysis',
+                'readability': 'Readability & Complexity Scorer',
+                'code': 'Structural Code Analyzer',
+                'logs': 'Heuristic Log Summarizer',
+                'diff': 'Smart Comparison (LCS)'
+            };
+            document.getElementById('page-title').innerText = titles[tool];
+
+            // Layout Switching
+            const stdInput = document.getElementById('standard-input-container');
+            const diffInput = document.getElementById('diff-input-container');
+
+            if (tool === 'diff') {
+                stdInput.classList.add('hidden');
+                diffInput.classList.remove('hidden');
+                diffInput.classList.add('flex');
+            } else {
+                stdInput.classList.remove('hidden');
+                diffInput.classList.add('hidden');
+                diffInput.classList.remove('flex');
+            }
+
+            // Reset Results
+            document.getElementById('results-area').innerHTML = `
+                <div class="h-full flex flex-col items-center justify-center text-slate-300 py-10 md:py-0">
+                    <div class="bg-slate-50 p-6 rounded-full mb-4">
+                        <i class="fa-solid fa-wand-magic-sparkles text-3xl text-slate-300"></i>
+                    </div>
+                    <p class="text-sm font-medium text-slate-400">Ready to analyze</p>
+                </div>`;
+        }
+
+        function handleFileUpload(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            // Size Check (5MB Limit)
+            if (file.size > 5 * 1024 * 1024) {
+                showToast("File too large (>5MB). Please use smaller files.", "error");
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const text = e.target.result;
+                if (currentTool === 'diff') {
+                    if (!document.getElementById('diff-original').value.trim()) {
+                        document.getElementById('diff-original').value = text;
+                        showToast("Loaded into 'Original'. Upload again for 'New'.");
+                    } else {
+                        document.getElementById('diff-modified').value = text;
+                        showToast("Loaded into 'New Version'.");
+                        analyze(); // Auto-run if both present
+                    }
+                } else {
+                    document.getElementById('main-input').value = text;
+                    showToast("File loaded successfully.");
+                    analyze();
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function clearInput() {
+            document.getElementById('main-input').value = '';
+            document.getElementById('diff-original').value = '';
+            document.getElementById('diff-modified').value = '';
+            showToast("Editor cleared.");
+        }
+
+        // --- Analysis Engine ---
+
+        async function analyze() {
+            const start = performance.now();
+            const loader = document.getElementById('loading-indicator');
+            const resultsArea = document.getElementById('results-area');
+
+            loader.classList.remove('hidden');
+            loader.classList.add('flex');
+
+            // Allow UI to update before heavy processing
+            setTimeout(() => {
+                try {
+                    let text = document.getElementById('main-input').value;
+                    let html = '';
+
+                    if (currentTool === 'diff') {
+                        const original = document.getElementById('diff-original').value;
+                        const modified = document.getElementById('diff-modified').value;
+                        if (!original && !modified) throw new Error("Please enter text in both fields.");
+                        html = runDiffAnalysis(original, modified);
+                    } else {
+                        if (!text.trim()) throw new Error("Please enter content to analyze.");
+
+                        switch (currentTool) {
+                            case 'frequency': html = runFrequencyAnalysis(text); break;
+                            case 'readability': html = runReadabilityAnalysis(text); break;
+                            case 'code': html = runCodeAnalysis(text); break;
+                            case 'logs': html = runLogAnalysis(text); break;
+                        }
+                    }
+
+                    resultsArea.innerHTML = html;
+                    const end = performance.now();
+                    const time = (end - start).toFixed(0);
+                    document.getElementById('exec-time').innerText = `${time}ms`;
+                    document.getElementById('exec-time').classList.remove('hidden');
+
+                } catch (err) {
+                    resultsArea.innerHTML = `
+                        <div class="p-4 bg-red-50 text-red-700 rounded-lg text-sm border border-red-200 flex items-start gap-3">
+                            <i class="fa-solid fa-circle-exclamation mt-1"></i>
+                            <div>
+                                <p class="font-bold">Analysis Failed</p>
+                                <p>${err.message}</p>
+                            </div>
+                        </div>
+                    `;
+                } finally {
+                    loader.classList.add('hidden');
+                    loader.classList.remove('flex');
+                }
+            }, 50);
+        }
+
+        // --- Export Feature (Fixed) ---
+        function downloadReport() {
+            const element = document.getElementById('results-area');
+
+            // Validation: Don't print empty states
+            if (!element.innerText.trim() || element.innerText.includes('Ready to analyze')) {
+                showToast("No analysis results to export.", "error");
+                return;
+            }
+
+            const btn = document.getElementById('btn-pdf');
+            const originalIcon = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin text-indigo-600"></i>';
+            btn.disabled = true;
+
+            // 1. Create a container for the print version
+            // We use absolute positioning off-screen to ensure it renders fully without affecting UI
+            const container = document.createElement('div');
+            container.style.position = 'absolute';
+            container.style.left = '-9999px';
+            container.style.top = '0';
+            container.style.width = '800px'; // Fixed width for A4 consistency
+            container.style.backgroundColor = '#ffffff';
+            container.style.zIndex = '-1';
+
+            // 2. Clone the content
+            const clone = element.cloneNode(true);
+
+            // 3. Clean up the clone for printing
+            // Remove scrollbars and height restrictions so html2canvas captures everything
+            clone.classList.remove('overflow-y-auto', 'flex-1', 'min-h-[300px]');
+            clone.style.overflow = 'visible';
+            clone.style.height = 'auto';
+            clone.style.maxHeight = 'none';
+            clone.style.padding = '20px';
+
+            // 4. Add Header
+            const header = document.createElement('div');
+            header.innerHTML = `
+                <div style="border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 20px; font-family: sans-serif; padding: 20px 20px 0 20px;">
+                    <h1 style="font-size: 24px; color: #1e293b; font-weight: bold; margin: 0;">Analysis Report</h1>
+                    <div style="font-size: 12px; color: #64748b; margin-top: 5px;">Generated by Text Analysis Studio Pro • ${new Date().toLocaleString()}</div>
+                    <div style="font-size: 14px; color: #475569; margin-top: 5px; font-weight: 500;">Module: ${document.getElementById('page-title').innerText}</div>
+                </div>
+            `;
+
+            container.appendChild(header);
+            container.appendChild(clone);
+            document.body.appendChild(container);
+
+            // 5. Generate PDF
+            const opt = {
+                margin: 0.2,
+                filename: `TextStudio_Report_${currentTool}_${new Date().toISOString().slice(0, 10)}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true, logging: false },
+                jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' },
+                pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+            };
+
+            // Small delay to ensure DOM is fully repainted before capture
+            setTimeout(() => {
+                html2pdf().set(opt).from(container).save().then(() => {
+                    document.body.removeChild(container);
+                    btn.innerHTML = originalIcon;
+                    btn.disabled = false;
+                    showToast("PDF Report downloaded.");
+                }).catch(err => {
+                    console.error(err);
+                    if (document.body.contains(container)) document.body.removeChild(container);
+                    btn.innerHTML = originalIcon;
+                    btn.disabled = false;
+                    showToast("Failed to generate PDF.", "error");
+                });
+            }, 500);
+        }
+
+        // --- 1. Frequency Analysis (Improved) ---
+        function runFrequencyAnalysis(text) {
+            const cleanText = text.toLowerCase();
+            // Count alphanumeric words only
+            const words = cleanText.match(/[a-z0-9]+(?:['-]?[a-z0-9]+)*/g) || [];
+            const charCount = text.length;
+            const nonSpaceCharCount = text.replace(/\s/g, '').length;
+
+            const freq = {};
+            words.forEach(w => {
+                if (!CONFIG.stopWords.has(w) && w.length > 2) { // Filter tiny words
+                    freq[w] = (freq[w] || 0) + 1;
+                }
+            });
+
+            const sorted = Object.entries(freq).sort((a, b) => b[1] - a[1]).slice(0, 15);
+            const wordCount = words.length;
+
+            let listHtml = '';
+            if (sorted.length === 0) {
+                listHtml = `<div class="text-[10px] md:text-sm text-slate-400 italic text-center py-4">No significant keywords found.</div>`;
+            } else {
+                const maxVal = sorted[0][1];
+                listHtml = `<div class="space-y-2 md:space-y-3">` + sorted.map(([word, count]) => {
+                    const percent = (count / maxVal) * 100;
+                    return `
+                        <div class="flex items-center text-[10px] md:text-sm group">
+                            <div class="w-16 md:w-24 font-medium text-slate-600 truncate" title="${word}">${word}</div>
+                            <div class="flex-1 h-1.5 md:h-2 bg-slate-100 rounded-full mx-2 overflow-hidden">
+                                <div class="h-full bg-indigo-500 rounded-full transition-all duration-500" style="width: ${percent}%"></div>
+                            </div>
+                            <div class="w-8 md:w-10 text-right text-slate-500 text-[9px] md:text-xs font-mono">${count}</div>
+                        </div>`;
+                }).join('') + `</div>`;
+            }
+
+            return `
+                <div class="space-y-4 md:space-y-6 animate-fade-in">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="bg-indigo-50 p-3 md:p-4 rounded-xl border border-indigo-100 text-center">
+                            <div class="text-xl md:text-3xl font-bold text-indigo-600 mb-1">${wordCount.toLocaleString()}</div>
+                            <div class="text-[8px] md:text-[10px] text-indigo-400 font-bold uppercase tracking-wider">Total Words</div>
+                        </div>
+                        <div class="bg-slate-50 p-3 md:p-4 rounded-xl border border-slate-200 text-center">
+                            <div class="text-xl md:text-3xl font-bold text-slate-600 mb-1">${charCount.toLocaleString()}</div>
+                            <div class="text-[8px] md:text-[10px] text-slate-400 font-bold uppercase tracking-wider">Characters</div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white border border-slate-100 rounded-xl p-3 md:p-4 shadow-sm">
+                        <h3 class="text-[9px] md:text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 md:mb-4 border-b border-slate-50 pb-2">Top Keywords</h3>
+                        ${listHtml}
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- 2. Readability (Advanced) ---
+        function runReadabilityAnalysis(text) {
+            // Intelligent Sentence Splitter
+            let sentences = [];
+            if (window.segmenter) {
+                sentences = Array.from(window.segmenter.segment(text)).map(s => s.segment.trim()).filter(s => s.length > 0);
+            } else {
+                // Fallback robust regex for "Mr.", "U.S.A.", etc.
+                sentences = text.replace(/([.?!])\s*(?=[A-Z])/g, "$1|").split("|").filter(s => s.trim().length > 0);
+            }
+
+            const words = text.match(/\b[a-zA-Z]+\b/g) || [];
+            const numSentences = Math.max(1, sentences.length);
+            const numWords = Math.max(1, words.length);
+
+            let totalSyllables = 0;
+            let complexWords = 0; // > 2 syllables
+            words.forEach(w => {
+                const syl = countSyllables(w);
+                totalSyllables += syl;
+                if (syl >= 3) complexWords++;
+            });
+
+            // Flesch-Kincaid
+            const avgWordsPerSentence = numWords / numSentences;
+            const avgSyllablesPerWord = totalSyllables / numWords;
+            const gradeLevel = (0.39 * avgWordsPerSentence) + (11.8 * avgSyllablesPerWord) - 15.59;
+            const readingEase = 206.835 - (1.015 * avgWordsPerSentence) - (84.6 * avgSyllablesPerWord);
+
+            // Gunning Fog
+            const percentComplex = (complexWords / numWords) * 100;
+            const gunningFog = 0.4 * (avgWordsPerSentence + percentComplex);
+
+            // Interpretation
+            let label = "Standard";
+            let color = "text-blue-600";
+            if (gradeLevel < 6) { label = "Very Easy"; color = "text-emerald-500"; }
+            else if (gradeLevel > 14) { label = "Academic/Dense"; color = "text-red-500"; }
+            else if (gradeLevel > 10) { label = "Complex"; color = "text-orange-500"; }
+
+            return `
+                <div class="space-y-4">
+                    <div class="bg-white border border-slate-200 p-4 md:p-5 rounded-xl shadow-sm relative overflow-hidden">
+                        <div class="absolute top-0 right-0 p-4 opacity-10"><i class="fa-solid fa-graduation-cap text-4xl md:text-6xl"></i></div>
+                        <div class="text-[9px] md:text-xs text-slate-500 font-bold uppercase mb-1">Grade Level Consensus</div>
+                        <div class="text-2xl md:text-4xl font-bold ${color}">${Math.max(0, gradeLevel).toFixed(1)}</div>
+                        <div class="text-[10px] md:text-sm font-medium text-slate-600 mt-1">${label}</div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                         <div class="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                             <span class="block text-lg md:text-xl font-bold text-slate-700">${Math.max(0, readingEase).toFixed(0)}</span>
+                             <span class="text-[8px] md:text-[10px] text-slate-500 uppercase">Reading Ease (0-100)</span>
+                         </div>
+                         <div class="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                             <span class="block text-lg md:text-xl font-bold text-slate-700">${gunningFog.toFixed(1)}</span>
+                             <span class="text-[8px] md:text-[10px] text-slate-500 uppercase">Gunning Fog Index</span>
+                         </div>
+                    </div>
+
+                    <div class="bg-white border border-slate-200 rounded-lg p-3 md:p-4">
+                        <h4 class="text-[9px] md:text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 md:mb-3">Composition</h4>
+                        <div class="space-y-2 text-[10px] md:text-sm">
+                            <div class="flex justify-between border-b border-slate-50 pb-1">
+                                <span class="text-slate-600">Avg Sentence Length</span>
+                                <span class="font-mono font-bold">${avgWordsPerSentence.toFixed(1)} words</span>
+                            </div>
+                            <div class="flex justify-between border-b border-slate-50 pb-1">
+                                <span class="text-slate-600">Complex Words</span>
+                                <span class="font-mono font-bold">${((complexWords / numWords) * 100).toFixed(1)}%</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-slate-600">Total Sentences</span>
+                                <span class="font-mono font-bold">${numSentences}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function countSyllables(word) {
+            word = word.toLowerCase().replace(/[^a-z]/g, '');
+            if (word.length <= 3) return 1;
+            word = word.replace(/(?:[^laeiouy]es|ed|[^laeiouy]e)$/, '');
+            word = word.replace(/^y/, '');
+            const syllables = word.match(/[aeiouy]{1,2}/g);
+            return syllables ? syllables.length : 1;
+        }
+
+        // --- 3. Smart Code Analysis ---
+        function runCodeAnalysis(text) {
+            // 1. Strip Strings ("..." and '...') to avoid false positives in braces
+            const noStrings = text.replace(/"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'/g, '""');
+
+            // 2. Strip Comments (Block /* */ and Line // or #)
+            const noComments = noStrings
+                .replace(/\/\*[\s\S]*?\*\//g, '')
+                .replace(/\/\/.*$/gm, '')
+                .replace(/#.*$/gm, '');
+
+            const lines = text.split('\n');
+            const logicalLines = noComments.split('\n').filter(l => l.trim().length > 0);
+
+            // Detect Language Family (Indentation vs Braces)
+            // Python check: look for colons at end of lines and no semicolons/braces
+            const isPython = /:\s*$/.test(logicalLines[0] || "") || (text.indexOf('{') === -1 && text.indexOf('def ') !== -1);
+
+            let maxNesting = 0;
+            let currentNesting = 0;
+            let totalComplexity = 0;
+
+            if (isPython) {
+                // Indentation based nesting calculation
+                let indentStack = [0];
+                logicalLines.forEach(line => {
+                    const indent = line.search(/\S/);
+                    if (indent > -1) {
+                        if (indent > indentStack[indentStack.length - 1]) {
+                            indentStack.push(indent);
+                        } else {
+                            while (indentStack.length > 1 && indent < indentStack[indentStack.length - 1]) {
+                                indentStack.pop();
+                            }
+                        }
+                        currentNesting = indentStack.length - 1;
+                        maxNesting = Math.max(maxNesting, currentNesting);
+                        if (line.trim().startsWith('if ') || line.trim().startsWith('for ') || line.trim().startsWith('while ')) {
+                            totalComplexity++;
+                        }
+                    }
+                });
+            } else {
+                // Brace based nesting
+                for (let char of noComments) {
+                    if (char === '{') {
+                        currentNesting++;
+                        maxNesting = Math.max(maxNesting, currentNesting);
+                    } else if (char === '}') {
+                        currentNesting = Math.max(0, currentNesting - 1);
+                    }
+                }
+                // Cyclomatic estimation: count branching keywords
+                const branching = (noComments.match(/\b(if|else|for|while|case|catch)\b/g) || []).length;
+                totalComplexity = branching + 1;
+            }
+
+            const commentLines = lines.length - logicalLines.length; // rough estimate
+            const commentDensity = (commentLines / lines.length) * 100;
+
+            return `
+                <div class="space-y-4">
+                    <div class="bg-slate-800 text-slate-100 p-3 md:p-4 rounded-xl shadow-md">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-[9px] md:text-xs font-mono text-slate-400 uppercase">Detected Style</span>
+                            <span class="text-[9px] md:text-xs font-bold bg-slate-700 px-2 py-0.5 rounded">${isPython ? 'Indentation (Python-like)' : 'C-Style (Braces)'}</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4 mt-2 md:mt-4">
+                            <div>
+                                <div class="text-xl md:text-3xl font-bold text-indigo-400">${lines.length}</div>
+                                <div class="text-[8px] md:text-[10px] text-slate-400 uppercase">LOC</div>
+                            </div>
+                            <div>
+                                <div class="text-xl md:text-3xl font-bold text-emerald-400">${maxNesting}</div>
+                                <div class="text-[8px] md:text-[10px] text-slate-400 uppercase">Max Nesting</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white border border-slate-200 p-3 md:p-4 rounded-lg">
+                         <div class="text-[9px] md:text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Maintainability</div>
+                         <div class="space-y-3">
+                            <div>
+                                <div class="flex justify-between text-[10px] md:text-sm mb-1">
+                                    <span class="text-slate-600">Comment Density</span>
+                                    <span class="font-mono font-bold">${commentDensity.toFixed(1)}%</span>
+                                </div>
+                                <div class="w-full bg-slate-100 rounded-full h-1.5">
+                                    <div class="bg-indigo-500 h-1.5 rounded-full" style="width: ${Math.min(commentDensity, 100)}%"></div>
+                                </div>
+                            </div>
+                             <div>
+                                <div class="flex justify-between text-[10px] md:text-sm mb-1">
+                                    <span class="text-slate-600">Cyclomatic Complexity (Est)</span>
+                                    <span class="font-mono font-bold">${totalComplexity}</span>
+                                </div>
+                                <div class="w-full bg-slate-100 rounded-full h-1.5">
+                                    <div class="${totalComplexity > 15 ? 'bg-red-500' : 'bg-emerald-500'} h-1.5 rounded-full" style="width: ${Math.min((totalComplexity / 30) * 100, 100)}%"></div>
+                                </div>
+                            </div>
+                         </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- 4. Heuristic Log Analysis ---
+        function runLogAnalysis(text) {
+            const lines = text.split('\n');
+            const ipPattern = /\b(?:\d{1,3}\.){3}\d{1,3}\b/; // Simple IPv4
+            const statusPattern = /"\s(\d{3})\s/; // Status after quote (Common Log Format)
+            const fallbackStatusPattern = /\b[1-5]\d{2}\b/; // Loose 3-digit number check if needed
+
+            const stats = { ips: {}, codes: {}, paths: {}, total: 0, errors: 0 };
+
+            lines.forEach(line => {
+                if (line.length < 10) return;
+
+                const ipMatch = line.match(ipPattern);
+                const statusMatch = line.match(statusPattern) || line.match(/HTTP\/1\.[01]"\s+(\d{3})/);
+
+                if (ipMatch) {
+                    stats.total++;
+                    const ip = ipMatch[0];
+                    stats.ips[ip] = (stats.ips[ip] || 0) + 1;
+
+                    if (statusMatch) {
+                        const code = statusMatch[1];
+                        stats.codes[code] = (stats.codes[code] || 0) + 1;
+                        if (code.startsWith('4') || code.startsWith('5')) stats.errors++;
+                    }
+                }
+            });
+
+            if (stats.total === 0) {
+                return `<div class="p-4 bg-orange-50 text-orange-700 rounded-lg text-[10px] md:text-sm border border-orange-200">
+                        <i class="fa-solid fa-triangle-exclamation mr-2"></i> No recognizable IP addresses or log patterns found.
+                    </div>`;
+            }
+
+            const topIPs = Object.entries(stats.ips).sort((a, b) => b[1] - a[1]).slice(0, 5);
+            const topCodes = Object.entries(stats.codes).sort((a, b) => b[1] - a[1]).slice(0, 5);
+            const errorRate = ((stats.errors / stats.total) * 100).toFixed(1);
+
+            return `
+                 <div class="space-y-4">
+                    <div class="grid grid-cols-2 gap-3">
+                         <div class="bg-indigo-50 p-3 md:p-4 rounded-xl border border-indigo-100 text-center">
+                            <div class="text-lg md:text-2xl font-bold text-indigo-700">${stats.total.toLocaleString()}</div>
+                            <div class="text-[8px] md:text-[10px] text-indigo-400 font-bold uppercase tracking-wider">Events</div>
+                        </div>
+                        <div class="bg-${stats.errors > 0 ? 'red' : 'emerald'}-50 p-3 md:p-4 rounded-xl border border-${stats.errors > 0 ? 'red' : 'emerald'}-100 text-center">
+                            <div class="text-lg md:text-2xl font-bold text-${stats.errors > 0 ? 'red' : 'emerald'}-700">${errorRate}%</div>
+                            <div class="text-[8px] md:text-[10px] text-${stats.errors > 0 ? 'red' : 'emerald'}-500 font-bold uppercase tracking-wider">Error Rate</div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white border border-slate-200 rounded-lg p-3">
+                        <h4 class="text-[9px] md:text-xs font-bold text-slate-400 uppercase mb-2 md:mb-3">Top Status Codes</h4>
+                        <div class="space-y-2">
+                        ${topCodes.map(([code, count]) => {
+                const color = code.startsWith('2') ? 'bg-emerald-100 text-emerald-800' :
+                    code.startsWith('5') || code.startsWith('4') ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800';
+                const width = (count / stats.total) * 100;
+                return `
+                                <div class="flex items-center text-[10px] md:text-sm">
+                                    <span class="w-8 md:w-10 text-[9px] md:text-xs font-mono font-bold px-1.5 py-0.5 rounded ${color} mr-2 text-center">${code}</span>
+                                    <div class="flex-1 h-1.5 md:h-2 bg-slate-100 rounded-full overflow-hidden">
+                                        <div class="h-full bg-slate-400 rounded-full" style="width: ${width}%"></div>
+                                    </div>
+                                    <span class="w-10 md:w-12 text-right text-[9px] md:text-xs text-slate-500">${count}</span>
+                                </div>
+                             `;
+            }).join('')}
+                        </div>
+                    </div>
+
+                    <div class="bg-white border border-slate-200 rounded-lg p-3">
+                        <h4 class="text-[9px] md:text-xs font-bold text-slate-400 uppercase mb-2 md:mb-3">Top Visitors (IP)</h4>
+                         <div class="space-y-1">
+                            ${topIPs.map(([ip, c]) =>
+                `<div class="flex justify-between text-[10px] md:text-xs text-slate-600 p-1 hover:bg-slate-50 rounded">
+                                    <span class="font-mono text-indigo-600">${ip}</span>
+                                    <span class="font-bold text-slate-700">${c}</span>
+                                </div>`
+            ).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- 5. "Perfect" Diff Analysis (LCS Algorithm) ---
+        function runDiffAnalysis(text1, text2) {
+            const lines1 = text1.split('\n');
+            const lines2 = text2.split('\n');
+
+            // Safety Valve for Performance
+            if (lines1.length > CONFIG.maxDiffLines || lines2.length > CONFIG.maxDiffLines) {
+                return `<div class="p-4 bg-yellow-50 text-yellow-800 rounded-lg border border-yellow-200">
+                    <p class="font-bold text-[10px] md:text-sm">File too large for Smart Diff</p>
+                    <p class="text-[9px] md:text-xs mt-1">Please use files under ${CONFIG.maxDiffLines} lines for browser-based comparison.</p>
+                </div>`;
+            }
+
+            // Compute LCS Matrix
+            const m = lines1.length;
+            const n = lines2.length;
+            // Using 1D array optimization or straightforward 2D for clarity in < 2k lines
+            // We use a simple 2D array here as JS engines handle sparse arrays well
+            const dp = Array(m + 1).fill(0).map(() => Array(n + 1).fill(0));
+
+            for (let i = 1; i <= m; i++) {
+                for (let j = 1; j <= n; j++) {
+                    if (lines1[i - 1] === lines2[j - 1]) {
+                        dp[i][j] = dp[i - 1][j - 1] + 1;
+                    } else {
+                        dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);
+                    }
+                }
+            }
+
+            // Backtrack to find diff
+            let i = m, j = n;
+            const diffs = [];
+            while (i > 0 && j > 0) {
+                if (lines1[i - 1] === lines2[j - 1]) {
+                    diffs.push({ type: 'eq', content: lines1[i - 1], l1: i, l2: j });
+                    i--; j--;
+                } else if (dp[i - 1][j] > dp[i][j - 1]) {
+                    diffs.push({ type: 'del', content: lines1[i - 1], l1: i });
+                    i--;
+                } else {
+                    diffs.push({ type: 'add', content: lines2[j - 1], l2: j });
+                    j--;
+                }
+            }
+            while (i > 0) {
+                diffs.push({ type: 'del', content: lines1[i - 1], l1: i });
+                i--;
+            }
+            while (j > 0) {
+                diffs.push({ type: 'add', content: lines2[j - 1], l2: j });
+                j--;
+            }
+            diffs.reverse();
+
+            // Render
+            let html = '<div class="font-mono text-[9px] md:text-xs overflow-auto h-full">';
+            let changeCount = 0;
+
+            diffs.forEach(d => {
+                const escaped = escapeHtml(d.content || ' '); // Preserve empty lines
+                if (d.type === 'eq') {
+                    html += `
+                        <div class="flex hover:bg-slate-50">
+                            <span class="diff-line-num bg-slate-50 border-r border-slate-200">${d.l1}</span>
+                            <span class="diff-line-num bg-slate-50 border-r border-slate-200">${d.l2}</span>
+                            <pre class="px-2 py-0.5 text-slate-500 flex-1 whitespace-pre-wrap">${escaped}</pre>
+                        </div>`;
+                } else if (d.type === 'add') {
+                    changeCount++;
+                    html += `
+                        <div class="flex diff-add">
+                            <span class="diff-line-num bg-green-50/50 border-r border-green-200"></span>
+                            <span class="diff-line-num bg-green-50/50 border-r border-green-200">${d.l2}</span>
+                            <pre class="px-2 py-0.5 flex-1 whitespace-pre-wrap"><span>+</span> ${escaped}</pre>
+                        </div>`;
+                } else {
+                    changeCount++;
+                    html += `
+                        <div class="flex diff-del">
+                            <span class="diff-line-num bg-red-50/50 border-r border-red-200">${d.l1}</span>
+                            <span class="diff-line-num bg-red-50/50 border-r border-red-200"></span>
+                            <pre class="px-2 py-0.5 flex-1 whitespace-pre-wrap"><span>-</span> ${escaped}</pre>
+                        </div>`;
+                }
+            });
+            html += '</div>';
+
+            return `
+                <div class="flex flex-col h-full">
+                    <div class="mb-3 p-3 bg-white border border-slate-200 rounded-lg text-[9px] md:text-xs flex justify-between shadow-sm">
+                        <span class="font-bold text-slate-600 flex items-center gap-2"><i class="fa-solid fa-code-compare"></i> Comparison Result</span>
+                        <span class="text-slate-500 font-mono bg-slate-100 px-2 py-0.5 rounded">${changeCount} changes</span>
+                    </div>
+                    <div class="flex-1 border border-slate-200 rounded-lg overflow-hidden bg-white shadow-inner">
+                        ${html}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Utils
+        function escapeHtml(text) {
+            if (!text) return '';
+            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+
+    </script>
+</body>
+
+</html>

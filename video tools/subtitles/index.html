@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Subtitle Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom scrollbar for text areas */
+        textarea::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        textarea::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        textarea::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+
+        textarea::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        .loader {
+            border-top-color: #3B82F6;
+            -webkit-animation: spinner 1.5s linear infinite;
+            animation: spinner 1.5s linear infinite;
+        }
+
+        @keyframes spinner {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-gray-900 text-gray-100 min-h-screen font-sans">
+
+    <div class="container mx-auto px-4 py-8 max-w-5xl">
+
+        <!-- Header -->
+        <header class="text-center mb-10">
+            <h1 class="text-4xl font-bold text-blue-500 mb-2">AutoSub AI</h1>
+            <p class="text-gray-400">Upload a video to generate subtitles instantly using Whisper AI.</p>
+        </header>
+
+        <!-- Main Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+            <!-- Left Column: Upload & Player -->
+            <div class="space-y-6">
+
+                <!-- Upload Zone -->
+                <div id="drop-zone"
+                    class="border-2 border-dashed border-gray-600 rounded-xl p-8 text-center bg-gray-800 hover:bg-gray-750 transition-colors cursor-pointer relative">
+                    <input type="file" id="file-input" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        accept="video/*,audio/*">
+                    <div class="pointer-events-none">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-gray-400 mb-3" fill="none"
+                            viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                        </svg>
+                        <p class="text-lg font-medium text-white">Drop video here or click to upload</p>
+                        <p class="text-sm text-gray-500 mt-1">MP4, MOV, MKV, AVI (Max 500MB)</p>
+                    </div>
+                </div>
+
+                <!-- Processing State -->
+                <div id="processing-state"
+                    class="hidden bg-gray-800 rounded-xl p-6 text-center shadow-lg border border-gray-700">
+                    <div
+                        class="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-10 w-10 mx-auto mb-3">
+                    </div>
+                    <h3 class="text-lg font-semibold animate-pulse">Transcribing Audio...</h3>
+                    <p class="text-gray-400 text-sm mt-1">This uses a large AI model, please wait.</p>
+                </div>
+
+                <!-- Video Player -->
+                <div id="video-container"
+                    class="hidden bg-black rounded-xl overflow-hidden shadow-2xl aspect-video relative group">
+                    <video id="video-player" class="w-full h-full" controls playsinline>
+                        Your browser does not support the video tag.
+                    </video>
+                </div>
+
+            </div>
+
+            <!-- Right Column: Results -->
+            <div class="space-y-4 flex flex-col h-full">
+
+                <div class="flex justify-between items-center">
+                    <h2 class="text-xl font-semibold flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-500" fill="none"
+                            viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        Generated Subtitles (.vtt)
+                    </h2>
+                    <button id="download-btn" disabled
+                        class="px-4 py-2 bg-gray-700 text-gray-400 rounded-lg text-sm font-medium transition-colors hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+                        Download VTT
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="flex-grow relative">
+                    <textarea id="subtitle-output" readonly
+                        class="w-full h-96 lg:h-full bg-gray-800 border border-gray-700 rounded-xl p-4 text-gray-300 font-mono text-sm focus:outline-none focus:border-blue-500 transition-colors resize-none"
+                        placeholder="Subtitles will appear here after processing..."></textarea>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('file-input');
+        const dropZone = document.getElementById('drop-zone');
+        const processingState = document.getElementById('processing-state');
+        const videoContainer = document.getElementById('video-container');
+        const videoPlayer = document.getElementById('video-player');
+        const subtitleOutput = document.getElementById('subtitle-output');
+        const downloadBtn = document.getElementById('download-btn');
+
+        // Drag and Drop Effects
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('border-blue-500', 'bg-gray-750');
+        });
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('border-blue-500', 'bg-gray-750');
+        });
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('border-blue-500', 'bg-gray-750');
+            if (e.dataTransfer.files.length) {
+                handleFile(e.dataTransfer.files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        function handleFile(file) {
+            // Reset UI
+            videoContainer.classList.add('hidden');
+            processingState.classList.remove('hidden');
+            dropZone.classList.add('hidden');
+            subtitleOutput.value = "Uploading and processing... This may take a minute based on video length.";
+            downloadBtn.disabled = true;
+            downloadBtn.classList.remove('bg-blue-600', 'text-white', 'hover:bg-blue-700');
+            downloadBtn.classList.add('bg-gray-700', 'text-gray-400');
+
+            // Setup local video preview immediately
+            const fileURL = URL.createObjectURL(file);
+            videoPlayer.src = fileURL;
+
+            // Prepare Upload
+            const formData = new FormData();
+            formData.append('file', file);
+
+            // Send to Backend
+            fetch('/transcribe', {
+                method: 'POST',
+                body: formData
+            })
+                .then(response => response.json())
+                .then(data => {
+                    processingState.classList.add('hidden');
+                    dropZone.classList.remove('hidden');
+
+                    if (data.error) {
+                        alert('Error: ' + data.error);
+                        subtitleOutput.value = "Error occurred during transcription.";
+                        return;
+                    }
+
+                    // Success
+                    videoContainer.classList.remove('hidden');
+                    subtitleOutput.value = data.vtt;
+
+                    // Enable Download
+                    downloadBtn.disabled = false;
+                    downloadBtn.classList.remove('bg-gray-700', 'text-gray-400');
+                    downloadBtn.classList.add('bg-blue-600', 'text-white', 'hover:bg-blue-700');
+
+                    // Setup Download Click
+                    downloadBtn.onclick = () => {
+                        const blob = new Blob([data.vtt], { type: 'text/vtt' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = 'subtitles.vtt';
+                        a.click();
+                        URL.revokeObjectURL(url);
+                    };
+
+                    // Add subtitles to video player
+                    const trackBlob = new Blob([data.vtt], { type: "text/vtt" });
+                    const trackUrl = URL.createObjectURL(trackBlob);
+
+                    // Remove old tracks
+                    const oldTracks = videoPlayer.getElementsByTagName('track');
+                    while (oldTracks.length > 0) oldTracks[0].remove();
+
+                    const track = document.createElement('track');
+                    track.kind = "captions";
+                    track.label = "English";
+                    track.srclang = "en";
+                    track.src = trackUrl;
+                    track.default = true;
+                    videoPlayer.appendChild(track);
+
+                    // Auto play to show it works
+                    videoPlayer.textTracks[0].mode = "showing";
+                    videoPlayer.play();
+                })
+                .catch(err => {
+                    console.error(err);
+                    processingState.classList.add('hidden');
+                    dropZone.classList.remove('hidden');
+                    alert("An error occurred connecting to the server.");
+                });
+        }
+    </script>
+</body>
+
+</html>

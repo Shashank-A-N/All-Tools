@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AudioForge - Universal Audio Tools</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FFmpeg.wasm (v0.11.x for better compatibility without SharedArrayBuffer requirements in some contexts) -->
+    <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
+    <script src="https://unpkg.com/@ffmpeg/core@0.11.6/dist/ffmpeg-core.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+            /* Slate 900 */
+            color: #e2e8f0;
+        }
+
+        .mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+
+        .drop-zone {
+            transition: all 0.3s ease;
+            background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='16' ry='16' stroke='%23334155FF' stroke-width='2' stroke-dasharray='12%2c 12' stroke-dashoffset='0' stroke-linecap='square'/%3e%3c/svg%3e");
+        }
+
+        .drop-zone.active {
+            background-color: rgba(59, 130, 246, 0.1);
+            background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='16' ry='16' stroke='%233B82F6FF' stroke-width='3' stroke-dasharray='12%2c 12' stroke-dashoffset='0' stroke-linecap='square'/%3e%3c/svg%3e");
+        }
+
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .tab-btn.active {
+            background-color: #3b82f6;
+            /* Blue 500 */
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.5);
+        }
+
+        .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border-left-color: #3b82f6;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body class="min-h-screen flex flex-col items-center p-4 selection:bg-blue-500 selection:text-white">
+
+    <!-- Header -->
+    <header class="w-full max-w-4xl mt-6 mb-8 text-center">
+        <div class="inline-flex items-center justify-center p-3 mb-4 rounded-full bg-blue-500/10 text-blue-400">
+            <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z">
+                </path>
+            </svg>
+            <span class="font-bold tracking-wide uppercase text-sm">Beta v1.0</span>
+        </div>
+        <h1 class="text-4xl md:text-6xl font-extrabold tracking-tight text-white mb-2">
+            Audio<span class="text-blue-500">Forge</span>
+        </h1>
+        <p class="text-slate-400 text-lg max-w-2xl mx-auto">
+            Secure, client-side audio tools. Format conversion, bitrate optimization, and video extraction running
+            entirely in your browser.
+        </p>
+    </header>
+
+    <!-- Engine Status Banner -->
+    <div id="engine-status"
+        class="hidden w-full max-w-4xl mb-6 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20 text-yellow-200 text-sm flex items-center justify-between">
+        <span id="engine-msg">Initializing FFmpeg Engine...</span>
+        <div class="spinner ml-2" id="engine-spinner"></div>
+    </div>
+
+    <!-- Main Tool Container -->
+    <main class="w-full max-w-4xl glass-panel rounded-2xl shadow-2xl overflow-hidden relative">
+
+        <!-- Tabs -->
+        <div class="flex border-b border-slate-700/50 bg-slate-800/50">
+            <button onclick="switchTab('converter')" id="tab-converter"
+                class="tab-btn flex-1 py-4 text-sm font-medium text-slate-400 hover:text-white transition-colors active">
+                Universal Converter
+            </button>
+            <button onclick="switchTab('optimizer')" id="tab-optimizer"
+                class="tab-btn flex-1 py-4 text-sm font-medium text-slate-400 hover:text-white transition-colors">
+                Bitrate Optimizer
+            </button>
+            <button onclick="switchTab('extractor')" id="tab-extractor"
+                class="tab-btn flex-1 py-4 text-sm font-medium text-slate-400 hover:text-white transition-colors">
+                Audio Extractor
+            </button>
+        </div>
+
+        <!-- Content Area -->
+        <div class="p-6 md:p-8">
+
+            <!-- Tab Content: Converter -->
+            <div id="view-converter" class="tab-content block">
+                <div class="mb-6">
+                    <h2 class="text-2xl font-bold text-white mb-2">Universal Converter</h2>
+                    <p class="text-slate-400 text-sm">Convert audio files between WAV, MP3, FLAC, and OGG formats.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Options -->
+                    <div class="space-y-4">
+                        <label class="block">
+                            <span class="text-slate-300 text-sm font-medium">Target Format</span>
+                            <select id="convert-format"
+                                class="mt-2 block w-full bg-slate-800 border border-slate-700 rounded-lg py-2.5 px-3 text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <option value="mp3">MP3 (Compressed)</option>
+                                <option value="wav">WAV (Lossless)</option>
+                                <option value="flac">FLAC (Lossless Compressed)</option>
+                                <option value="ogg">OGG (Vorbis)</option>
+                            </select>
+                        </label>
+                        <div class="p-4 bg-slate-800/50 rounded-lg border border-slate-700/50 text-xs text-slate-400">
+                            <p class="mb-2"><strong class="text-slate-300">Tip:</strong></p>
+                            <ul class="list-disc pl-4 space-y-1">
+                                <li><strong>MP3:</strong> Best for compatibility.</li>
+                                <li><strong>WAV:</strong> Best for editing (large file size).</li>
+                                <li><strong>FLAC:</strong> Archival quality.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab Content: Optimizer -->
+            <div id="view-optimizer" class="tab-content hidden">
+                <div class="mb-6">
+                    <h2 class="text-2xl font-bold text-white mb-2">Bitrate Optimizer</h2>
+                    <p class="text-slate-400 text-sm">Reduce file size by optimizing bitrate. Ideal for web streaming.
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-4">
+                        <label class="block">
+                            <span class="text-slate-300 text-sm font-medium">Target Bitrate</span>
+                            <select id="optimize-bitrate"
+                                class="mt-2 block w-full bg-slate-800 border border-slate-700 rounded-lg py-2.5 px-3 text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <option value="320k">320 kbps (High Quality)</option>
+                                <option value="256k">256 kbps (Standard)</option>
+                                <option value="192k">192 kbps (Balanced)</option>
+                                <option value="128k">128 kbps (Web/Stream)</option>
+                                <option value="64k">64 kbps (Voice Only)</option>
+                            </select>
+                        </label>
+                        <div class="text-xs text-slate-500 mt-2">Output will be MP3 format.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab Content: Extractor -->
+            <div id="view-extractor" class="tab-content hidden">
+                <div class="mb-6">
+                    <h2 class="text-2xl font-bold text-white mb-2">Audio Extractor</h2>
+                    <p class="text-slate-400 text-sm">Strip audio tracks from video files (MP4, MKV) to MP3.</p>
+                </div>
+                <div class="p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg text-sm text-blue-200 mb-4">
+                    Supports <strong>.mp4</strong>, <strong>.mkv</strong>, <strong>.mov</strong>, and
+                    <strong>.webm</strong> inputs.
+                </div>
+            </div>
+
+            <!-- Shared Drop Zone -->
+            <div class="mt-8">
+                <div id="drop-area"
+                    class="drop-zone relative group rounded-2xl h-48 flex flex-col items-center justify-center cursor-pointer text-center p-4">
+                    <input type="file" id="file-input" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        accept="audio/*,video/*">
+
+                    <div id="upload-prompt">
+                        <div
+                            class="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform shadow-lg shadow-black/20">
+                            <svg class="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12">
+                                </path>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-semibold text-white">Click to upload or drag & drop</h3>
+                        <p class="text-slate-400 text-sm mt-1" id="file-types-hint">Supported: WAV, MP3, OGG, FLAC, MP4,
+                            MKV</p>
+                    </div>
+
+                    <div id="file-info" class="hidden text-center z-10">
+                        <div
+                            class="w-12 h-12 bg-green-500/20 text-green-400 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <p class="text-white font-medium truncate max-w-xs mx-auto" id="filename-display">file.mp3</p>
+                        <p class="text-slate-400 text-xs mt-1" id="filesize-display">2.4 MB</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Area -->
+            <div class="mt-6 flex flex-col items-center">
+                <button id="process-btn" disabled
+                    class="w-full md:w-auto px-8 py-3 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-700 disabled:text-slate-500 disabled:cursor-not-allowed text-white font-bold rounded-lg shadow-lg shadow-blue-500/20 transition-all transform hover:-translate-y-0.5 active:translate-y-0">
+                    Start Processing
+                </button>
+
+                <!-- Progress Bar -->
+                <div id="progress-container" class="w-full mt-6 hidden">
+                    <div class="flex justify-between text-xs text-slate-400 mb-1">
+                        <span id="status-text">Processing...</span>
+                        <span id="percent-text">0%</span>
+                    </div>
+                    <div class="w-full bg-slate-700 rounded-full h-2.5 overflow-hidden">
+                        <div id="progress-bar"
+                            class="bg-gradient-to-r from-blue-500 to-indigo-500 h-2.5 rounded-full transition-all duration-300"
+                            style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <!-- Terminal / Log -->
+                <div id="log-container"
+                    class="w-full mt-6 bg-slate-900 rounded-lg border border-slate-700/50 p-4 h-32 overflow-y-auto hidden">
+                    <div class="mono text-xs text-slate-400 space-y-1" id="logs">
+                        <div class="text-blue-400">> Ready to initialize.</div>
+                    </div>
+                </div>
+
+                <!-- Download -->
+                <div id="download-area" class="mt-6 hidden">
+                    <a id="download-link" href="#" download
+                        class="inline-flex items-center px-6 py-3 bg-green-600 hover:bg-green-500 text-white font-bold rounded-lg shadow-lg shadow-green-500/20 transition-all">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                        </svg>
+                        Download Result
+                    </a>
+                    <button onclick="resetUI()" class="ml-4 text-slate-400 hover:text-white underline text-sm">Convert
+                        another</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="mt-12 text-slate-500 text-sm text-center">
+        <p>&copy; 2026 AudioForge. All processing happens locally in your browser.</p>
+    </footer>
+
+    <!-- LOGIC -->
+    <script>
+        // --- Global State ---
+        let currentTab = 'converter';
+        let currentFile = null;
+        let ffmpeg = null;
+        let engineReady = false;
+        let simulationMode = false;
+
+        // --- DOM Elements ---
+        const els = {
+            tabs: ['converter', 'optimizer', 'extractor'],
+            dropZone: document.getElementById('drop-area'),
+            fileInput: document.getElementById('file-input'),
+            uploadPrompt: document.getElementById('upload-prompt'),
+            fileInfo: document.getElementById('file-info'),
+            filename: document.getElementById('filename-display'),
+            filesize: document.getElementById('filesize-display'),
+            processBtn: document.getElementById('process-btn'),
+            progressContainer: document.getElementById('progress-container'),
+            progressBar: document.getElementById('progress-bar'),
+            percentText: document.getElementById('percent-text'),
+            statusText: document.getElementById('status-text'),
+            logContainer: document.getElementById('log-container'),
+            logs: document.getElementById('logs'),
+            downloadArea: document.getElementById('download-area'),
+            downloadLink: document.getElementById('download-link'),
+            engineStatus: document.getElementById('engine-status'),
+            engineMsg: document.getElementById('engine-msg'),
+            engineSpinner: document.getElementById('engine-spinner')
+        };
+
+        // --- Initialization ---
+        window.addEventListener('load', initEngine);
+
+        async function initEngine() {
+            log('Initializing system...');
+            els.engineStatus.classList.remove('hidden');
+
+            try {
+                // Check if FFmpeg global is available from script tag
+                if (typeof FFmpeg === 'undefined') {
+                    throw new Error('FFmpeg script not loaded');
+                }
+
+                const { createFFmpeg } = FFmpeg;
+
+                // Attempt to create FFmpeg instance
+                // log: true enables console logging from the engine
+                ffmpeg = createFFmpeg({ log: true, corePath: 'https://unpkg.com/@ffmpeg/core@0.11.6/dist/ffmpeg-core.js' });
+
+                await ffmpeg.load();
+                engineReady = true;
+
+                els.engineMsg.textContent = "Engine Ready (WASM)";
+                els.engineMsg.classList.add('text-green-400');
+                els.engineMsg.classList.remove('text-yellow-200');
+                els.engineSpinner.classList.add('hidden');
+
+                log('Audio Engine loaded successfully.');
+
+                // Hide banner after 2s
+                setTimeout(() => els.engineStatus.classList.add('hidden'), 2000);
+
+            } catch (e) {
+                console.error(e);
+                log('⚠️ WASM Engine failed to load. Switching to Simulation Mode.');
+                simulationMode = true;
+                engineReady = true; // Ready to "simulate"
+
+                els.engineMsg.innerHTML = "Restricted Mode (Simulation Only)";
+                els.engineStatus.classList.remove('bg-yellow-500/10', 'border-yellow-500/20');
+                els.engineStatus.classList.add('bg-red-500/10', 'border-red-500/20', 'text-red-200');
+                els.engineSpinner.classList.add('hidden');
+            }
+        }
+
+        // --- Tab Logic ---
+        function switchTab(tabName) {
+            currentTab = tabName;
+
+            // UI Toggle
+            els.tabs.forEach(t => {
+                const btn = document.getElementById(`tab-${t}`);
+                const view = document.getElementById(`view-${t}`);
+
+                if (t === tabName) {
+                    btn.classList.add('active');
+                    view.classList.remove('hidden');
+                } else {
+                    btn.classList.remove('active');
+                    view.classList.add('hidden');
+                }
+            });
+
+            // Update hints based on tab
+            const hint = document.getElementById('file-types-hint');
+            if (tabName === 'extractor') {
+                hint.textContent = "Supported: MP4, MKV, MOV, WEBM";
+                els.fileInput.accept = "video/*";
+            } else {
+                hint.textContent = "Supported: WAV, MP3, OGG, FLAC";
+                els.fileInput.accept = "audio/*";
+            }
+
+            // Reset if file type doesn't match new tab requirement? 
+            // We'll keep the file but users might get an error if they try to extract audio from an image etc.
+        }
+
+        // --- File Handling ---
+        els.fileInput.addEventListener('change', handleFileSelect);
+        els.dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            els.dropZone.classList.add('active');
+        });
+        els.dropZone.addEventListener('dragleave', () => els.dropZone.classList.remove('active'));
+        els.dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            els.dropZone.classList.remove('active');
+            if (e.dataTransfer.files.length) {
+                els.fileInput.files = e.dataTransfer.files;
+                handleFileSelect();
+            }
+        });
+
+        function handleFileSelect() {
+            if (!els.fileInput.files.length) return;
+
+            currentFile = els.fileInput.files[0];
+
+            // Update UI
+            els.uploadPrompt.classList.add('hidden');
+            els.fileInfo.classList.remove('hidden');
+            els.filename.textContent = currentFile.name;
+            els.filesize.textContent = formatSize(currentFile.size);
+            els.processBtn.disabled = false;
+
+            // Reset results
+            els.downloadArea.classList.add('hidden');
+            els.progressContainer.classList.add('hidden');
+            els.logContainer.classList.add('hidden');
+
+            log(`File selected: ${currentFile.name} (${currentFile.type})`);
+        }
+
+        // --- Processing Logic ---
+        els.processBtn.addEventListener('click', async () => {
+            if (!currentFile || !engineReady) return;
+
+            els.processBtn.disabled = true;
+            els.processBtn.textContent = "Processing...";
+            els.progressContainer.classList.remove('hidden');
+            els.logContainer.classList.remove('hidden');
+            updateProgress(0);
+
+            try {
+                if (simulationMode) {
+                    await runSimulation();
+                } else {
+                    await runFFmpeg();
+                }
+            } catch (err) {
+                log('Error: ' + err.message);
+                els.processBtn.disabled = false;
+                els.processBtn.textContent = "Start Processing";
+                alert("An error occurred during processing. Check logs.");
+            }
+        });
+
+        async function runFFmpeg() {
+            const { fetchFile } = FFmpeg;
+            const inputName = 'input_file';
+            const fileExt = currentFile.name.split('.').pop();
+            const safeInputName = `input.${fileExt}`;
+
+            log('Writing file to memory...');
+            ffmpeg.FS('writeFile', safeInputName, await fetchFile(currentFile));
+
+            let command = [];
+            let outputFilename = '';
+
+            // Build Command based on Tab
+            if (currentTab === 'converter') {
+                const format = document.getElementById('convert-format').value;
+                outputFilename = `converted.${format}`;
+                command = ['-i', safeInputName, outputFilename];
+                log(`Starting Conversion: ${currentFile.name} -> ${outputFilename}`);
+            }
+            else if (currentTab === 'optimizer') {
+                const bitrate = document.getElementById('optimize-bitrate').value;
+                outputFilename = `optimized.mp3`;
+                // -b:a sets audio bitrate
+                command = ['-i', safeInputName, '-b:a', bitrate, outputFilename];
+                log(`Starting Optimization: ${currentFile.name} -> ${bitrate} MP3`);
+            }
+            else if (currentTab === 'extractor') {
+                outputFilename = `extracted.mp3`;
+                // -vn disables video, -q:a 2 is high quality VBR mp3
+                command = ['-i', safeInputName, '-vn', '-acodec', 'libmp3lame', '-q:a', '2', outputFilename];
+                log(`Starting Extraction: ${currentFile.name} -> MP3`);
+            }
+
+            // Bind Progress
+            ffmpeg.setProgress(({ ratio }) => {
+                const pct = Math.round(ratio * 100);
+                if (pct > 0 && pct <= 100) updateProgress(pct);
+            });
+
+            // Run
+            await ffmpeg.run(...command);
+
+            // Read Result
+            log('Processing complete. Reading output...');
+            const data = ffmpeg.FS('readFile', outputFilename);
+
+            // Create Download Link
+            const blob = new Blob([data.buffer], { type: getMimeType(outputFilename) });
+            prepareDownload(blob, outputFilename);
+
+            // Cleanup
+            ffmpeg.FS('unlink', safeInputName);
+            ffmpeg.FS('unlink', outputFilename);
+        }
+
+        async function runSimulation() {
+            log('Running in SIMULATION MODE (No real conversion)...');
+            log(`Job Type: ${currentTab.toUpperCase()}`);
+            log(`File: ${currentFile.name}`);
+
+            const steps = 20;
+            for (let i = 0; i <= steps; i++) {
+                await new Promise(r => setTimeout(r, 150)); // Artificial delay
+                updateProgress((i / steps) * 100);
+                if (i % 5 === 0) log(`Encoding frame ${i * 100}...`);
+            }
+
+            log('Simulation complete.');
+            // Just return the original file for the "download" in simulation to prove the flow
+            prepareDownload(currentFile, `simulated_output_${currentFile.name}`);
+        }
+
+        // --- Utilities ---
+        function updateProgress(percent) {
+            els.progressBar.style.width = `${percent}%`;
+            els.percentText.textContent = `${percent}%`;
+            if (percent === 100) els.statusText.textContent = "Finished";
+        }
+
+        function log(msg) {
+            const line = document.createElement('div');
+            line.textContent = `> ${msg}`;
+            els.logs.appendChild(line);
+            els.logContainer.scrollTop = els.logContainer.scrollHeight;
+        }
+
+        function prepareDownload(blob, filename) {
+            const url = URL.createObjectURL(blob);
+            els.downloadLink.href = url;
+            els.downloadLink.download = filename;
+
+            els.downloadArea.classList.remove('hidden');
+            els.processBtn.textContent = "Completed";
+
+            // Confetti effect or success state could go here
+        }
+
+        function resetUI() {
+            els.processBtn.disabled = false;
+            els.processBtn.textContent = "Start Processing";
+            els.downloadArea.classList.add('hidden');
+            els.progressContainer.classList.add('hidden');
+            els.logContainer.classList.add('hidden');
+            els.fileInput.value = '';
+            els.fileInfo.classList.add('hidden');
+            els.uploadPrompt.classList.remove('hidden');
+            currentFile = null;
+            els.logs.innerHTML = '';
+            updateProgress(0);
+        }
+
+        function formatSize(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function getMimeType(filename) {
+            const ext = filename.split('.').pop().toLowerCase();
+            const map = {
+                'mp3': 'audio/mpeg',
+                'wav': 'audio/wav',
+                'ogg': 'audio/ogg',
+                'flac': 'audio/flac'
+            };
+            return map[ext] || 'application/octet-stream';
+        }
+
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shadow Text - Frequency Analyzer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;500;600;700&display=swap"
+        rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link rel="stylesheet" href="../../styles.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        mono: ['Courier New', 'monospace'],
+                        sans: ['Rajdhani', 'sans-serif'],
+                        orbitron: ['Orbitron', 'sans-serif']
+                    },
+                    colors: {
+                        cyber: {
+                            accent: '#ec4899', // Pink-500
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body
+    class="min-h-screen flex flex-col font-sans overflow-x-hidden bg-slate-900 text-white selection:bg-pink-500 selection:text-white">
+
+    <!-- 3D Background -->
+    <div id="bg-3d-container"></div>
+
+    <!-- Navigation -->
+    <nav
+        class="sticky top-0 z-50 glass-effect border-b border-white/5 px-4 md:px-6 py-3 flex items-center justify-between backdrop-blur-md">
+        <a href="../index.html" class="flex items-center gap-3 text-slate-300 hover:text-white transition-colors group">
+            <div
+                class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center border border-white/10 group-hover:border-pink-500/50 transition-all">
+                <i class="fas fa-chevron-left text-xs group-hover:-translate-x-0.5 transition-transform"></i>
+            </div>
+            <span class="font-orbitron font-bold tracking-wider hidden md:block">BACK</span>
+        </a>
+
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded bg-pink-500/20 flex items-center justify-center text-pink-400">
+                <i class="fas fa-chart-bar"></i>
+            </div>
+            <h1 class="text-lg md:text-xl font-orbitron font-bold tracking-widest text-white">SHADOW<span
+                    class="text-pink-500">STATS</span></h1>
+        </div>
+
+        <div class="w-8"></div>
+    </nav>
+
+    <!-- Main Content -->
+    <main
+        class="flex-grow container mx-auto px-4 py-8 relative z-10 flex flex-col lg:flex-row gap-6 h-full lg:h-[calc(100vh-80px)] min-h-[700px]">
+
+        <!-- Input Panel -->
+        <div class="lg:w-1/2 flex flex-col glass rounded-2xl border border-white/5 shadow-xl overflow-hidden h-full">
+            <div class="px-6 py-3 border-b border-white/5 bg-slate-900/50 flex justify-between items-center">
+                <span class="text-xs font-bold text-slate-400 tracking-widest uppercase">Input Text</span>
+            </div>
+            <textarea id="textInput" oninput="analyze()"
+                class="flex-1 w-full bg-transparent p-6 text-sm md:text-base font-mono text-slate-300 focus:outline-none resize-none custom-scrollbar placeholder-slate-700"
+                placeholder="Type or paste text here to analyze..."></textarea>
+        </div>
+
+        <!-- Stats Panel -->
+        <div class="lg:w-1/2 flex flex-col gap-6 h-full overflow-hidden">
+
+            <!-- Quick Stats Grid -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="glass p-4 rounded-xl border border-white/5 flex flex-col items-center justify-center">
+                    <span class="text-3xl font-orbitron font-bold text-pink-500" id="charCount">0</span>
+                    <span class="text-[10px] uppercase tracking-widest text-slate-500 mt-1">Characters</span>
+                </div>
+                <div class="glass p-4 rounded-xl border border-white/5 flex flex-col items-center justify-center">
+                    <span class="text-3xl font-orbitron font-bold text-blue-500" id="wordCount">0</span>
+                    <span class="text-[10px] uppercase tracking-widest text-slate-500 mt-1">Words</span>
+                </div>
+                <div class="glass p-4 rounded-xl border border-white/5 flex flex-col items-center justify-center">
+                    <span class="text-3xl font-orbitron font-bold text-green-500" id="lineCount">0</span>
+                    <span class="text-[10px] uppercase tracking-widest text-slate-500 mt-1">Lines</span>
+                </div>
+                <div class="glass p-4 rounded-xl border border-white/5 flex flex-col items-center justify-center">
+                    <span class="text-3xl font-orbitron font-bold text-yellow-500" id="noSpaceCount">0</span>
+                    <span class="text-[10px] uppercase tracking-widest text-slate-500 mt-1">No Spaces</span>
+                </div>
+            </div>
+
+            <!-- Frequency List -->
+            <div class="glass flex-1 rounded-2xl border border-white/5 shadow-xl flex flex-col overflow-hidden">
+                <div class="px-6 py-3 border-b border-white/5 bg-slate-900/50 flex justify-between items-center">
+                    <span class="text-xs font-bold text-pink-400 tracking-widest uppercase"><i
+                            class="fas fa-list-ol mr-2"></i>Frequency Distribution</span>
+                </div>
+                <div class="flex-1 overflow-auto custom-scrollbar p-0">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-slate-950/50 sticky top-0 backdrop-blur-sm z-10">
+                            <tr>
+                                <th
+                                    class="p-4 text-[10px] uppercase tracking-wider text-slate-500 font-bold border-b border-white/5">
+                                    Char</th>
+                                <th
+                                    class="p-4 text-[10px] uppercase tracking-wider text-slate-500 font-bold border-b border-white/5">
+                                    Graph</th>
+                                <th
+                                    class="p-4 text-[10px] uppercase tracking-wider text-slate-500 font-bold border-b border-white/5 text-right">
+                                    Count</th>
+                                <th
+                                    class="p-4 text-[10px] uppercase tracking-wider text-slate-500 font-bold border-b border-white/5 text-right">
+                                    %</th>
+                            </tr>
+                        </thead>
+                        <tbody id="freqTable" class="divide-y divide-white/5 text-sm font-mono text-slate-300">
+                            <tr>
+                                <td colspan="4" class="p-8 text-center text-slate-600 italic">Start typing to see
+                                    stats...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Shared Script -->
+    <script type="module" src="../../shared/bg-particles.js"></script>
+
+    <script>
+        function analyze() {
+            const text = document.getElementById('textInput').value;
+
+            // Basic counts
+            document.getElementById('charCount').innerText = text.length;
+            document.getElementById('wordCount').innerText = text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
+            document.getElementById('lineCount').innerText = text === '' ? 0 : text.split(/\r\n|\r|\n/).length;
+            document.getElementById('noSpaceCount').innerText = text.replace(/\s/g, '').length;
+
+            // Frequency map
+            const map = {};
+            for (let char of text) {
+                if (char.match(/\s/)) char = 'SPC'; // Represent space visible
+                if (char === '\n') char = 'RET'; // Return
+                map[char] = (map[char] || 0) + 1;
+            }
+
+            // Sort
+            const sorted = Object.entries(map).sort((a, b) => b[1] - a[1]);
+            const total = text.length || 1;
+
+            // Render table
+            const tbody = document.getElementById('freqTable');
+            if (text.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="p-8 text-center text-slate-600 italic">Start typing to see stats...</td></tr>';
+                return;
+            }
+
+            let html = '';
+            sorted.forEach(([char, count]) => {
+                const percent = ((count / total) * 100).toFixed(1);
+                // Graph bar width
+                const barWidth = Math.max(percent, 2);
+
+                html += `
+                    <tr class="hover:bg-white/5 transition-colors group">
+                        <td class="p-4 font-bold text-pink-400">${char}</td>
+                        <td class="p-4 w-1/2">
+                            <div class="h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                                <div class="h-full bg-pink-500 rounded-full" style="width: ${barWidth}%"></div>
+                            </div>
+                        </td>
+                        <td class="p-4 text-right">${count}</td>
+                        <td class="p-4 text-right text-slate-500">${percent}%</td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = html;
+        }
+    </script>
+</body>
+
+</html>

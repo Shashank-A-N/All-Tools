@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Compressor (Backend Edition)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f0f2f5;
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .whatsapp-green {
+            background-color: #25D366;
+        }
+
+        #drop-zone.drag-over {
+            background-color: #f0fff4;
+            border-color: #25D366;
+        }
+
+        .loader {
+            border-top-color: #25D366;
+            animation: spinner 1.5s linear infinite;
+        }
+
+        @keyframes spinner {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body class="min-h-screen flex flex-col items-center justify-center p-4">
+
+    <div class="max-w-2xl w-full space-y-6">
+        <div class="text-center space-y-2">
+            <h1 class="text-4xl font-extrabold text-gray-900 tracking-tight">
+                Cloud <span class="text-[#25D366]">Compressor</span>
+            </h1>
+            <p class="text-gray-500 font-medium">High-speed server-side processing.</p>
+        </div>
+
+        <div class="glass-panel rounded-3xl p-8 space-y-8">
+            <!-- Upload Section -->
+            <div id="upload-section" class="space-y-4">
+                <div id="drop-zone"
+                    class="border-2 border-dashed border-gray-300 rounded-2xl p-12 text-center cursor-pointer hover:border-[#25D366] transition-all">
+                    <input type="file" id="file-input" class="hidden" accept="video/*">
+                    <div class="space-y-4">
+                        <p class="text-lg font-semibold text-gray-700">Drop video to compress</p>
+                        <button class="px-6 py-2 whatsapp-green text-white rounded-full font-bold">Choose File</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Config Section -->
+            <div id="config-section" class="hidden space-y-6">
+                <div class="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                    <span id="file-name" class="font-bold truncate max-w-[250px]">video.mp4</span>
+                    <button onclick="location.reload()" class="text-red-500 text-xs font-bold">CANCEL</button>
+                </div>
+
+                <div class="space-y-4">
+                    <label class="block text-sm font-bold text-gray-700">QUALITY SETTING</label>
+                    <input type="range" id="quality-slider" min="18" max="45" value="28"
+                        class="w-full accent-[#25D366]">
+                    <div class="flex justify-between text-[10px] font-bold text-gray-400">
+                        <span>CRF 18 (HIGH)</span>
+                        <span>CRF 28 (BALANCED)</span>
+                        <span>CRF 45 (SMALLEST)</span>
+                    </div>
+                </div>
+
+                <button id="start-btn" class="w-full py-4 whatsapp-green text-white rounded-2xl font-bold shadow-xl">
+                    Compress for WhatsApp
+                </button>
+            </div>
+
+            <!-- Processing Section -->
+            <div id="processing-section" class="hidden text-center space-y-4 py-8">
+                <div class="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-12 w-12 mx-auto">
+                </div>
+                <p class="text-gray-600 font-medium">Server is processing your video...</p>
+                <p class="text-xs text-gray-400">This may take a minute for large files.</p>
+            </div>
+
+            <!-- Success Section -->
+            <div id="success-section" class="hidden text-center space-y-6">
+                <div
+                    class="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                </div>
+                <h2 class="text-2xl font-bold">Ready!</h2>
+                <a id="download-link"
+                    class="block w-full py-4 whatsapp-green text-white rounded-2xl font-bold text-center">Download
+                    Now</a>
+                <button onclick="location.reload()" class="text-gray-400 font-bold text-sm">New Compression</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = "http://localhost:8000"; // Update this to your deployed server URL
+
+        let selectedFile = null;
+        const els = {
+            drop: document.getElementById('drop-zone'),
+            input: document.getElementById('file-input'),
+            upSec: document.getElementById('upload-section'),
+            cfgSec: document.getElementById('config-section'),
+            procSec: document.getElementById('processing-section'),
+            sucSec: document.getElementById('success-section'),
+            name: document.getElementById('file-name'),
+            start: document.getElementById('start-btn'),
+            dl: document.getElementById('download-link'),
+            quality: document.getElementById('quality-slider')
+        };
+        els.drop.onclick = () => els.input.click();
+        els.input.onchange = (e) => {
+            selectedFile = e.target.files[0];
+            if (selectedFile) {
+                els.name.innerText = selectedFile.name;
+                els.upSec.classList.add('hidden');
+                els.cfgSec.classList.remove('hidden');
+            }
+        };
+        els.start.onclick = async () => {
+            els.cfgSec.classList.add('hidden');
+            els.procSec.classList.remove('hidden');
+            const formData = new FormData();
+            formData.append('video', selectedFile);
+            formData.append('crf', els.quality.value);
+            try {
+                const response = await fetch(`${API_URL}/compress`, {
+                    method: 'POST',
+                    body: formData
+                });
+                if (!response.ok) throw new Error('Compression failed');
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+
+                els.dl.href = url;
+                els.dl.download = `compressed_${selectedFile.name}`;
+
+                els.procSec.classList.add('hidden');
+                els.sucSec.classList.remove('hidden');
+            } catch (err) {
+                alert("Error: " + err.message);
+                location.reload();
+            }
+        };
+    </script>
+</body>
+
+</html>

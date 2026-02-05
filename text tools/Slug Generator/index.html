@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shadow Text - Slug Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;500;600;700&display=swap"
+        rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link rel="stylesheet" href="../../styles.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        mono: ['Courier New', 'monospace'],
+                        sans: ['Rajdhani', 'sans-serif'],
+                        orbitron: ['Orbitron', 'sans-serif']
+                    },
+                    colors: {
+                        cyber: {
+                            accent: '#f59e0b', // Amber-500
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body
+    class="min-h-screen flex flex-col font-sans overflow-x-hidden bg-slate-900 text-white selection:bg-amber-500 selection:text-black">
+
+    <!-- 3D Background -->
+    <div id="bg-3d-container"></div>
+
+    <!-- Navigation -->
+    <nav
+        class="sticky top-0 z-50 glass-effect border-b border-white/5 px-4 md:px-6 py-3 flex items-center justify-between backdrop-blur-md">
+        <a href="../index.html" class="flex items-center gap-3 text-slate-300 hover:text-white transition-colors group">
+            <div
+                class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center border border-white/10 group-hover:border-amber-500/50 transition-all">
+                <i class="fas fa-chevron-left text-xs group-hover:-translate-x-0.5 transition-transform"></i>
+            </div>
+            <span class="font-orbitron font-bold tracking-wider hidden md:block">BACK</span>
+        </a>
+
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded bg-amber-500/20 flex items-center justify-center text-amber-400">
+                <i class="fas fa-link"></i>
+            </div>
+            <h1 class="text-lg md:text-xl font-orbitron font-bold tracking-widest text-white">SHADOW<span
+                    class="text-amber-500">SLUG</span></h1>
+        </div>
+
+        <div class="w-8"></div>
+    </nav>
+
+    <!-- Main Content -->
+    <main
+        class="flex-grow container mx-auto px-4 py-8 relative z-10 flex flex-col items-center justify-center h-[calc(100vh-80px)] min-h-[600px]">
+
+        <div class="grid grid-cols-1 gap-8 w-full max-w-4xl">
+
+            <!-- Input Panel -->
+            <div class="flex flex-col gap-2">
+                <label class="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Title Text</label>
+                <div
+                    class="glass p-1 rounded-2xl border border-white/5 shadow-xl transition-all focus-within:border-amber-500/50">
+                    <input type="text" id="textInput" oninput="generate()"
+                        class="w-full bg-slate-950/30 rounded-xl px-6 py-4 text-lg md:text-xl text-white placeholder-slate-600 focus:outline-none font-sans"
+                        placeholder="Type article title here...">
+                </div>
+            </div>
+
+            <!-- Arrow -->
+            <div class="flex justify-center text-amber-500/50">
+                <i class="fas fa-arrow-down text-3xl animate-bounce"></i>
+            </div>
+
+            <!-- Output Panel -->
+            <div class="flex flex-col gap-2">
+                <label class="text-xs font-bold text-amber-500 uppercase tracking-widest ml-1">Generated Slug</label>
+                <div
+                    class="glass p-1 rounded-2xl border border-white/5 shadow-xl transition-all group hover:border-amber-500/50 relative">
+                    <input type="text" id="slugOutput" readonly
+                        class="w-full bg-slate-950/50 rounded-xl px-6 py-4 text-lg md:text-xl text-amber-400 font-mono focus:outline-none"
+                        placeholder="type-article-title-here">
+                    <button onclick="copy('slugOutput')"
+                        class="absolute right-2 top-1/2 -translate-y-1/2 px-4 py-2 bg-amber-600/20 hover:bg-amber-500 text-amber-500 hover:text-black rounded-lg transition-all font-bold text-xs uppercase tracking-wider">
+                        Copy
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Shared Script -->
+    <script type="module" src="../../shared/bg-particles.js"></script>
+
+    <script>
+        function generate() {
+            const text = document.getElementById('textInput').value;
+            const slug = text
+                .toLowerCase()
+                .trim()
+                .replace(/[^\w\s-]/g, '')
+                .replace(/[\s_-]+/g, '-')
+                .replace(/^-+|-+$/g, '');
+
+            document.getElementById('slugOutput').value = slug;
+        }
+
+        function copy(id) {
+            const el = document.getElementById(id);
+            el.select();
+            document.execCommand('copy');
+            const btn = document.querySelector(`button[onclick="copy('${id}')"]`);
+            const originalText = btn.innerHTML;
+            btn.innerHTML = 'COPIED';
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+            }, 1500);
+        }
+    </script>
+</body>
+
+</html>

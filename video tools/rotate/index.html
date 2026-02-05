@@ -1,0 +1,1138 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Batch Video Rotator</title>
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔄</text></svg>">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        /* Custom scrollbar for webkit */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+
+        .fade-enter {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        .fade-enter-active {
+            opacity: 1;
+            transform: translateY(0);
+            transition: opacity 300ms, transform 300ms;
+        }
+
+        /* Drag & Drop Animations */
+        @keyframes pulse-border {
+            0% {
+                border-color: #6366f1;
+                box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4);
+            }
+
+            70% {
+                border-color: #818cf8;
+                box-shadow: 0 0 0 10px rgba(99, 102, 241, 0);
+            }
+
+            100% {
+                border-color: #6366f1;
+                box-shadow: 0 0 0 0 rgba(99, 102, 241, 0);
+            }
+        }
+
+        .drag-active {
+            background-color: rgba(30, 41, 59, 0.95) !important;
+            border-color: #6366f1 !important;
+            transform: scale(1.01);
+            animation: pulse-border 2s infinite;
+        }
+
+        /* Progress Bar Shimmer */
+        .shimmer {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .shimmer::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transform: translateX(-100%);
+            animation: shimmer 1.5s infinite;
+        }
+
+        @keyframes shimmer {
+            100% {
+                transform: translateX(100%);
+            }
+        }
+
+        /* Toast Notifications */
+        .toast-container {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            left: 24px;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            pointer-events: none;
+            align-items: flex-end;
+        }
+
+        .toast {
+            background: #1e293b;
+            border: 1px solid #334155;
+            color: white;
+            padding: 12px 16px;
+            border-radius: 12px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transform: translateY(20px);
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            pointer-events: auto;
+            width: 100%;
+            max-width: 350px;
+        }
+
+        @media (min-width: 640px) {
+            .toast-container {
+                left: auto;
+            }
+
+            .toast {
+                transform: translateX(120%);
+                opacity: 1;
+            }
+        }
+
+        .toast.show {
+            transform: translateX(0) translateY(0);
+            opacity: 1;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen bg-slate-900 text-slate-100 font-sans p-2 sm:p-4 md:p-8">
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <div class="max-w-6xl mx-auto">
+
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-4 sm:mb-8">
+            <div class="flex items-center space-x-2 sm:space-x-3">
+                <div class="bg-indigo-600 p-2 sm:p-3 rounded-xl shadow-lg shadow-indigo-500/20">
+                    <i data-lucide="layers" class="w-5 h-5 sm:w-6 sm:h-6 text-white"></i>
+                </div>
+                <div>
+                    <h1
+                        class="text-lg sm:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">
+                        Batch Video Rotator</h1>
+                    <p class="text-slate-400 text-[10px] sm:text-sm">Rotate and convert multiple videos locally.</p>
+                </div>
+            </div>
+            <div id="global-actions"
+                class="hidden flex space-x-3 animate-in fade-in slide-in-from-right-4 duration-500">
+                <button id="btn-download-all"
+                    class="hidden flex items-center space-x-2 px-3 py-2 sm:px-5 sm:py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-medium transition-all hover:scale-105 active:scale-95 shadow-lg shadow-emerald-900/20 text-xs sm:text-sm group">
+                    <i data-lucide="archive" class="w-4 h-4 group-hover:rotate-12 transition-transform"></i>
+                    <span class="hidden sm:inline">Download All (ZIP)</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Workspace -->
+        <div
+            class="bg-slate-800 rounded-2xl sm:rounded-3xl border border-slate-700 overflow-hidden shadow-2xl relative min-h-[550px] sm:min-h-[700px] flex flex-col transition-all duration-300">
+
+            <!-- Upload Section (Overlay or Full State) -->
+            <div id="upload-section"
+                class="flex-1 flex flex-col items-center justify-center text-center p-6 sm:p-12 border-2 border-dashed border-slate-600 m-2 sm:m-4 rounded-xl sm:rounded-2xl hover:bg-slate-700/50 hover:border-slate-500 transition-all duration-300 relative group cursor-pointer">
+                <input type="file" id="file-input" accept="video/*" multiple
+                    class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+
+                <div
+                    class="bg-slate-700 p-4 sm:p-6 rounded-full mb-4 sm:mb-6 group-hover:scale-110 group-hover:bg-slate-600 transition-all duration-300 shadow-xl">
+                    <i data-lucide="upload-cloud"
+                        class="w-8 h-8 sm:w-12 sm:h-12 text-indigo-400 group-hover:text-indigo-300 transition-colors"></i>
+                </div>
+
+                <h3
+                    class="text-lg sm:text-2xl font-bold mb-2 sm:mb-3 text-slate-200 group-hover:text-white transition-colors">
+                    Drop videos here</h3>
+                <p class="text-slate-400 max-w-xs sm:max-w-sm mb-6 sm:mb-8 text-xs sm:text-base">
+                    Drag and drop your files or click to browse.<br>
+                    <span class="text-[10px] sm:text-xs text-slate-500 mt-1 sm:mt-2 block">Supports MP4, WebM, MOV.
+                        Processed locally.</span>
+                </p>
+
+                <button
+                    class="px-5 py-2 sm:px-8 sm:py-3 bg-indigo-600 group-hover:bg-indigo-500 text-white rounded-full font-semibold text-sm sm:text-base transition-all shadow-lg shadow-indigo-500/30 pointer-events-none group-hover:scale-105">
+                    Select Files
+                </button>
+            </div>
+
+            <!-- Dashboard Section (Hidden by default) -->
+            <div id="dashboard-section" class="hidden flex flex-col h-full absolute inset-0 bg-slate-800 z-20">
+
+                <!-- Toolbar -->
+                <div
+                    class="flex items-center justify-between p-2 sm:p-4 border-b border-slate-700 bg-slate-800/95 backdrop-blur z-30 sticky top-0">
+                    <div class="flex items-center space-x-2 sm:space-x-4">
+                        <button id="btn-add-more"
+                            class="flex items-center space-x-2 px-3 py-2 sm:px-4 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-xs sm:text-sm font-medium transition-all hover:ring-2 hover:ring-indigo-500/50 relative overflow-hidden active:scale-95"
+                            title="Add Videos">
+                            <input type="file" id="add-more-input" accept="video/*" multiple
+                                class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+                            <i data-lucide="plus" class="w-4 h-4"></i>
+                            <span class="hidden sm:inline">Add Videos</span>
+                        </button>
+
+                        <div class="flex items-center space-x-1">
+                            <button id="btn-global-left"
+                                class="text-slate-400 hover:text-white text-sm flex items-center space-x-1 transition-colors p-2 hover:bg-slate-700 rounded-lg"
+                                title="Rotate All Left">
+                                <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                                <span class="hidden sm:inline">All Left</span>
+                            </button>
+                            <button id="btn-global-right"
+                                class="text-slate-400 hover:text-white text-sm flex items-center space-x-1 transition-colors p-2 hover:bg-slate-700 rounded-lg"
+                                title="Rotate All Right">
+                                <i data-lucide="rotate-cw" class="w-4 h-4"></i>
+                                <span class="hidden sm:inline">All Right</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center space-x-2 sm:space-x-3">
+                        <button id="btn-clear-all"
+                            class="text-slate-400 hover:text-red-400 text-xs sm:text-sm px-2 py-2 sm:px-3 hover:bg-red-500/10 rounded-lg transition-colors"
+                            title="Clear All">
+                            <i data-lucide="trash-2" class="w-4 h-4 sm:hidden"></i>
+                            <span class="hidden sm:inline">Clear All</span>
+                        </button>
+                        <button id="btn-process-queue"
+                            class="flex items-center space-x-2 px-3 py-2 sm:px-6 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-bold transition-all shadow-lg hover:shadow-indigo-500/25 active:scale-95 text-xs sm:text-sm">
+                            <i data-lucide="play" class="w-4 h-4 fill-current"></i>
+                            <span class="hidden sm:inline">Process Queue</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Video List Drop Zone -->
+                <div id="video-list-container" class="flex-1 overflow-hidden relative">
+                    <!-- Drop overlay for dashboard -->
+                    <div id="dashboard-drop-overlay"
+                        class="absolute inset-0 bg-slate-900/80 backdrop-blur-sm z-40 hidden flex-col items-center justify-center border-2 border-dashed border-indigo-500 m-4 rounded-xl">
+                        <i data-lucide="copy-plus"
+                            class="w-12 h-12 sm:w-16 sm:h-16 text-indigo-400 mb-4 animate-bounce"></i>
+                        <h3 class="text-lg sm:text-xl font-bold text-white">Drop to add more videos</h3>
+                    </div>
+
+                    <div id="video-list" class="h-full overflow-y-auto p-2 sm:p-4 space-y-2 sm:space-y-3">
+                        <!-- Items will be injected here via JS -->
+                    </div>
+                </div>
+
+                <!-- Footer Status -->
+                <div
+                    class="p-2 sm:p-3 bg-slate-900 border-t border-slate-700 text-[10px] sm:text-xs text-slate-500 flex justify-between items-center">
+                    <span id="queue-status">Ready</span>
+                    <span class="hidden sm:inline">Note: WebM files work best in VLC or Chrome</span>
+                    <span class="sm:hidden">Local Processing</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hidden Processing Elements -->
+        <div id="hidden-container"
+            style="position: fixed; top: 0; left: 0; width: 1px; height: 1px; opacity: 0.01; pointer-events: none; z-index: -9999; overflow: hidden;">
+            <canvas id="hidden-canvas"></canvas>
+        </div>
+
+    </div>
+
+    <!-- Video Preview Modal -->
+    <div id="video-modal"
+        class="fixed inset-0 bg-black/95 z-[100] hidden flex flex-col items-center justify-center p-4 backdrop-blur-md transition-all duration-300">
+        <div class="w-full max-w-5xl relative animate-in zoom-in-95 duration-200">
+            <div class="flex justify-between items-center mb-4 text-white">
+                <div class="flex items-center space-x-3">
+                    <h3 id="modal-title" class="text-base sm:text-xl font-semibold truncate max-w-[200px] sm:max-w-md">
+                        Preview</h3>
+                    <span id="modal-tag"
+                        class="text-[10px] sm:text-xs font-bold px-2 py-1 rounded uppercase tracking-wider">Original</span>
+                </div>
+                <button id="btn-close-modal" class="p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors">
+                    <i data-lucide="x" class="w-5 h-5 sm:w-6 sm:h-6"></i>
+                </button>
+            </div>
+            <div
+                class="relative bg-black rounded-xl overflow-hidden shadow-2xl border border-slate-800 ring-1 ring-white/10">
+                <video id="modal-video" class="w-full max-h-[70vh] sm:max-h-[80vh] mx-auto" controls
+                    playsinline></video>
+            </div>
+        </div>
+    </div>
+
+    <!-- Template for Video Item -->
+    <template id="video-item-template">
+        <div
+            class="video-item bg-slate-750 border border-slate-700/50 bg-slate-800/40 rounded-xl p-3 sm:p-4 flex flex-col sm:flex-row items-center gap-3 sm:gap-4 fade-enter-active group hover:border-slate-600 hover:bg-slate-800/80 transition-all duration-200 shadow-sm">
+
+            <!-- Preview / Icon -->
+            <div
+                class="btn-preview-original w-full h-24 sm:w-32 sm:h-20 bg-black/40 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0 relative cursor-pointer group/thumb hover:bg-black/60 transition-colors border border-transparent hover:border-indigo-500/30">
+                <i data-lucide="film"
+                    class="w-6 h-6 sm:w-8 sm:h-8 text-slate-500 group-hover/thumb:hidden transition-opacity"></i>
+                <div class="hidden group-hover/thumb:flex flex-col items-center animate-in fade-in duration-200">
+                    <i data-lucide="eye" class="w-5 h-5 sm:w-6 sm:h-6 text-indigo-400 mb-1"></i>
+                    <span class="text-[9px] text-slate-300 uppercase font-bold tracking-wide">Original</span>
+                </div>
+            </div>
+
+            <!-- Info -->
+            <div class="flex-1 min-w-0 text-center sm:text-left w-full">
+                <h4 class="font-medium text-slate-200 truncate filename text-sm sm:text-lg">video.mp4</h4>
+                <div
+                    class="text-[10px] sm:text-xs text-slate-400 mt-1 flex items-center justify-center sm:justify-start space-x-2">
+                    <span class="filesize bg-slate-700/50 px-2 py-0.5 rounded">0 MB</span>
+                    <span class="text-slate-600">•</span>
+                    <span class="status-text text-indigo-400 font-medium">Pending</span>
+                </div>
+            </div>
+
+            <!-- Controls & Actions Wrapper for Mobile -->
+            <div class="w-full sm:w-auto flex items-center justify-between sm:justify-end gap-2 sm:gap-4">
+
+                <!-- Controls (Rotation) -->
+                <div
+                    class="controls-area flex items-center space-x-1 bg-slate-900/50 p-1 rounded-lg border border-slate-700/50">
+                    <button
+                        class="btn-rot-left p-1.5 sm:p-2 hover:bg-slate-700 rounded text-slate-400 hover:text-white transition-colors">
+                        <i data-lucide="rotate-ccw" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i>
+                    </button>
+                    <div
+                        class="w-8 sm:w-12 text-center font-mono text-xs sm:text-sm text-indigo-300 rotation-value font-bold">
+                        0°</div>
+                    <button
+                        class="btn-rot-right p-1.5 sm:p-2 hover:bg-slate-700 rounded text-slate-400 hover:text-white transition-colors">
+                        <i data-lucide="rotate-cw" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i>
+                    </button>
+                </div>
+
+                <!-- Actions -->
+                <div class="action-area flex items-center space-x-1 sm:space-x-2">
+
+                    <!-- Individual Process Button -->
+                    <button
+                        class="btn-process-single p-2 text-indigo-400 hover:text-white hover:bg-indigo-600 rounded-lg transition-all"
+                        title="Process this file">
+                        <i data-lucide="play" class="w-4 h-4 sm:w-5 sm:h-5 fill-current"></i>
+                    </button>
+
+                    <!-- Cancel Button (Hidden by default) -->
+                    <button
+                        class="btn-cancel hidden p-2 text-red-400 hover:text-white hover:bg-red-600 rounded-lg transition-all"
+                        title="Cancel processing">
+                        <i data-lucide="square" class="w-4 h-4 sm:w-5 sm:h-5 fill-current"></i>
+                    </button>
+
+                    <!-- Remove Button -->
+                    <button
+                        class="btn-remove p-2 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                        title="Remove from queue">
+                        <i data-lucide="trash-2" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+                    </button>
+
+                    <!-- Processing State (Progress Bar) -->
+                    <div class="progress-area hidden w-20 sm:w-full flex-col justify-center px-1">
+                        <div class="h-2 bg-slate-900 rounded-full overflow-hidden w-full ring-1 ring-white/5">
+                            <div
+                                class="progress-bar bg-gradient-to-r from-indigo-600 to-indigo-400 h-full w-0 transition-all duration-300 shimmer">
+                            </div>
+                        </div>
+                        <div class="text-right text-[9px] sm:text-[10px] text-slate-400 mt-0.5 progress-text font-mono">
+                            0%</div>
+                    </div>
+
+                    <!-- Completed Actions -->
+                    <div
+                        class="completed-actions hidden flex items-center space-x-1 sm:space-x-2 animate-in fade-in duration-300">
+                        <button
+                            class="btn-preview-processed p-2 text-slate-400 hover:text-indigo-400 transition-colors rounded-lg hover:bg-slate-700 border border-transparent hover:border-slate-600"
+                            title="Preview Result">
+                            <i data-lucide="eye" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+                        </button>
+
+                        <a class="btn-download flex items-center space-x-2 px-3 py-1.5 sm:px-4 sm:py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs sm:text-sm font-bold transition-all shadow-lg shadow-emerald-900/20 hover:-translate-y-0.5"
+                            download>
+                            <i data-lucide="download" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i>
+                            <span class="hidden sm:inline">Save</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <script>
+        // --- Service Worker Cleanup ---
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function (registrations) {
+                for (let registration of registrations) registration.unregister();
+            });
+        }
+
+        // --- Icons ---
+        lucide.createIcons();
+
+        // --- State ---
+        let queue = [];
+        let isProcessing = false;
+
+        // --- DOM Elements ---
+        const els = {
+            fileInput: document.getElementById('file-input'),
+            addMoreInput: document.getElementById('add-more-input'),
+            uploadSection: document.getElementById('upload-section'),
+            dashboardSection: document.getElementById('dashboard-section'),
+            videoList: document.getElementById('video-list'),
+            videoListContainer: document.getElementById('video-list-container'),
+            dashboardDropOverlay: document.getElementById('dashboard-drop-overlay'),
+            btnProcess: document.getElementById('btn-process-queue'),
+            btnClear: document.getElementById('btn-clear-all'),
+            btnDownloadAll: document.getElementById('btn-download-all'),
+            btnGlobalLeft: document.getElementById('btn-global-left'),
+            btnGlobalRight: document.getElementById('btn-global-right'),
+            globalActions: document.getElementById('global-actions'),
+            queueStatus: document.getElementById('queue-status'),
+            hiddenContainer: document.getElementById('hidden-container'),
+            hiddenCanvas: document.getElementById('hidden-canvas'),
+            template: document.getElementById('video-item-template'),
+            videoModal: document.getElementById('video-modal'),
+            modalVideo: document.getElementById('modal-video'),
+            modalTitle: document.getElementById('modal-title'),
+            modalTag: document.getElementById('modal-tag'),
+            btnCloseModal: document.getElementById('btn-close-modal'),
+            toastContainer: document.getElementById('toast-container')
+        };
+
+        // --- Drag & Drop Logic ---
+        function setupDragDrop(element, overlay = null) {
+            element.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                element.classList.add('drag-active');
+                if (overlay) overlay.style.display = 'flex';
+            });
+
+            element.addEventListener('dragleave', (e) => {
+                e.preventDefault();
+                // Check if we really left the element (and not just went to a child)
+                if (!element.contains(e.relatedTarget)) {
+                    element.classList.remove('drag-active');
+                    if (overlay) overlay.style.display = 'none';
+                }
+            });
+
+            element.addEventListener('drop', (e) => {
+                e.preventDefault();
+                element.classList.remove('drag-active');
+                if (overlay) overlay.style.display = 'none';
+
+                if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                    handleFiles(e.dataTransfer.files);
+                }
+            });
+        }
+
+        setupDragDrop(els.uploadSection);
+        setupDragDrop(els.videoListContainer, els.dashboardDropOverlay);
+        // Also allow drag on the dashboard drop overlay itself to catch the drop
+        els.dashboardDropOverlay.addEventListener('dragover', (e) => e.preventDefault());
+        els.dashboardDropOverlay.addEventListener('drop', (e) => {
+            e.preventDefault();
+            els.videoListContainer.classList.remove('drag-active');
+            els.dashboardDropOverlay.style.display = 'none';
+            if (e.dataTransfer.files) handleFiles(e.dataTransfer.files);
+        });
+
+
+        // --- Toast Logic ---
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+
+            let icon = '';
+            let colorClass = '';
+
+            if (type === 'success') {
+                icon = '<i data-lucide="check-circle" class="text-emerald-400"></i>';
+                colorClass = 'border-emerald-500/30';
+            } else if (type === 'error') {
+                icon = '<i data-lucide="alert-circle" class="text-red-400"></i>';
+                colorClass = 'border-red-500/30';
+            } else {
+                icon = '<i data-lucide="info" class="text-indigo-400"></i>';
+                colorClass = 'border-indigo-500/30';
+            }
+
+            toast.classList.add(colorClass);
+            toast.innerHTML = `
+                ${icon}
+                <span class="font-medium text-xs sm:text-sm">${message}</span>
+            `;
+
+            els.toastContainer.appendChild(toast);
+            lucide.createIcons({ root: toast });
+
+            // Trigger animation
+            requestAnimationFrame(() => toast.classList.add('show'));
+
+            // Remove after delay
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 400);
+            }, 3000);
+        }
+
+        // --- Event Listeners ---
+        els.fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
+        els.addMoreInput.addEventListener('change', (e) => handleFiles(e.target.files));
+
+        els.btnProcess.addEventListener('click', startQueue);
+        els.btnClear.addEventListener('click', clearAll);
+        els.btnGlobalLeft.addEventListener('click', () => adjustGlobalRotation(-90));
+        els.btnGlobalRight.addEventListener('click', () => adjustGlobalRotation(90));
+        els.btnDownloadAll.addEventListener('click', downloadAllZip);
+        els.btnCloseModal.addEventListener('click', closeModal);
+        els.videoModal.addEventListener('click', (e) => {
+            if (e.target === els.videoModal) closeModal();
+        });
+
+        // --- Core Logic ---
+
+        function handleFiles(fileList) {
+            if (!fileList || fileList.length === 0) return;
+
+            // Switch to dashboard view
+            if (!els.uploadSection.classList.contains('hidden')) {
+                els.uploadSection.classList.add('hidden');
+                els.dashboardSection.classList.remove('hidden');
+            }
+
+            let count = 0;
+            Array.from(fileList).forEach(file => {
+                if (file.type.startsWith('video/')) {
+                    addVideoToQueue(file);
+                    count++;
+                }
+            });
+
+            if (count > 0) {
+                showToast(`${count} video${count > 1 ? 's' : ''} added to queue`, 'info');
+            } else {
+                showToast('No valid video files found', 'error');
+            }
+
+            els.fileInput.value = '';
+            els.addMoreInput.value = '';
+            updateGlobalUI();
+        }
+
+        function addVideoToQueue(file) {
+            const id = 'v-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
+
+            const videoItem = {
+                id: id,
+                file: file,
+                url: URL.createObjectURL(file),
+                rotation: 0,
+                status: 'idle', // idle, processing, done, error, cancelled
+                progress: 0,
+                processedUrl: null,
+                blob: null,
+                cancelFn: null // Function to abort processing
+            };
+
+            queue.push(videoItem);
+            renderVideoItem(videoItem);
+        }
+
+        function renderVideoItem(item) {
+            const clone = els.template.content.cloneNode(true);
+            const root = clone.querySelector('.video-item');
+            root.id = item.id;
+
+            root.querySelector('.filename').textContent = item.file.name;
+            root.querySelector('.filesize').textContent = formatSize(item.file.size);
+
+            const btnLeft = root.querySelector('.btn-rot-left');
+            const btnRight = root.querySelector('.btn-rot-right');
+            const btnRemove = root.querySelector('.btn-remove');
+            const btnPreviewOriginal = root.querySelector('.btn-preview-original');
+            const btnProcessSingle = root.querySelector('.btn-process-single');
+            const btnCancel = root.querySelector('.btn-cancel');
+
+            btnLeft.onclick = () => updateItemRotation(item.id, -90);
+            btnRight.onclick = () => updateItemRotation(item.id, 90);
+            btnRemove.onclick = () => removeItem(item.id);
+            btnPreviewOriginal.onclick = () => openModal(item.url, item.file.name, "Original");
+
+            btnProcessSingle.onclick = () => startSingleItem(item.id);
+            btnCancel.onclick = () => cancelItem(item.id);
+
+            els.videoList.appendChild(clone);
+            // Scroll to bottom
+            els.videoList.scrollTop = els.videoList.scrollHeight;
+            lucide.createIcons({ root: root });
+        }
+
+        function updateItemRotation(id, delta) {
+            const item = queue.find(v => v.id === id);
+            if (!item || item.status === 'processing' || item.status === 'done') return;
+            item.rotation = (item.rotation + delta) % 360;
+            const el = document.getElementById(id);
+            if (el) {
+                const val = ((item.rotation % 360) + 360) % 360;
+                el.querySelector('.rotation-value').textContent = val + '°';
+                const isRotated = val !== 0;
+                el.querySelector('.rotation-value').classList.toggle('text-indigo-300', isRotated);
+                el.querySelector('.rotation-value').classList.toggle('text-slate-500', !isRotated);
+            }
+        }
+
+        function adjustGlobalRotation(delta) {
+            let count = 0;
+            queue.forEach(item => {
+                if (item.status === 'idle') {
+                    updateItemRotation(item.id, delta);
+                    count++;
+                }
+            });
+            if (count > 0) showToast(`Rotated ${count} videos`, 'info');
+        }
+
+        function removeItem(id) {
+            const index = queue.findIndex(v => v.id === id);
+            if (index > -1) {
+                const item = queue[index];
+                if (item.status === 'processing' && item.cancelFn) item.cancelFn(); // Ensure stop
+                if (item.url) URL.revokeObjectURL(item.url);
+                if (item.processedUrl) URL.revokeObjectURL(item.processedUrl);
+                queue.splice(index, 1);
+
+                const el = document.getElementById(id);
+                if (el) {
+                    el.style.opacity = '0';
+                    el.style.transform = 'scale(0.9)';
+                    setTimeout(() => el.remove(), 200);
+                }
+
+                if (queue.length === 0) clearAll();
+                else updateGlobalUI();
+            }
+        }
+
+        function clearAll() {
+            queue.forEach(item => {
+                if (item.status === 'processing' && item.cancelFn) item.cancelFn();
+                if (item.url) URL.revokeObjectURL(item.url);
+                if (item.processedUrl) URL.revokeObjectURL(item.processedUrl);
+            });
+            queue = [];
+            els.videoList.innerHTML = '';
+            els.uploadSection.classList.remove('hidden');
+            els.dashboardSection.classList.add('hidden');
+            els.btnDownloadAll.classList.add('hidden');
+            els.globalActions.classList.add('hidden');
+            setProcessingState(false);
+            showToast('All items cleared', 'info');
+        }
+
+        function updateGlobalUI() {
+            const hasFinished = queue.some(i => i.status === 'done');
+            if (hasFinished) {
+                els.globalActions.classList.remove('hidden');
+                els.btnDownloadAll.classList.remove('hidden');
+            }
+            els.queueStatus.textContent = `${queue.length} video(s) in queue`;
+        }
+
+        // --- Processing Logic & State Management ---
+
+        function setProcessingState(processing) {
+            isProcessing = processing;
+
+            // Toggle Global Buttons
+            els.btnProcess.disabled = processing;
+            els.btnProcess.classList.toggle('opacity-50', processing);
+            els.btnProcess.classList.toggle('cursor-not-allowed', processing);
+            els.btnGlobalLeft.disabled = processing;
+            els.btnGlobalRight.disabled = processing;
+
+            // Toggle all individual process buttons
+            document.querySelectorAll('.btn-process-single').forEach(btn => {
+                btn.disabled = processing;
+                btn.classList.toggle('opacity-50', processing);
+            });
+        }
+
+        async function processNext() {
+            const nextItem = queue.find(i => i.status === 'idle');
+
+            if (!nextItem || !isProcessing) {
+                setProcessingState(false);
+                if (!nextItem && isBatchMode) {
+                    // All done!
+                    showToast('Batch processing complete!', 'success');
+                    triggerConfetti();
+                    els.queueStatus.textContent = "Batch processing complete";
+                } else {
+                    els.queueStatus.textContent = "Processing stopped";
+                }
+                updateGlobalUI();
+                return;
+            }
+
+            await processSingleVideo(nextItem);
+
+            if (isBatchMode) {
+                processNext();
+            } else {
+                setProcessingState(false);
+            }
+        }
+
+        let isBatchMode = false;
+
+        async function startQueue() {
+            if (isProcessing) return;
+            const hasIdle = queue.some(i => i.status === 'idle');
+            if (!hasIdle) {
+                showToast("No pending videos to process", 'info');
+                return;
+            }
+
+            showToast("Starting batch processing...", 'info');
+            isBatchMode = true;
+            setProcessingState(true);
+            await processNext();
+        }
+
+        async function startSingleItem(id) {
+            if (isProcessing) return;
+            const item = queue.find(i => i.id === id);
+
+            if (item && (item.status === 'idle' || item.status === 'cancelled' || item.status === 'error')) {
+                isBatchMode = false;
+                setProcessingState(true);
+                showToast(`Processing ${item.file.name}...`, 'info');
+                await processSingleVideo(item);
+                setProcessingState(false);
+            }
+        }
+
+        function cancelItem(id) {
+            const item = queue.find(i => i.id === id);
+            if (item && item.status === 'processing' && item.cancelFn) {
+                item.cancelFn();
+                showToast("Processing cancelled", 'error');
+            }
+        }
+
+        function updateItemStatusUI(id, status, progress = 0) {
+            const el = document.getElementById(id);
+            if (!el) return;
+
+            const statusText = el.querySelector('.status-text');
+            const progressArea = el.querySelector('.progress-area');
+            const progressBar = el.querySelector('.progress-bar');
+            const progressVal = el.querySelector('.progress-text');
+            const controls = el.querySelector('.controls-area');
+            const btnRemove = el.querySelector('.btn-remove');
+            const btnProcessSingle = el.querySelector('.btn-process-single');
+            const btnCancel = el.querySelector('.btn-cancel');
+            const completedActions = el.querySelector('.completed-actions');
+
+            // Reset visibility
+            btnProcessSingle.classList.add('hidden');
+            btnCancel.classList.add('hidden');
+            btnRemove.classList.add('hidden');
+            completedActions.classList.add('hidden');
+            progressArea.classList.add('hidden');
+            controls.classList.remove('hidden');
+
+            if (status === 'processing') {
+                statusText.textContent = "Processing...";
+                statusText.className = "status-text text-indigo-400 font-bold animate-pulse";
+                progressArea.classList.remove('hidden');
+                controls.classList.add('opacity-30', 'pointer-events-none');
+                btnCancel.classList.remove('hidden'); // Show Cancel
+
+                progressBar.style.width = `${progress}%`;
+                progressVal.textContent = `${progress}%`;
+
+            } else if (status === 'done') {
+                statusText.textContent = "Complete";
+                statusText.className = "status-text text-emerald-400 font-bold";
+                controls.classList.add('hidden');
+                btnRemove.classList.remove('hidden');
+                completedActions.classList.remove('hidden');
+
+                // Highlight item
+                el.classList.add('border-emerald-500/30', 'bg-emerald-500/5');
+
+            } else if (status === 'error') {
+                statusText.textContent = "Error";
+                statusText.className = "status-text text-red-500 font-bold";
+                controls.classList.remove('opacity-30', 'pointer-events-none');
+                btnRemove.classList.remove('hidden');
+                btnProcessSingle.classList.remove('hidden');
+                el.classList.add('border-red-500/30', 'bg-red-500/5');
+
+            } else if (status === 'idle') {
+                statusText.textContent = "Pending";
+                statusText.className = "status-text text-indigo-400 font-medium";
+                controls.classList.remove('opacity-30', 'pointer-events-none');
+                btnRemove.classList.remove('hidden');
+                btnProcessSingle.classList.remove('hidden');
+                el.className = "video-item bg-slate-750 border border-slate-700/50 bg-slate-800/40 rounded-xl p-3 sm:p-4 flex flex-col sm:flex-row items-center gap-3 sm:gap-4 fade-enter-active group hover:border-slate-600 hover:bg-slate-800/80 transition-all duration-200 shadow-sm"; // Reset class
+            } else if (status === 'cancelled') {
+                statusText.textContent = "Cancelled";
+                statusText.className = "status-text text-slate-400";
+                controls.classList.remove('opacity-30', 'pointer-events-none');
+                btnRemove.classList.remove('hidden');
+                btnProcessSingle.classList.remove('hidden');
+            }
+        }
+
+        async function processSingleVideo(item) {
+            item.status = 'processing';
+            updateItemStatusUI(item.id, 'processing', 0);
+
+            // Create fresh video element for each process
+            const video = document.createElement('video');
+            video.crossOrigin = "anonymous";
+            video.playsInline = true;
+            video.muted = true;
+            video.style.opacity = '0';
+
+            els.hiddenContainer.appendChild(video);
+
+            const canvas = els.hiddenCanvas;
+            const ctx = canvas.getContext('2d');
+            let animationFrameId;
+            let mediaRecorder;
+            let cancelled = false;
+            let stream = null;
+
+            item.cancelFn = () => {
+                cancelled = true;
+                if (animationFrameId) cancelAnimationFrame(animationFrameId);
+                if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                    mediaRecorder.stop();
+                }
+                video.pause();
+                video.src = "";
+                if (stream) stream.getTracks().forEach(track => track.stop());
+                item.status = 'cancelled';
+                updateItemStatusUI(item.id, 'cancelled');
+            };
+
+            try {
+                video.src = item.url;
+                video.load();
+
+                if (video.readyState < 2) {
+                    await new Promise((resolve, reject) => {
+                        video.onloadedmetadata = resolve;
+                        video.onerror = () => reject(new Error("Video load error"));
+                        if (cancelled) reject(new Error("Cancelled"));
+                    });
+                }
+                if (cancelled) throw new Error("Cancelled");
+
+                const originalWidth = video.videoWidth;
+                const originalHeight = video.videoHeight;
+                const duration = video.duration;
+
+                let normRotation = ((item.rotation % 360) + 360) % 360;
+                const isPortrait = normRotation === 90 || normRotation === 270;
+                const newWidth = isPortrait ? originalHeight : originalWidth;
+                const newHeight = isPortrait ? originalWidth : originalHeight;
+                canvas.width = newWidth;
+                canvas.height = newHeight;
+
+                stream = canvas.captureStream(30);
+
+                try {
+                    let audioStream = null;
+                    if (video.captureStream) audioStream = video.captureStream();
+                    else if (video.mozCaptureStream) audioStream = video.mozCaptureStream();
+
+                    if (audioStream) {
+                        const audioTrack = audioStream.getAudioTracks()[0];
+                        if (audioTrack) stream.addTrack(audioTrack);
+                    }
+                } catch (e) { console.warn("Audio issue", e); }
+
+                const mimeTypes = [
+                    'video/webm;codecs=vp8',
+                    'video/webm;codecs=vp9',
+                    'video/webm',
+                    'video/mp4'
+                ];
+                let mimeType = mimeTypes.find(type => MediaRecorder.isTypeSupported(type)) || '';
+                if (!mimeType) throw new Error("No supported video recorder mime type found.");
+
+                mediaRecorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 2500000 });
+                const chunks = [];
+
+                mediaRecorder.ondataavailable = (e) => {
+                    if (e.data && e.data.size > 0) chunks.push(e.data);
+                };
+
+                return new Promise(async (resolve, reject) => {
+
+                    const cleanup = () => {
+                        if (animationFrameId) cancelAnimationFrame(animationFrameId);
+                        if (stream) stream.getTracks().forEach(track => track.stop());
+                        video.pause();
+                        video.src = "";
+                        video.remove();
+                    };
+
+                    mediaRecorder.onstop = () => {
+                        cleanup();
+
+                        if (cancelled) {
+                            resolve();
+                            return;
+                        }
+
+                        if (chunks.length === 0) {
+                            item.status = 'error';
+                            updateItemStatusUI(item.id, 'error');
+                            showToast(`Failed to process ${item.file.name}`, 'error');
+                            resolve();
+                            return;
+                        }
+
+                        const blob = new Blob(chunks, { type: mimeType.split(';')[0] });
+                        item.blob = blob;
+                        item.processedUrl = URL.createObjectURL(blob);
+                        item.status = 'done';
+
+                        const el = document.getElementById(item.id);
+                        if (el) {
+                            const btn = el.querySelector('.btn-download');
+                            btn.href = item.processedUrl;
+                            const nameParts = item.file.name.split('.');
+                            const ext = nameParts.pop();
+                            const base = nameParts.join('.');
+                            const outExt = mimeType.includes('mp4') ? 'mp4' : 'webm';
+                            btn.download = `${base}_rotated.${outExt}`;
+
+                            const btnPreview = el.querySelector('.btn-preview-processed');
+                            btnPreview.onclick = () => openModal(item.processedUrl, item.file.name, "Processed");
+                        }
+
+                        updateItemStatusUI(item.id, 'done');
+                        showToast('Video processed successfully', 'success');
+
+                        if (!isBatchMode) triggerConfetti(); // Celebration for single item too
+
+                        resolve();
+                    };
+
+                    mediaRecorder.onerror = (e) => {
+                        if (!cancelled) {
+                            console.error("MediaRecorder Error:", e);
+                            cleanup();
+                            reject(e);
+                        }
+                    };
+
+                    mediaRecorder.start(100);
+                    video.muted = true;
+                    video.currentTime = 0;
+
+                    try {
+                        await video.play();
+                    } catch (e) {
+                        if (!cancelled) {
+                            console.error("Playback failed", e);
+                            mediaRecorder.stop();
+                            cleanup();
+                            reject(e);
+                        }
+                        return;
+                    }
+
+                    const drawFrame = () => {
+                        if (cancelled) return;
+
+                        ctx.save();
+                        ctx.clearRect(0, 0, newWidth, newHeight);
+                        ctx.translate(newWidth / 2, newHeight / 2);
+                        ctx.rotate((normRotation * Math.PI) / 180);
+                        ctx.drawImage(video, -originalWidth / 2, -originalHeight / 2, originalWidth, originalHeight);
+                        ctx.restore();
+
+                        if (video.ended) {
+                            if (mediaRecorder.state === 'recording') {
+                                mediaRecorder.requestData();
+                                mediaRecorder.stop();
+                            }
+                            return;
+                        }
+
+                        if (duration > 0) {
+                            const percent = Math.round((video.currentTime / duration) * 100);
+                            if (percent > item.progress) {
+                                item.progress = percent;
+                                const el = document.getElementById(item.id);
+                                if (el) {
+                                    el.querySelector('.progress-bar').style.width = `${percent}%`;
+                                    el.querySelector('.progress-text').textContent = `${percent}%`;
+                                }
+                            }
+                        }
+
+                        if (item.status === 'processing' && !video.paused && !video.ended) {
+                            animationFrameId = requestAnimationFrame(drawFrame);
+                        } else if (item.status === 'processing' && video.paused && !video.ended) {
+                            video.play().then(() => {
+                                animationFrameId = requestAnimationFrame(drawFrame);
+                            }).catch(() => {
+                                if (mediaRecorder.state === 'recording') mediaRecorder.stop();
+                            });
+                        }
+                    };
+
+                    drawFrame();
+                });
+
+            } catch (err) {
+                if (item.status !== 'cancelled') {
+                    console.error("Processing Error", err);
+                    item.status = 'error';
+                    updateItemStatusUI(item.id, 'error');
+                    if (video.parentNode) video.remove();
+                    if (stream) stream.getTracks().forEach(track => track.stop());
+                    showToast(`Error processing ${item.file.name}`, 'error');
+                }
+                return Promise.resolve();
+            }
+        }
+
+        // --- Utilities ---
+        function openModal(url, title, type) {
+            els.modalVideo.src = url;
+            els.modalTitle.textContent = title;
+            els.modalTag.textContent = type;
+            els.modalTag.className = type === 'Original' ? 'text-[10px] sm:text-xs bg-slate-700 px-2 py-1 rounded uppercase tracking-wider text-slate-300' : 'text-[10px] sm:text-xs bg-indigo-600 px-2 py-1 rounded uppercase tracking-wider text-white';
+            els.videoModal.classList.remove('hidden');
+            els.modalVideo.play().catch(e => console.log("Auto-play prevented", e));
+        }
+
+        function closeModal() {
+            els.videoModal.classList.add('hidden');
+            els.modalVideo.pause();
+            els.modalVideo.src = "";
+        }
+
+        function triggerConfetti() {
+            if (typeof confetti === 'function') {
+                confetti({
+                    particleCount: 100,
+                    spread: 70,
+                    origin: { y: 0.6 },
+                    colors: ['#6366f1', '#10b981', '#f59e0b']
+                });
+            }
+        }
+
+        async function downloadAllZip() {
+            const completedItems = queue.filter(i => i.status === 'done' && i.blob);
+            if (completedItems.length === 0) return;
+
+            showToast("Preparing ZIP file...", 'info');
+            const btn = els.btnDownloadAll;
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = `<i data-lucide="loader" class="w-4 h-4 animate-spin"></i><span class="hidden sm:inline">Zipping...</span>`;
+            lucide.createIcons({ root: btn });
+
+            const zip = new JSZip();
+            completedItems.forEach(item => {
+                const nameParts = item.file.name.split('.');
+                nameParts.pop();
+                const mimeType = item.blob.type || 'video/webm';
+                const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
+                const filename = `${nameParts.join('.')}_rotated.${ext}`;
+                zip.file(filename, item.blob);
+            });
+            try {
+                const content = await zip.generateAsync({ type: "blob" });
+                const url = URL.createObjectURL(content);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = "rotated_videos_batch.zip";
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
+                showToast("ZIP file ready", 'success');
+            } catch (e) {
+                console.error("Zip failed", e);
+                showToast("Failed to create ZIP file", 'error');
+            }
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+            lucide.createIcons({ root: btn });
+        }
+
+        function formatSize(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+    </script>
+</body>
+
+</html>

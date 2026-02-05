@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SonicExtract Pro - Batch Audio Tool</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Base & Animations */
+        @keyframes slide-up {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fade-in {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        .animate-slide-up {
+            animation: slide-up 0.4s ease-out forwards;
+        }
+
+        .animate-fade-in {
+            animation: fade-in 0.2s ease-out forwards;
+        }
+
+        .glass-panel {
+            background: rgba(17, 24, 39, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .glass-item {
+            background: rgba(31, 41, 55, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.2s ease-in-out;
+        }
+
+        .glass-item:hover {
+            background: rgba(31, 41, 55, 0.8);
+            border-color: rgba(59, 130, 246, 0.3);
+        }
+
+        .glass-item.active-row {
+            background: rgba(30, 58, 138, 0.3);
+            border-color: #3b82f6;
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.1);
+        }
+
+        /* Custom Range Slider */
+        input[type=range] {
+            -webkit-appearance: none;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 14px;
+            width: 14px;
+            border-radius: 50%;
+            background: #fff;
+            cursor: pointer;
+            margin-top: -5px;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+            transition: transform 0.1s;
+        }
+
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 2px;
+        }
+
+        /* Scrollbar */
+        .custom-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .custom-scroll::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: #4b5563;
+            border-radius: 3px;
+        }
+
+        .custom-scroll::-webkit-scrollbar-thumb:hover {
+            background: #6b7280;
+        }
+
+        /* Loader */
+        .loader {
+            border: 2px solid rgba(59, 130, 246, 0.1);
+            border-left-color: #3b82f6;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Audio Visualizer Canvas */
+        #footer-viz {
+            mask-image: linear-gradient(to right, transparent, black 20%, black 80%, transparent);
+            -webkit-mask-image: linear-gradient(to right, transparent, black 20%, black 80%, transparent);
+        }
+
+        /* Exponential Font Scaling for Small Devices */
+        html {
+            font-size: 16px;
+        }
+
+        /* Base */
+
+        @media (max-width: 1024px) {
+            html {
+                font-size: 15px;
+            }
+
+            /* Laptops */
+        }
+
+        @media (max-width: 768px) {
+            html {
+                font-size: 14px;
+            }
+
+            /* Tablets */
+        }
+
+        @media (max-width: 640px) {
+            html {
+                font-size: 13px;
+            }
+
+            /* Large Phones */
+        }
+
+        @media (max-width: 480px) {
+            html {
+                font-size: 12px;
+            }
+
+            /* Standard Phones */
+            .mobile-hide-text {
+                display: none;
+            }
+
+            /* Helper to hide auxiliary text */
+        }
+
+        @media (max-width: 360px) {
+            html {
+                font-size: 11px;
+            }
+
+            /* Small Phones */
+        }
+    </style>
+</head>
+
+<body
+    class="bg-gray-950 text-gray-100 h-screen font-sans selection:bg-blue-500 selection:text-white flex flex-col overflow-hidden">
+
+    <!-- Confirmation Modal (Hidden by default) -->
+    <div id="confirm-modal"
+        class="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm hidden flex items-center justify-center opacity-0 transition-opacity duration-200">
+        <div class="bg-gray-900 border border-red-500/30 p-6 rounded-2xl shadow-2xl max-w-sm w-full mx-4 transform scale-95 transition-transform duration-200"
+            id="confirm-modal-content">
+            <div
+                class="w-12 h-12 bg-red-500/10 rounded-full flex items-center justify-center mb-4 mx-auto text-red-500">
+                <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+            </div>
+            <h3 class="text-xl font-bold text-center mb-2">Clear All Files?</h3>
+            <p class="text-gray-400 text-center text-sm mb-6">This will remove all processed audio files. This action
+                cannot be undone.</p>
+            <div class="flex gap-3">
+                <button id="cancel-clear-btn"
+                    class="flex-1 py-2.5 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-300 font-medium transition-colors">
+                    Cancel
+                </button>
+                <button id="confirm-clear-btn"
+                    class="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-medium transition-colors shadow-lg shadow-red-900/20">
+                    Yes, Clear All
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Bar -->
+    <header class="border-b border-gray-800 bg-gray-900/50 backdrop-blur-md z-50 h-16 flex-none">
+        <div class="max-w-7xl mx-auto px-4 h-full flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <div
+                    class="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-500/20">
+                    <i data-lucide="layers" class="w-5 h-5 text-white"></i>
+                </div>
+                <span class="font-bold text-lg tracking-tight">Sonic<span class="text-blue-400">Extract</span> <span
+                        class="text-xs px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 font-mono">PRO</span></span>
+            </div>
+
+            <div class="flex items-center gap-4">
+                <!-- Settings Dropdown Trigger -->
+                <div class="relative group">
+                    <button
+                        class="flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors bg-gray-800/50 px-3 py-1.5 rounded-md border border-gray-700">
+                        <i data-lucide="settings-2" class="w-4 h-4"></i>
+                        <span id="format-label">WAV (16-bit)</span>
+                    </button>
+                    <!-- Settings Dropdown -->
+                    <div
+                        class="absolute right-0 top-full mt-2 w-56 bg-gray-900 border border-gray-700 rounded-xl shadow-xl p-3 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                        <div class="text-xs font-semibold text-gray-500 uppercase mb-2">Output Format</div>
+                        <label class="flex items-center gap-2 p-2 hover:bg-gray-800 rounded cursor-pointer">
+                            <input type="radio" name="format" value="16" checked
+                                class="text-blue-500 focus:ring-blue-500 bg-gray-700 border-gray-600">
+                            <span class="text-sm">WAV 16-bit (Standard)</span>
+                        </label>
+                        <label class="flex items-center gap-2 p-2 hover:bg-gray-800 rounded cursor-pointer">
+                            <input type="radio" name="format" value="32"
+                                class="text-blue-500 focus:ring-blue-500 bg-gray-700 border-gray-600">
+                            <span class="text-sm">WAV 32-bit (Float)</span>
+                        </label>
+                        <div class="h-px bg-gray-800 my-2"></div>
+                        <div class="text-xs font-semibold text-gray-500 uppercase mb-2">Channels</div>
+                        <label class="flex items-center gap-2 p-2 hover:bg-gray-800 rounded cursor-pointer">
+                            <input type="radio" name="channels" value="source" checked
+                                class="text-blue-500 focus:ring-blue-500 bg-gray-700 border-gray-600">
+                            <span class="text-sm">Same as Source</span>
+                        </label>
+                        <label class="flex items-center gap-2 p-2 hover:bg-gray-800 rounded cursor-pointer">
+                            <input type="radio" name="channels" value="1"
+                                class="text-blue-500 focus:ring-blue-500 bg-gray-700 border-gray-600">
+                            <span class="text-sm">Mono Mixdown</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="flex-grow flex flex-col md:flex-row h-[calc(100vh-8rem)] overflow-hidden">
+
+        <!-- Sidebar / Upload Area -->
+        <aside class="w-full md:w-80 bg-gray-900/30 border-r border-gray-800 flex flex-col p-4 z-10 transition-all">
+            <div id="drop-zone"
+                class="flex-shrink-0 border-2 border-dashed border-gray-700 bg-gray-800/20 rounded-xl p-6 text-center hover:border-blue-500 hover:bg-gray-800/40 transition-all cursor-pointer group mb-4">
+                <input type="file" id="file-input" class="hidden" accept="video/*" multiple />
+                <div
+                    class="w-12 h-12 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform shadow-lg group-hover:shadow-blue-900/20">
+                    <i data-lucide="upload" class="w-6 h-6 text-blue-400"></i>
+                </div>
+                <h3 class="font-medium text-white mb-1">Add Videos</h3>
+                <p class="text-xs text-gray-500">Drag & drop multiple files</p>
+            </div>
+
+            <!-- Stats -->
+            <div class="flex-grow">
+                <div
+                    class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 px-1 flex justify-between items-center">
+                    <span>Batch Queue</span>
+                    <span
+                        class="text-[10px] bg-gray-800 px-2 py-0.5 rounded text-gray-400 mobile-hide-text">Auto-Process</span>
+                </div>
+                <div class="space-y-2" id="stats-container">
+                    <div class="flex justify-between text-sm p-3 rounded-lg bg-gray-800/30 border border-gray-800">
+                        <span class="text-gray-400">Total Files</span>
+                        <span class="font-mono text-white" id="total-count">0</span>
+                    </div>
+                    <div class="flex justify-between text-sm p-3 rounded-lg bg-gray-800/30 border border-gray-800">
+                        <span class="text-gray-400">Processed</span>
+                        <span class="font-mono text-blue-400" id="processed-count">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Global Actions -->
+            <button id="clear-all-trigger"
+                class="mt-4 w-full py-2.5 text-sm font-medium text-gray-400 hover:text-red-400 hover:bg-red-900/20 rounded-lg border border-transparent hover:border-red-900/30 transition-all flex items-center justify-center gap-2 hidden">
+                <i data-lucide="trash-2" class="w-4 h-4"></i> Clear All
+            </button>
+        </aside>
+
+        <!-- List Content -->
+        <section class="flex-grow bg-gray-950 relative overflow-hidden flex flex-col">
+            <!-- Background Decoration -->
+            <div
+                class="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-900/10 rounded-full blur-[120px] pointer-events-none">
+            </div>
+
+            <!-- Empty State -->
+            <div id="empty-state"
+                class="absolute inset-0 flex flex-col items-center justify-center text-gray-500 pointer-events-none z-0 p-4 text-center">
+                <i data-lucide="music" class="w-16 h-16 mb-4 opacity-20"></i>
+                <p class="text-lg">No files added yet</p>
+                <p class="text-sm opacity-50 mt-2">Shortcuts: Space (Play/Pause) • Arrows (Seek)</p>
+            </div>
+
+            <!-- File List Container -->
+            <div id="file-list" class="flex-grow overflow-y-auto custom-scroll p-6 space-y-3 z-10 relative pb-24">
+                <!-- Items will be injected here via JS -->
+            </div>
+
+        </section>
+    </main>
+
+    <!-- Persistent Player Footer -->
+    <footer
+        class="h-24 bg-gray-900 border-t border-gray-800 flex items-center px-4 md:px-8 gap-3 z-50 relative overflow-hidden">
+
+        <!-- Background Visualizer -->
+        <canvas id="footer-viz" class="absolute bottom-0 left-0 w-full h-full opacity-20 pointer-events-none"></canvas>
+
+        <!-- Track Info -->
+        <div class="w-1/4 min-w-[100px] md:min-w-[150px] z-10 relative">
+            <h4 class="text-white font-medium truncate text-sm" id="player-title">No Audio Selected</h4>
+            <div class="flex items-center gap-2 text-xs text-gray-500">
+                <span id="player-status" class="truncate">Ready</span>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="flex-grow flex flex-col items-center max-w-2xl mx-auto z-10 relative">
+            <div class="flex items-center gap-4 md:gap-6 mb-2">
+                <button id="player-prev"
+                    class="text-gray-400 hover:text-white transition-colors p-2 hover:bg-gray-800 rounded-full"><i
+                        data-lucide="skip-back" class="w-5 h-5"></i></button>
+                <button id="player-play"
+                    class="w-10 h-10 bg-white text-black rounded-full flex items-center justify-center hover:scale-105 transition-transform shadow-lg shadow-white/10"
+                    disabled>
+                    <i data-lucide="play" class="w-5 h-5 ml-0.5 fill-current"></i>
+                </button>
+                <button id="player-next"
+                    class="text-gray-400 hover:text-white transition-colors p-2 hover:bg-gray-800 rounded-full"><i
+                        data-lucide="skip-forward" class="w-5 h-5"></i></button>
+            </div>
+            <div class="w-full flex items-center gap-3 text-xs text-gray-500 font-mono">
+                <span id="player-current" class="hidden sm:inline">0:00</span>
+                <input type="range" id="player-seek" min="0" max="100" value="0"
+                    class="flex-grow h-1 bg-gray-700 rounded-full appearance-none hover:h-2 transition-all">
+                <span id="player-total" class="hidden sm:inline">0:00</span>
+            </div>
+        </div>
+
+        <!-- Volume -->
+        <div class="w-1/4 flex justify-end items-center gap-3 z-10 relative">
+            <button id="mute-btn" class="text-gray-400 hover:text-white"><i data-lucide="volume-2"
+                    class="w-5 h-5"></i></button>
+            <input type="range"
+                class="w-24 h-1 bg-gray-700 rounded-full appearance-none hover:h-2 transition-all hidden sm:block"
+                id="volume-slider" value="100">
+        </div>
+
+        <!-- Hidden Audio Element -->
+        <audio id="global-audio" class="hidden" crossorigin="anonymous"></audio>
+    </footer>
+
+    <script>
+        // --- Configuration & State ---
+        const config = {
+            bitDepth: 16,
+            channels: 'source',
+        };
+
+        const state = {
+            queue: [], // Array of File Objects
+            processing: false,
+            activeFileId: null, // ID of currently playing file
+            audioCtx: new (window.AudioContext || window.webkitAudioContext)(),
+            analyser: null,
+            vizSource: null,
+            vizDataArray: null,
+            isMuted: false,
+            prevVolume: 1
+        };
+
+        // --- DOM References ---
+        const dom = {
+            dropZone: document.getElementById('drop-zone'),
+            fileInput: document.getElementById('file-input'),
+            fileList: document.getElementById('file-list'),
+            emptyState: document.getElementById('empty-state'),
+            totalCount: document.getElementById('total-count'),
+            processedCount: document.getElementById('processed-count'),
+            clearAllTrigger: document.getElementById('clear-all-trigger'),
+            formatLabel: document.getElementById('format-label'),
+            // Modal
+            confirmModal: document.getElementById('confirm-modal'),
+            confirmModalContent: document.getElementById('confirm-modal-content'),
+            confirmClearBtn: document.getElementById('confirm-clear-btn'),
+            cancelClearBtn: document.getElementById('cancel-clear-btn'),
+            // Player
+            audio: document.getElementById('global-audio'),
+            playerTitle: document.getElementById('player-title'),
+            playerStatus: document.getElementById('player-status'),
+            playerPlayBtn: document.getElementById('player-play'),
+            playerNextBtn: document.getElementById('player-next'),
+            playerPrevBtn: document.getElementById('player-prev'),
+            playerSeek: document.getElementById('player-seek'),
+            playerCurrent: document.getElementById('player-current'),
+            playerTotal: document.getElementById('player-total'),
+            volumeSlider: document.getElementById('volume-slider'),
+            muteBtn: document.getElementById('mute-btn'),
+            footerVizCanvas: document.getElementById('footer-viz')
+        };
+
+        // --- Initialization ---
+        lucide.createIcons();
+        initApp();
+
+        function initApp() {
+            initEventListeners();
+            initFooterVisualizer();
+            requestAnimationFrame(drawFooterVisualizer);
+        }
+
+        // --- Core Logic ---
+
+        function initEventListeners() {
+            // Drag & Drop
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dom.dropZone.addEventListener(eventName, preventDefaults, false);
+            });
+
+            dom.dropZone.addEventListener('dragover', () => dom.dropZone.classList.add('border-blue-500', 'bg-gray-800/40'));
+            dom.dropZone.addEventListener('dragleave', () => dom.dropZone.classList.remove('border-blue-500', 'bg-gray-800/40'));
+            dom.dropZone.addEventListener('drop', handleDrop);
+            dom.dropZone.addEventListener('click', () => dom.fileInput.click());
+            dom.fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
+
+            // Settings
+            document.querySelectorAll('input[name="format"]').forEach(el => {
+                el.addEventListener('change', (e) => {
+                    config.bitDepth = parseInt(e.target.value);
+                    updateSettingsLabel();
+                });
+            });
+            document.querySelectorAll('input[name="channels"]').forEach(el => {
+                el.addEventListener('change', (e) => {
+                    config.channels = e.target.value === '1' ? 1 : 'source';
+                });
+            });
+
+            // Player Controls
+            dom.playerPlayBtn.addEventListener('click', togglePlay);
+            dom.playerNextBtn.addEventListener('click', playNext);
+            dom.playerPrevBtn.addEventListener('click', playPrev);
+            dom.muteBtn.addEventListener('click', toggleMute);
+
+            dom.audio.addEventListener('timeupdate', updateProgress);
+            dom.audio.addEventListener('ended', handleTrackEnd); // Auto-advance logic
+            dom.audio.addEventListener('play', () => syncUIState(true));
+            dom.audio.addEventListener('pause', () => syncUIState(false));
+
+            dom.playerSeek.addEventListener('input', (e) => {
+                if (dom.audio.duration) {
+                    dom.audio.currentTime = (e.target.value / 100) * dom.audio.duration;
+                }
+            });
+            dom.volumeSlider.addEventListener('input', (e) => {
+                const vol = e.target.value / 100;
+                dom.audio.volume = vol;
+                if (vol > 0 && state.isMuted) toggleMute();
+            });
+
+            // Modal Events
+            dom.clearAllTrigger.addEventListener('click', showClearModal);
+            dom.cancelClearBtn.addEventListener('click', hideClearModal);
+            dom.confirmClearBtn.addEventListener('click', performClearAll);
+
+            // Keyboard Shortcuts
+            document.addEventListener('keydown', (e) => {
+                if (e.code === 'Space' && e.target.tagName !== 'INPUT' && dom.confirmModal.classList.contains('hidden')) {
+                    e.preventDefault();
+                    togglePlay();
+                } else if (e.code === 'ArrowRight' && state.activeFileId) {
+                    dom.audio.currentTime += 5;
+                } else if (e.code === 'ArrowLeft' && state.activeFileId) {
+                    dom.audio.currentTime -= 5;
+                } else if (e.code === 'Escape' && !dom.confirmModal.classList.contains('hidden')) {
+                    hideClearModal();
+                }
+            });
+        }
+
+        // --- Visualizer Setup ---
+        function initFooterVisualizer() {
+            // We connect the existing audio element to the existing context
+            if (!state.vizSource) {
+                state.analyser = state.audioCtx.createAnalyser();
+                state.analyser.fftSize = 128; // Low count for smoother, thicker bars
+                state.vizSource = state.audioCtx.createMediaElementSource(dom.audio);
+                state.vizSource.connect(state.analyser);
+                state.analyser.connect(state.audioCtx.destination); // Connect to output
+
+                const bufferLength = state.analyser.frequencyBinCount;
+                state.vizDataArray = new Uint8Array(bufferLength);
+            }
+        }
+
+        function drawFooterVisualizer() {
+            requestAnimationFrame(drawFooterVisualizer);
+            if (!state.analyser || dom.audio.paused) {
+                // Fade out if paused
+                const ctx = dom.footerVizCanvas.getContext('2d');
+                ctx.clearRect(0, 0, dom.footerVizCanvas.width, dom.footerVizCanvas.height);
+                return;
+            }
+
+            state.analyser.getByteFrequencyData(state.vizDataArray);
+
+            const canvas = dom.footerVizCanvas;
+            const ctx = canvas.getContext('2d');
+
+            // Resize if needed
+            if (canvas.width !== canvas.offsetWidth) {
+                canvas.width = canvas.offsetWidth;
+                canvas.height = canvas.offsetHeight;
+            }
+
+            const width = canvas.width;
+            const height = canvas.height;
+            const barWidth = (width / state.vizDataArray.length) * 2.5;
+            let barHeight;
+            let x = 0;
+
+            ctx.clearRect(0, 0, width, height);
+
+            for (let i = 0; i < state.vizDataArray.length; i++) {
+                barHeight = state.vizDataArray[i] / 2; // Scale down
+
+                // Gradient Color
+                const gradient = ctx.createLinearGradient(0, height, 0, height - barHeight);
+                gradient.addColorStop(0, 'rgba(59, 130, 246, 0.5)'); // Blue
+                gradient.addColorStop(1, 'rgba(147, 51, 234, 0.1)'); // Purple fade
+
+                ctx.fillStyle = gradient;
+
+                // Draw rounded top bars
+                ctx.beginPath();
+                ctx.roundRect(x, height - barHeight, barWidth, barHeight, 4);
+                ctx.fill();
+
+                x += barWidth + 2;
+            }
+        }
+
+        // --- File Handling ---
+
+        function preventDefaults(e) { e.preventDefault(); e.stopPropagation(); }
+
+        function handleDrop(e) {
+            dom.dropZone.classList.remove('border-blue-500', 'bg-gray-800/40');
+            const dt = e.dataTransfer;
+            handleFiles(dt.files);
+        }
+
+        function handleFiles(files) {
+            const newFiles = Array.from(files).filter(f => f.type.startsWith('video/') || f.type.startsWith('audio/'));
+            if (newFiles.length === 0) return;
+
+            // Resume Audio Context if needed (browsers block auto-audio)
+            if (state.audioCtx.state === 'suspended') {
+                state.audioCtx.resume();
+            }
+
+            newFiles.forEach(file => {
+                const id = Math.random().toString(36).substr(2, 9);
+                const fileObj = {
+                    id,
+                    file,
+                    status: 'pending',
+                    wavBlob: null,
+                    peaks: [],
+                    duration: 0
+                };
+                state.queue.push(fileObj);
+                addFileToUI(fileObj);
+            });
+
+            updateStats();
+            processQueue();
+        }
+
+        async function processQueue() {
+            if (state.processing) return;
+
+            const nextFile = state.queue.find(f => f.status === 'pending');
+            if (!nextFile) return;
+
+            state.processing = true;
+            updateFileStatusUI(nextFile.id, 'processing');
+
+            try {
+                const arrayBuffer = await nextFile.file.arrayBuffer();
+                // Decode using the shared context
+                const audioBuffer = await state.audioCtx.decodeAudioData(arrayBuffer);
+
+                nextFile.duration = audioBuffer.duration;
+                nextFile.peaks = calculatePeaks(audioBuffer, 80);
+                nextFile.wavBlob = encodeWAV(audioBuffer, config);
+
+                nextFile.status = 'done';
+                updateFileStatusUI(nextFile.id, 'done');
+                drawMiniWaveform(nextFile.id, nextFile.peaks);
+
+            } catch (err) {
+                console.error(err);
+                nextFile.status = 'error';
+                updateFileStatusUI(nextFile.id, 'error');
+            }
+
+            state.processing = false;
+            updateStats();
+            processQueue();
+        }
+
+        // --- Playback Logic ---
+
+        function playFile(id) {
+            const fileObj = state.queue.find(f => f.id === id);
+            if (!fileObj || !fileObj.wavBlob) return;
+
+            // 1. Setup Audio Source
+            if (dom.audio.src) URL.revokeObjectURL(dom.audio.src);
+            const url = URL.createObjectURL(fileObj.wavBlob);
+            dom.audio.src = url;
+
+            // 2. Update State
+            state.activeFileId = id;
+            dom.playerTitle.textContent = fileObj.file.name;
+
+            // 3. Play
+            const playPromise = dom.audio.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(error => console.log("Playback prevented:", error));
+            }
+
+            // 4. Enable Buttons
+            dom.playerPlayBtn.disabled = false;
+
+            // UI Sync happens automatically via 'play' event listener
+        }
+
+        function togglePlay() {
+            if (!state.activeFileId) return;
+
+            if (dom.audio.paused) {
+                dom.audio.play();
+            } else {
+                dom.audio.pause();
+            }
+        }
+
+        function toggleMute() {
+            if (dom.audio.muted) {
+                dom.audio.muted = false;
+                state.isMuted = false;
+                updateIcon(dom.muteBtn, 'volume-2');
+                dom.volumeSlider.value = state.prevVolume * 100;
+            } else {
+                state.prevVolume = dom.audio.volume;
+                dom.audio.muted = true;
+                state.isMuted = true;
+                updateIcon(dom.muteBtn, 'volume-x');
+                dom.volumeSlider.value = 0;
+            }
+        }
+
+        function playNext() {
+            const currentIndex = state.queue.findIndex(f => f.id === state.activeFileId);
+            if (currentIndex === -1) return;
+
+            // Find next 'done' file
+            for (let i = currentIndex + 1; i < state.queue.length; i++) {
+                if (state.queue[i].status === 'done') {
+                    playFile(state.queue[i].id);
+                    return;
+                }
+            }
+        }
+
+        function playPrev() {
+            const currentIndex = state.queue.findIndex(f => f.id === state.activeFileId);
+            if (currentIndex === -1) return;
+
+            // Find prev 'done' file
+            for (let i = currentIndex - 1; i >= 0; i--) {
+                if (state.queue[i].status === 'done') {
+                    playFile(state.queue[i].id);
+                    return;
+                }
+            }
+        }
+
+        function handleTrackEnd() {
+            // Auto Advance
+            playNext();
+        }
+
+        // --- Sync UI State (The Magic Glue) ---
+        function syncUIState(isPlaying) {
+            // 1. Update Footer Button
+            updateIcon(dom.playerPlayBtn, isPlaying ? 'pause' : 'play');
+            dom.playerStatus.textContent = isPlaying ? 'Now Playing' : 'Paused';
+
+            // 2. Update List Items
+            state.queue.forEach(f => {
+                const row = document.getElementById(`file-${f.id}`);
+                const btn = document.getElementById(`btn-play-${f.id}`);
+                if (!row || !btn) return;
+
+                if (f.id === state.activeFileId) {
+                    // Active Row
+                    row.classList.add('active-row', 'bg-blue-900/20');
+                    row.classList.remove('glass-item'); // Remove default to override
+
+                    // Crucial: Update Icon specifically for this button
+                    updateIcon(btn, isPlaying ? 'pause' : 'play');
+
+                    btn.classList.add('text-white', 'bg-blue-600');
+                    btn.classList.remove('text-gray-400');
+                } else {
+                    // Inactive Row
+                    row.classList.remove('active-row', 'bg-blue-900/20');
+                    row.classList.add('glass-item');
+                    updateIcon(btn, 'play');
+                    btn.classList.remove('text-white', 'bg-blue-600');
+                    btn.classList.add('text-gray-400');
+                }
+            });
+        }
+
+        function updateProgress() {
+            if (dom.audio.duration) {
+                const cur = dom.audio.currentTime;
+                const dur = dom.audio.duration;
+                dom.playerSeek.value = (cur / dur) * 100;
+                dom.playerCurrent.textContent = formatTime(cur);
+                dom.playerTotal.textContent = formatTime(dur);
+            }
+        }
+
+        // --- DOM Generators ---
+
+        function addFileToUI(fileObj) {
+            dom.emptyState.style.display = 'none';
+            dom.clearAllTrigger.classList.remove('hidden');
+
+            const item = document.createElement('div');
+            item.className = 'glass-item p-4 rounded-xl flex items-center gap-4 animate-slide-up cursor-pointer mb-2 border-l-4 border-transparent';
+            item.id = `file-${fileObj.id}`;
+
+            item.innerHTML = `
+                <div class="w-10 h-10 rounded-lg bg-gray-800 flex items-center justify-center flex-shrink-0 text-gray-400 relative overflow-hidden group-hover:text-white transition-colors">
+                    <i data-lucide="music" class="w-5 h-5 relative z-10"></i>
+                </div>
+                <div class="flex-grow min-w-0">
+                    <div class="flex justify-between items-center mb-1">
+                        <h4 class="text-sm font-medium text-white truncate pr-4" title="${fileObj.file.name}">${fileObj.file.name}</h4>
+                        <span class="text-xs text-gray-500 status-badge">Pending</span>
+                    </div>
+                    <div class="h-8 bg-gray-900/50 rounded-md relative overflow-hidden flex items-center justify-center">
+                        <canvas id="canvas-${fileObj.id}" class="absolute inset-0 w-full h-full opacity-0 transition-opacity duration-500"></canvas>
+                        <div id="loader-${fileObj.id}" class="hidden"><div class="loader"></div></div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 flex-shrink-0">
+                    <button id="btn-play-${fileObj.id}" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-700 text-gray-400 hover:text-white transition-all disabled:opacity-30" disabled>
+                        <i data-lucide="play" class="w-4 h-4 fill-current"></i>
+                    </button>
+                    <button id="btn-dl-${fileObj.id}" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-blue-600/20 text-blue-400 transition-colors disabled:opacity-30" disabled>
+                        <i data-lucide="download" class="w-4 h-4"></i>
+                    </button>
+                    <button id="btn-rm-${fileObj.id}" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-red-900/20 text-gray-500 hover:text-red-400 transition-colors">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            `;
+
+            // Event Delegation
+            item.addEventListener('click', (e) => {
+                if (fileObj.status === 'done') {
+                    if (state.activeFileId === fileObj.id) {
+                        togglePlay();
+                    } else {
+                        playFile(fileObj.id);
+                    }
+                }
+            });
+
+            // Stop propagation for buttons
+            const stopProp = (e) => e.stopPropagation();
+            const btnPlay = item.querySelector(`#btn-play-${fileObj.id}`);
+            const btnDl = item.querySelector(`#btn-dl-${fileObj.id}`);
+            const btnRm = item.querySelector(`#btn-rm-${fileObj.id}`);
+
+            btnPlay.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (state.activeFileId === fileObj.id) togglePlay();
+                else playFile(fileObj.id);
+            });
+
+            btnDl.addEventListener('click', (e) => {
+                e.stopPropagation();
+                downloadFile(fileObj.id);
+            });
+
+            btnRm.addEventListener('click', (e) => {
+                e.stopPropagation();
+                removeFile(fileObj.id);
+            });
+
+            dom.fileList.appendChild(item);
+            lucide.createIcons({ root: item }); // Init icons just for this item
+        }
+
+        // --- Modal Logic ---
+        function showClearModal() {
+            dom.confirmModal.classList.remove('hidden');
+            // Trigger reflow to enable transition
+            void dom.confirmModal.offsetWidth;
+            dom.confirmModal.classList.remove('opacity-0');
+            dom.confirmModalContent.classList.remove('scale-95');
+        }
+
+        function hideClearModal() {
+            dom.confirmModal.classList.add('opacity-0');
+            dom.confirmModalContent.classList.add('scale-95');
+            setTimeout(() => {
+                dom.confirmModal.classList.add('hidden');
+            }, 200);
+        }
+
+        function performClearAll() {
+            state.queue = [];
+            dom.fileList.innerHTML = '';
+            dom.emptyState.style.display = 'flex';
+            dom.clearAllTrigger.classList.add('hidden');
+            dom.audio.pause();
+            dom.audio.src = '';
+            state.activeFileId = null;
+            dom.playerTitle.textContent = "No Audio Selected";
+            syncUIState(false);
+            updateStats();
+            hideClearModal();
+        }
+
+        // --- Helpers & Utilities ---
+
+        function updateFileStatusUI(id, status) {
+            const el = document.getElementById(`file-${id}`);
+            if (!el) return;
+            const badge = el.querySelector('.status-badge');
+            const loader = document.getElementById(`loader-${id}`);
+            const canvas = document.getElementById(`canvas-${id}`);
+            const btnPlay = document.getElementById(`btn-play-${id}`);
+            const btnDl = document.getElementById(`btn-dl-${id}`);
+
+            if (status === 'processing') {
+                badge.textContent = 'Processing...';
+                badge.className = 'text-xs text-blue-400 status-badge animate-pulse';
+                loader.classList.remove('hidden');
+            } else if (status === 'done') {
+                badge.textContent = 'Ready';
+                badge.className = 'text-xs text-green-400 status-badge';
+                loader.classList.add('hidden');
+                canvas.classList.remove('opacity-0');
+                btnPlay.disabled = false;
+                btnDl.disabled = false;
+            } else if (status === 'error') {
+                badge.textContent = 'Failed';
+                badge.className = 'text-xs text-red-500 status-badge';
+                loader.classList.add('hidden');
+            }
+        }
+
+        function updateIcon(btnElement, iconName) {
+            // Optimization: check if we really need to update using a data attribute
+            if (btnElement.getAttribute('data-current-icon') === iconName) {
+                return;
+            }
+
+            // Find existing icon (either unrendered <i> or rendered <svg>)
+            const existingIcon = btnElement.querySelector('i, svg');
+
+            if (existingIcon) {
+                // Capture current classes to preserve styling (size, margin, fill)
+                const currentClasses = existingIcon.getAttribute('class');
+
+                // Create a new <i> tag to reset the icon
+                const newIcon = document.createElement('i');
+                newIcon.setAttribute('data-lucide', iconName);
+                if (currentClasses) {
+                    newIcon.setAttribute('class', currentClasses);
+                }
+
+                // Replace the old icon with the new unrendered one
+                btnElement.replaceChild(newIcon, existingIcon);
+
+                // Trigger Lucide to render the new icon specifically within this button
+                lucide.createIcons({ root: btnElement });
+
+                // Update tracker
+                btnElement.setAttribute('data-current-icon', iconName);
+            }
+        }
+
+        // ... Existing WAV Encoder and Utils ...
+        function encodeWAV(audioBuffer, settings) {
+            const numChannels = settings.channels === 1 ? 1 : audioBuffer.numberOfChannels;
+            const sampleRate = audioBuffer.sampleRate;
+            const format = settings.bitDepth === 32 ? 3 : 1;
+            const bitDepth = settings.bitDepth;
+
+            let channelData = [];
+            if (numChannels === 1 && audioBuffer.numberOfChannels > 1) {
+                const left = audioBuffer.getChannelData(0);
+                const right = audioBuffer.getChannelData(1);
+                const mono = new Float32Array(left.length);
+                for (let i = 0; i < left.length; i++) mono[i] = (left[i] + right[i]) / 2;
+                channelData.push(mono);
+            } else {
+                for (let i = 0; i < numChannels; i++) channelData.push(audioBuffer.getChannelData(i));
+            }
+
+            const length = channelData[0].length;
+            const interleaved = new Float32Array(length * numChannels);
+            for (let i = 0; i < length; i++) {
+                for (let ch = 0; ch < numChannels; ch++) interleaved[i * numChannels + ch] = channelData[ch][i];
+            }
+
+            const bytesPerSample = bitDepth / 8;
+            const blockAlign = numChannels * bytesPerSample;
+            const byteRate = sampleRate * blockAlign;
+            const dataSize = interleaved.length * bytesPerSample;
+            const buffer = new ArrayBuffer(44 + dataSize);
+            const view = new DataView(buffer);
+
+            writeString(view, 0, 'RIFF');
+            view.setUint32(4, 36 + dataSize, true);
+            writeString(view, 8, 'WAVE');
+            writeString(view, 12, 'fmt ');
+            view.setUint32(16, 16, true);
+            view.setUint16(20, format, true);
+            view.setUint16(22, numChannels, true);
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, byteRate, true);
+            view.setUint16(32, blockAlign, true);
+            view.setUint16(34, bitDepth, true);
+            writeString(view, 36, 'data');
+            view.setUint32(40, dataSize, true);
+
+            let offset = 44;
+            if (bitDepth === 16) {
+                for (let i = 0; i < interleaved.length; i++) {
+                    const s = Math.max(-1, Math.min(1, interleaved[i]));
+                    view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+                    offset += 2;
+                }
+            } else {
+                for (let i = 0; i < interleaved.length; i++) {
+                    view.setFloat32(offset, interleaved[i], true);
+                    offset += 4;
+                }
+            }
+            return new Blob([view], { type: 'audio/wav' });
+        }
+
+        function calculatePeaks(buffer, steps) {
+            const data = buffer.getChannelData(0);
+            const stepSize = Math.floor(data.length / steps);
+            const peaks = [];
+            for (let i = 0; i < steps; i++) {
+                const start = i * stepSize;
+                let max = 0;
+                for (let j = 0; j < stepSize; j++) {
+                    const val = Math.abs(data[start + j]);
+                    if (val > max) max = val;
+                }
+                peaks.push(max);
+            }
+            return peaks;
+        }
+
+        function drawMiniWaveform(id, peaks) {
+            const canvas = document.getElementById(`canvas-${id}`);
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+            const width = canvas.width;
+            const height = canvas.height;
+            const barWidth = width / peaks.length;
+            ctx.fillStyle = '#3b82f6'; // Blue-500
+            for (let i = 0; i < peaks.length; i++) {
+                const h = peaks[i] * height;
+                const x = i * barWidth;
+                const y = (height - h) / 2;
+                ctx.fillRect(x, y, barWidth - 1, h);
+            }
+        }
+
+        function writeString(view, offset, string) {
+            for (let i = 0; i < string.length; i++) view.setUint8(offset + i, string.charCodeAt(i));
+        }
+
+        function formatTime(seconds) {
+            const m = Math.floor(seconds / 60);
+            const s = Math.floor(seconds % 60);
+            return `${m}:${s < 10 ? '0' : ''}${s}`;
+        }
+
+        function updateSettingsLabel() {
+            dom.formatLabel.innerHTML = `<i data-lucide="settings-2" class="w-4 h-4"></i> WAV (${config.bitDepth}-bit)`;
+            lucide.createIcons();
+        }
+
+        function updateStats() {
+            dom.totalCount.textContent = state.queue.length;
+            dom.processedCount.textContent = state.queue.filter(f => f.status === 'done').length;
+        }
+
+        window.downloadFile = (id) => {
+            const fileObj = state.queue.find(f => f.id === id);
+            if (!fileObj || !fileObj.wavBlob) return;
+            const url = URL.createObjectURL(fileObj.wavBlob);
+            const a = document.createElement('a');
+            a.href = url;
+            const ext = fileObj.file.name.substring(fileObj.file.name.lastIndexOf('.'));
+            a.download = fileObj.file.name.replace(ext, `_${config.bitDepth}bit.wav`);
+            a.click();
+            URL.revokeObjectURL(url);
+        };
+
+        window.removeFile = (id) => {
+            state.queue = state.queue.filter(f => f.id !== id);
+            const el = document.getElementById(`file-${id}`);
+            if (el) el.remove();
+            if (state.activeFileId === id) {
+                dom.audio.pause();
+                dom.audio.src = '';
+                state.activeFileId = null;
+                dom.playerTitle.textContent = "No Audio Selected";
+                syncUIState(false);
+            }
+            if (state.queue.length === 0) {
+                dom.emptyState.style.display = 'flex';
+                dom.clearAllTrigger.classList.add('hidden');
+            }
+            updateStats();
+        };
+    </script>
+</body>
+
+</html>

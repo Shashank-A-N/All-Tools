@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shadow Text - Lorem Ipsum</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;500;600;700&display=swap"
+        rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link rel="stylesheet" href="../../styles.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        mono: ['Courier New', 'monospace'],
+                        sans: ['Rajdhani', 'sans-serif'],
+                        orbitron: ['Orbitron', 'sans-serif']
+                    },
+                    colors: {
+                        cyber: {
+                            accent: '#94a3b8', // Gray-400
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body
+    class="min-h-screen flex flex-col font-sans overflow-x-hidden bg-slate-900 text-white selection:bg-slate-500 selection:text-white">
+
+    <!-- 3D Background -->
+    <div id="bg-3d-container"></div>
+
+    <!-- Navigation -->
+    <nav
+        class="sticky top-0 z-50 glass-effect border-b border-white/5 px-4 md:px-6 py-3 flex items-center justify-between backdrop-blur-md">
+        <a href="../index.html" class="flex items-center gap-3 text-slate-300 hover:text-white transition-colors group">
+            <div
+                class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center border border-white/10 group-hover:border-slate-500/50 transition-all">
+                <i class="fas fa-chevron-left text-xs group-hover:-translate-x-0.5 transition-transform"></i>
+            </div>
+            <span class="font-orbitron font-bold tracking-wider hidden md:block">BACK</span>
+        </a>
+
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded bg-slate-500/20 flex items-center justify-center text-slate-400">
+                <i class="fas fa-paragraph"></i>
+            </div>
+            <h1 class="text-lg md:text-xl font-orbitron font-bold tracking-widest text-white">SHADOW<span
+                    class="text-slate-400">IPSUM</span></h1>
+        </div>
+
+        <div class="w-8"></div>
+    </nav>
+
+    <!-- Main Content -->
+    <main
+        class="flex-grow container mx-auto px-4 py-8 relative z-10 flex flex-col gap-6 h-[calc(100vh-80px)] min-h-[600px]">
+
+        <!-- Controls Bar -->
+        <div
+            class="glass p-5 rounded-xl border border-white/5 flex flex-wrap md:flex-nowrap gap-6 items-center shadow-lg bg-slate-900/60 sticky top-0 z-10 justify-center">
+
+            <div
+                class="flex items-center gap-3 bg-slate-950/50 px-4 py-2 rounded-lg border border-white/10 w-full md:w-auto">
+                <label
+                    class="text-xs font-bold text-slate-400 uppercase tracking-widest whitespace-nowrap">Count:</label>
+                <input type="number" id="count" value="5" min="1" max="100"
+                    class="bg-transparent w-16 text-center focus:outline-none font-orbitron text-slate-200 border-b border-white/20 focus:border-slate-500">
+            </div>
+
+            <div
+                class="flex items-center gap-3 bg-slate-950/50 px-4 py-2 rounded-lg border border-white/10 w-full md:w-auto">
+                <label
+                    class="text-xs font-bold text-slate-400 uppercase tracking-widest whitespace-nowrap">Type:</label>
+                <select id="type"
+                    class="bg-transparent focus:outline-none text-slate-200 text-sm font-sans cursor-pointer w-full">
+                    <option value="paragraphs" class="bg-black">Paragraphs</option>
+                    <option value="sentences" class="bg-black">Sentences</option>
+                    <option value="words" class="bg-black">Words</option>
+                </select>
+            </div>
+
+            <button onclick="generate()"
+                class="w-full md:w-auto px-6 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg shadow-lg transition-all flex items-center justify-center gap-2 font-bold uppercase tracking-wider group">
+                <i class="fas fa-sync-alt group-hover:rotate-180 transition-transform duration-500"></i> Generate
+            </button>
+        </div>
+
+        <!-- Output Panel -->
+        <div class="flex flex-col glass rounded-2xl border border-white/5 shadow-xl overflow-hidden h-full flex-grow">
+            <div
+                class="px-6 py-4 border-b border-white/5 bg-slate-900/50 flex justify-between items-center bg-slate-800/20">
+                <span class="text-xs font-bold text-slate-400 tracking-widest uppercase"><i
+                        class="fas fa-file-alt mr-2"></i>Generated Text</span>
+                <button onclick="copy('textOutput')"
+                    class="text-[10px] text-slate-400 hover:text-white transition-colors uppercase font-bold tracking-wider"><i
+                        class="fas fa-copy mr-1"></i>Copy</button>
+            </div>
+            <textarea id="textOutput" readonly
+                class="flex-1 w-full bg-slate-950/30 p-6 text-sm md:text-base lg:text-lg font-serif text-slate-300 focus:outline-none resize-none custom-scrollbar leading-relaxed"
+                placeholder="Lorem ipsum dolor sit amet..."></textarea>
+        </div>
+
+    </main>
+
+    <!-- Shared Script -->
+    <script type="module" src="../../shared/bg-particles.js"></script>
+
+    <script>
+        const ipsum = [
+            "lorem", "ipsum", "dolor", "sit", "amet", "consectetur", "adipiscing", "elit", "sed", "do", "eiusmod", "tempor", "incididunt", "ut", "labore", "et", "dolore", "magna", "aliqua", "ut", "enim", "ad", "minim", "veniam", "quis", "nostrud", "exercitation", "ullamco", "laboris", "nisi", "ut", "aliquip", "ex", "ea", "commodo", "consequat", "duis", "aute", "irure", "dolor", "in", "reprehenderit", "in", "voluptate", "velit", "esse", "cillum", "dolore", "eu", "fugiat", "nulla", "pariatur", "excepteur", "sint", "occaecat", "cupidatat", "non", "proident", "sunt", "in", "culpa", "qui", "officia", "deserunt", "mollit", "anim", "id", "est", "laborum"
+        ];
+
+        function generate() {
+            const count = parseInt(document.getElementById('count').value) || 5;
+            const type = document.getElementById('type').value;
+            let output = '';
+
+            if (type === 'words') {
+                for (let i = 0; i < count; i++) {
+                    output += ipsum[Math.floor(Math.random() * ipsum.length)] + ' ';
+                }
+            } else if (type === 'sentences') {
+                for (let i = 0; i < count; i++) {
+                    let sentence = '';
+                    const len = Math.floor(Math.random() * 10) + 5;
+                    for (let j = 0; j < len; j++) {
+                        sentence += ipsum[Math.floor(Math.random() * ipsum.length)] + ' ';
+                    }
+                    output += sentence.charAt(0).toUpperCase() + sentence.slice(1).trim() + '. ';
+                }
+            } else {
+                for (let i = 0; i < count; i++) {
+                    let para = '';
+                    const sentences = Math.floor(Math.random() * 5) + 3;
+                    for (let s = 0; s < sentences; s++) {
+                        let sentence = '';
+                        const len = Math.floor(Math.random() * 10) + 5;
+                        for (let j = 0; j < len; j++) {
+                            sentence += ipsum[Math.floor(Math.random() * ipsum.length)] + ' ';
+                        }
+                        para += sentence.charAt(0).toUpperCase() + sentence.slice(1).trim() + '. ';
+                    }
+                    output += para.trim() + '\n\n';
+                }
+            }
+
+            document.getElementById('textOutput').value = output.trim();
+        }
+
+        function copy(id) {
+            const el = document.getElementById(id);
+            el.select();
+            document.execCommand('copy');
+            const btn = document.querySelector(`button[onclick="copy('${id}')"]`);
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-check mr-1"></i>COPIED';
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+            }, 1500);
+        }
+
+        // Initial
+        window.addEventListener('load', generate);
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,1156 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Convrt.io Pro - Advanced</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    screens: { 'xs': '360px' },
+                    colors: {
+                        slate: { 850: '#151f32', 900: '#0f172a', 950: '#020617' },
+                        indigo: { 450: '#6366f1', 550: '#4f46e5' },
+                        emerald: { 450: '#10b981', 550: '#059669' }
+                    },
+                    fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+                    animation: {
+                        'slide-up': 'slideUp 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards',
+                        'scale-in': 'scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards',
+                        'float': 'float 6s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        slideUp: { '0%': { opacity: '0', transform: 'translateY(20px) scale(0.98)' }, '100%': { opacity: '1', transform: 'translateY(0) scale(1)' } },
+                        scaleIn: { '0%': { opacity: '0', transform: 'scale(0.9) translateY(10px)' }, '100%': { opacity: '1', transform: 'scale(1) translateY(0)' } },
+                        float: { '0%, 100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-10px)' } }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 10px;
+        }
+
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #475569;
+        }
+
+        .hide {
+            display: none !important;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            background: transparent;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 18px;
+            width: 18px;
+            border-radius: 50%;
+            background: #6366f1;
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1), 0 2px 4px rgba(0, 0, 0, 0.2);
+            transform: translateY(-7px);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .dark input[type=range]::-webkit-slider-thumb {
+            background: #818cf8;
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            background: #e2e8f0;
+            border-radius: 2px;
+        }
+
+        .dark input[type=range]::-webkit-slider-runnable-track {
+            background: #334155;
+        }
+
+        input[type=range]:disabled::-webkit-slider-thumb {
+            background: #94a3b8;
+            cursor: not-allowed;
+        }
+
+        .bg-pattern {
+            background-image: radial-gradient(circle, #6366f1 1px, transparent 1px);
+            background-size: 24px 24px;
+            opacity: 0.05;
+        }
+
+        .dark .bg-pattern {
+            opacity: 0.08;
+        }
+
+        .tab-btn.active {
+            background-color: #e0e7ff;
+            color: #4f46e5;
+        }
+
+        .dark .tab-btn.active {
+            background-color: rgba(99, 102, 241, 0.2);
+            color: #818cf8;
+        }
+    </style>
+</head>
+
+<body
+    class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans transition-colors duration-500 selection:bg-indigo-500 selection:text-white overflow-x-hidden min-w-[280px]">
+
+    <div class="fixed inset-0 pointer-events-none bg-pattern z-0"></div>
+
+    <!-- Header -->
+    <header
+        class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-200/50 dark:border-slate-800/50 sticky top-0 z-40 transition-all duration-300">
+        <div class="max-w-7xl mx-auto px-3 xs:px-4 md:px-6 h-14 md:h-16 flex items-center justify-between">
+            <div id="logo-btn" class="flex items-center gap-2 md:gap-3 cursor-pointer group shrink-0 select-none mr-2">
+                <div class="relative w-8 h-8 md:w-10 md:h-10 transition-transform duration-300 group-hover:scale-110">
+                    <div
+                        class="absolute inset-0 bg-indigo-500/20 dark:bg-indigo-400/20 rounded-xl rotate-6 group-hover:rotate-12 transition-transform duration-500">
+                    </div>
+                    <div
+                        class="absolute inset-0 bg-gradient-to-br from-indigo-600 to-violet-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-500/30">
+                        <i data-lucide="zap" class="w-5 h-5 md:w-6 md:h-6"></i>
+                    </div>
+                </div>
+                <div class="flex flex-col">
+                    <span class="font-bold text-base md:text-xl tracking-tight leading-none">Convrt<span
+                            class="text-indigo-600 dark:text-indigo-400">.io</span></span>
+                    <span
+                        class="hidden xs:block text-[9px] font-bold text-indigo-500/80 uppercase tracking-[0.2em] translate-x-0.5">Pro</span>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-1.5 md:gap-3 ml-auto">
+                <div id="nav-actions"
+                    class="flex items-center gap-1.5 md:gap-2 mr-1 md:mr-2 border-r border-slate-200 dark:border-slate-700 pr-2 md:pr-4">
+                    <button id="btn-toggle-animation"
+                        class="hide group flex items-center gap-1.5 px-2 md:px-3 py-1.5 rounded-lg text-xs font-bold bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 transition-all"
+                        title="GIF Preview">
+                        <i data-lucide="play-circle" class="w-4 h-4 group-hover:fill-current"></i>
+                        <span class="hidden md:inline">Preview</span>
+                    </button>
+                    <button id="btn-clear-all"
+                        class="hide flex items-center gap-1.5 px-2 md:px-3 py-1.5 text-slate-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-xs font-bold transition-all"
+                        title="Clear All">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        <span class="hidden md:inline">Clear</span>
+                    </button>
+                </div>
+                <button id="theme-toggle"
+                    class="p-2 rounded-full bg-slate-100/50 dark:bg-slate-800/50 hover:bg-white dark:hover:bg-slate-700 hover:text-indigo-500 transition-all">
+                    <i data-lucide="moon" class="w-5 h-5 dark:hidden"></i>
+                    <i data-lucide="sun" class="w-5 h-5 hidden dark:block"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div id="main-view"
+        class="relative z-10 min-h-[calc(100vh-64px)] pb-20 px-2 xs:px-4 md:px-6 pt-4 md:pt-6 transition-all duration-300">
+        <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-6 lg:gap-8">
+            <!-- LEFT: File Manager -->
+            <div class="md:col-span-7 lg:col-span-8 space-y-4 md:space-y-6">
+                <!-- Batch Toolbar -->
+                <div id="batch-toolbar"
+                    class="hide bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm p-3 md:p-4 rounded-2xl shadow-sm border border-slate-200/60 dark:border-slate-800/60 flex items-center justify-center animate-slide-up">
+                    <div
+                        class="flex items-center justify-center gap-3 w-full overflow-x-auto no-scrollbar mask-gradient">
+                        <span class="text-xs font-bold text-slate-500 uppercase flex items-center gap-1.5 shrink-0">
+                            <i data-lucide="layers" class="w-4 h-4 text-indigo-500"></i> <span
+                                class="hidden xs:inline">Batch:</span>
+                        </span>
+                        <div id="format-options-container" class="flex gap-1"></div>
+                    </div>
+                </div>
+
+                <!-- Dropzone -->
+                <div id="dropzone"
+                    class="relative border-3 border-dashed border-slate-300 dark:border-slate-700 rounded-3xl p-6 md:p-12 text-center cursor-pointer transition-all duration-300 flex flex-col items-center justify-center min-h-[220px] md:min-h-[280px] hover:border-indigo-500 dark:hover:border-indigo-400 hover:bg-indigo-50/30 dark:hover:bg-indigo-900/10 group animate-slide-up">
+                    <input type="file" id="file-input" class="hidden" multiple accept="image/*">
+                    <div
+                        class="absolute inset-0 bg-indigo-500/5 dark:bg-indigo-400/5 rounded-3xl scale-0 group-hover:scale-100 transition-transform duration-500 rounded-full blur-3xl">
+                    </div>
+                    <div class="relative z-10 animate-float mb-4 md:mb-6">
+                        <div
+                            class="w-16 h-16 md:w-20 md:h-20 bg-white dark:bg-slate-800 text-indigo-500 dark:text-indigo-400 rounded-3xl flex items-center justify-center shadow-xl shadow-indigo-500/10 group-hover:rotate-6 transition-transform duration-300">
+                            <i data-lucide="cloud-upload" class="w-8 h-8 md:w-10 md:h-10"></i>
+                        </div>
+                    </div>
+                    <h3 class="relative z-10 text-lg md:text-2xl font-bold text-slate-800 dark:text-slate-100 mb-2">Drag
+                        & Drop Files</h3>
+                    <p class="relative z-10 text-xs md:text-sm text-slate-500 dark:text-slate-400 max-w-xs mx-auto">
+                        Support for JPG, PNG, WEBP, BMP, AVIF</p>
+                    <button
+                        class="relative z-10 mt-6 px-5 py-2 md:px-6 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-xs md:text-sm shadow-lg shadow-indigo-500/30 transition-all hover:scale-105">Browse
+                        Files</button>
+                </div>
+
+                <!-- File List -->
+                <div id="file-list-container" class="hide space-y-4">
+                    <div class="flex items-center justify-between px-2 animate-slide-up">
+                        <h3
+                            class="font-bold text-sm md:text-base text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                            <span id="count-text">0 Files</span>
+                        </h3>
+                        <button id="btn-add-more"
+                            class="text-xs px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-indigo-600 dark:text-indigo-400 font-bold hover:shadow-md transition-all">
+                            + Add
+                        </button>
+                    </div>
+                    <div id="file-list-items" class="space-y-3"></div>
+                </div>
+            </div>
+
+            <!-- RIGHT: Settings & Output -->
+            <div class="lg:col-span-4 md:col-span-5 space-y-6">
+                <!-- Settings Panel -->
+                <div class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm p-4 md:p-6 rounded-2xl shadow-sm border border-slate-200/60 dark:border-slate-800/60 sticky top-24 animate-slide-up"
+                    style="animation-delay: 0.1s;">
+                    <h3 class="font-bold text-base md:text-lg mb-4 md:mb-6 flex items-center gap-2">
+                        <i data-lucide="sliders-horizontal" class="w-4 h-4 md:w-5 md:h-5 text-indigo-500"></i> Settings
+                    </h3>
+                    <div class="space-y-5 md:space-y-6">
+                        <div class="group">
+                            <div class="flex justify-between text-xs md:text-sm mb-2">
+                                <span class="text-slate-500 dark:text-slate-400 font-medium">Compression Quality</span>
+                                <span id="quality-val"
+                                    class="font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-2 py-0.5 rounded">90%</span>
+                            </div>
+                            <input type="range" id="quality-slider" min="10" max="100" value="90" class="w-full mb-1">
+
+                            <div class="flex items-center justify-between mt-2">
+                                <p id="lossless-warning"
+                                    class="hidden text-[10px] text-amber-500 flex items-center gap-1">
+                                    <i data-lucide="alert-circle" class="w-3 h-3"></i> Lossless (Quality ignored)
+                                </p>
+                                <label
+                                    class="flex items-center gap-2 text-[10px] text-slate-500 cursor-pointer select-none group">
+                                    <input type="checkbox" id="force-quality"
+                                        class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer">
+                                    <span class="group-hover:text-indigo-600 transition-colors">Prioritize
+                                        Quality</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="relative">
+                            <label class="text-xs font-bold text-slate-400 uppercase mb-2 block">Resize Output</label>
+                            <div class="relative">
+                                <i data-lucide="scaling"
+                                    class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"></i>
+                                <select id="resize-select"
+                                    class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 pl-10 py-2 md:py-3 text-xs md:text-sm font-medium focus:ring-2 focus:ring-indigo-500/50 outline-none appearance-none cursor-pointer transition-all">
+                                    <option value="1">Original Size (100%)</option>
+                                    <option value="0.75">Resize to 75%</option>
+                                    <option value="0.5">Resize to 50%</option>
+                                    <option value="0.25">Resize to 25%</option>
+                                </select>
+                                <i data-lucide="chevron-down"
+                                    class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="h-px bg-slate-200 dark:bg-slate-800 my-5 md:my-6"></div>
+                    <div class="space-y-3">
+                        <button id="btn-convert" disabled
+                            class="group relative w-full py-3 md:py-4 rounded-xl font-bold text-sm md:text-lg flex items-center justify-center gap-2 transition-all bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed overflow-hidden">
+                            <span class="relative z-10 flex items-center gap-2">Convert Images</span>
+                        </button>
+                        <button id="btn-download-all"
+                            class="hide w-full py-3 md:py-4 rounded-xl font-bold text-sm md:text-lg flex items-center justify-center gap-2 transition-all bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-500/20 hover:-translate-y-1 active:translate-y-0 active:scale-95">
+                            <i data-lucide="archive" class="w-4 h-4 md:w-5 md:h-5 animate-bounce"></i> Download ZIP
+                        </button>
+                    </div>
+                </div>
+                <!-- Animation Preview -->
+                <div id="animation-card"
+                    class="hide bg-slate-900 rounded-2xl overflow-hidden shadow-xl border border-slate-800 animate-scale-in">
+                    <div class="p-3 border-b border-slate-800 flex justify-between items-center bg-slate-800/50">
+                        <span class="text-xs font-bold text-white uppercase flex items-center gap-2">
+                            <span class="relative flex h-2 w-2"><span
+                                    class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span><span
+                                    class="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span></span> GIF
+                            Preview
+                        </span>
+                        <button id="close-anim"
+                            class="text-slate-400 hover:text-white p-1 hover:bg-white/10 rounded-full"><i
+                                data-lucide="x" class="w-4 h-4"></i></button>
+                    </div>
+                    <div class="aspect-video bg-black/50 flex items-center justify-center relative backdrop-blur-sm">
+                        <img id="anim-image" class="max-h-full max-w-full object-contain" />
+                        <div
+                            class="absolute bottom-3 left-3 bg-black/60 px-2 py-1 rounded text-[10px] text-white font-mono border border-white/10">
+                            <span id="anim-frame-indicator">1/1</span>
+                        </div>
+                    </div>
+                    <div class="p-3 flex items-center gap-3">
+                        <button id="btn-anim-play"
+                            class="p-2 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-white shadow-lg shadow-indigo-500/20"><i
+                                data-lucide="pause" class="w-4 h-4"></i></button>
+                        <input id="anim-speed" type="range" min="50" max="1000" step="50" value="200"
+                            class="flex-1 h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lightbox Modal -->
+    <div id="lightbox-modal"
+        class="fixed inset-0 z-[60] hide flex items-center justify-center bg-black/95 backdrop-blur-xl animate-scale-in">
+        <button onclick="closeLightbox()"
+            class="absolute top-4 right-4 p-3 bg-white/10 hover:bg-white/20 rounded-full text-white transition-all z-20">
+            <i data-lucide="x" class="w-6 h-6"></i>
+        </button>
+        <div class="w-full h-full flex items-center justify-center p-4 md:p-10">
+            <img id="lightbox-image" class="max-w-full max-h-full object-contain shadow-2xl rounded-sm" src="">
+            <div
+                class="absolute bottom-6 left-1/2 -translate-x-1/2 bg-black/50 px-4 py-2 rounded-full text-white/80 text-xs font-mono backdrop-blur-md border border-white/10">
+                <span id="lightbox-caption">filename.jpg</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirm-modal"
+        class="fixed inset-0 z-[70] hide flex items-center justify-center bg-slate-950/60 backdrop-blur-sm animate-scale-in">
+        <div
+            class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-2xl max-w-sm w-full mx-4 border border-slate-200 dark:border-slate-800">
+            <h3 class="font-bold text-lg mb-2 text-slate-800 dark:text-slate-100">Clear All Files?</h3>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mb-6">This action cannot be undone. All uploaded images
+                and edits will be lost.</p>
+            <div class="flex gap-3 justify-end">
+                <button onclick="closeConfirm()"
+                    class="px-4 py-2 rounded-xl font-bold text-sm text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">Cancel</button>
+                <button onclick="confirmClear()"
+                    class="px-4 py-2 rounded-xl font-bold text-sm bg-red-500 hover:bg-red-600 text-white shadow-lg shadow-red-500/30 transition-all">Yes,
+                    Clear All</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MEGA EDITOR MODAL (Refined Mobile Responsiveness) -->
+    <div id="editor-modal" class="fixed inset-0 z-50 hide flex items-center justify-center">
+        <div class="absolute inset-0 bg-slate-950/90 backdrop-blur-md transition-opacity duration-300"></div>
+        <div
+            class="relative w-full h-[100dvh] md:h-[90vh] md:w-[95vw] lg:w-[95vw] lg:max-w-7xl bg-white dark:bg-[#0a0a0a] md:rounded-3xl shadow-2xl flex flex-col md:flex-row overflow-hidden animate-scale-in border border-white/10">
+
+            <!-- Mobile Header -->
+            <div
+                class="md:hidden h-14 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-3 shrink-0 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md z-20">
+                <button onclick="closeEditor()" class="p-2 -ml-2 text-slate-500"><i data-lucide="arrow-left"
+                        class="w-5 h-5"></i></button>
+                <h3 class="font-bold text-sm dark:text-white">Pro Editor</h3>
+                <button onclick="saveEditorChanges()"
+                    class="px-3 py-1 text-xs font-bold bg-indigo-600 text-white rounded-lg">Apply</button>
+            </div>
+
+            <!-- Canvas Area (Fill available space) -->
+            <div
+                class="flex-1 relative bg-slate-100 dark:bg-[#000000] overflow-hidden flex items-center justify-center p-4 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCI+PGcmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiMzMzMiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTAgMGgxMHYxMEgwVjB6bTEwIDEwaDEwdjEwSDEwVjEweiIvPjwvZz48L2c+PC9zdmc+')] min-h-0">
+                <canvas id="editor-canvas"
+                    class="max-w-[95%] max-h-[95%] shadow-2xl border border-slate-200 dark:border-slate-800 rounded-lg"></canvas>
+            </div>
+
+            <!-- Enhanced Sidebar (Responsive Height) -->
+            <div
+                class="w-full md:w-[360px] bg-white dark:bg-slate-900 border-t md:border-t-0 md:border-l border-slate-200 dark:border-slate-800 shrink-0 flex flex-col z-10 shadow-up md:shadow-none max-h-[50dvh] md:max-h-full">
+
+                <!-- Desktop Header -->
+                <div
+                    class="hidden md:flex h-16 border-b border-slate-200 dark:border-slate-800 items-center justify-between px-6 bg-slate-50/50 dark:bg-slate-900/50 shrink-0">
+                    <h3 class="font-bold text-lg flex items-center gap-2 text-slate-800 dark:text-slate-100">
+                        <i data-lucide="sliders" class="w-5 h-5 text-indigo-500"></i> Pro Editor
+                    </h3>
+                    <div class="flex gap-2">
+                        <button onclick="resetEditor()"
+                            class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full text-slate-400 hover:text-indigo-500 transition-all"
+                            title="Reset All"><i data-lucide="rotate-ccw" class="w-4 h-4"></i></button>
+                        <button onclick="closeEditor()"
+                            class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full text-slate-400 hover:text-red-500 transition-all"><i
+                                data-lucide="x" class="w-5 h-5"></i></button>
+                    </div>
+                </div>
+
+                <!-- Tabs (Responsive) -->
+                <div class="flex border-b border-slate-200 dark:border-slate-800 overflow-x-auto no-scrollbar shrink-0">
+                    <button onclick="setTab('tune')" id="tab-tune"
+                        class="tab-btn flex-1 py-3 md:py-4 flex flex-col md:flex-row items-center justify-center gap-1.5 text-[10px] md:text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 border-b-2 border-transparent hover:bg-slate-50 dark:hover:bg-slate-800 transition-all active">
+                        <i data-lucide="sliders-horizontal" class="w-4 h-4 md:hidden"></i>
+                        <span class="hidden md:inline">Tune</span>
+                        <span class="md:hidden">Tune</span>
+                    </button>
+                    <button onclick="setTab('filters')" id="tab-filters"
+                        class="tab-btn flex-1 py-3 md:py-4 flex flex-col md:flex-row items-center justify-center gap-1.5 text-[10px] md:text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 border-b-2 border-transparent hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">
+                        <i data-lucide="wand-2" class="w-4 h-4 md:hidden"></i>
+                        <span class="hidden md:inline">Filters</span>
+                        <span class="md:hidden">Filters</span>
+                    </button>
+                    <button onclick="setTab('transform')" id="tab-transform"
+                        class="tab-btn flex-1 py-3 md:py-4 flex flex-col md:flex-row items-center justify-center gap-1.5 text-[10px] md:text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 border-b-2 border-transparent hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">
+                        <i data-lucide="crop" class="w-4 h-4 md:hidden"></i>
+                        <span class="hidden md:inline">Transform</span>
+                        <span class="md:hidden">Crop</span>
+                    </button>
+                    <button onclick="setTab('text')" id="tab-text"
+                        class="tab-btn flex-1 py-3 md:py-4 flex flex-col md:flex-row items-center justify-center gap-1.5 text-[10px] md:text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 border-b-2 border-transparent hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">
+                        <i data-lucide="type" class="w-4 h-4 md:hidden"></i>
+                        <span class="hidden md:inline">Text</span>
+                        <span class="md:hidden">Text</span>
+                    </button>
+                </div>
+
+                <!-- Tool Content (Scrollable) -->
+                <div class="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-6 relative">
+
+                    <!-- TUNE TAB -->
+                    <div id="panel-tune" class="space-y-6 animate-slide-up">
+                        <div>
+                            <div
+                                class="flex justify-between text-xs mb-1.5 font-bold text-slate-500 dark:text-slate-400">
+                                Brightness</div><input type="range" id="edit-brightness" min="0" max="200" value="100"
+                                class="w-full">
+                        </div>
+                        <div>
+                            <div
+                                class="flex justify-between text-xs mb-1.5 font-bold text-slate-500 dark:text-slate-400">
+                                Contrast</div><input type="range" id="edit-contrast" min="0" max="200" value="100"
+                                class="w-full">
+                        </div>
+                        <div>
+                            <div
+                                class="flex justify-between text-xs mb-1.5 font-bold text-slate-500 dark:text-slate-400">
+                                Saturation</div><input type="range" id="edit-saturation" min="0" max="200" value="100"
+                                class="w-full">
+                        </div>
+                        <div>
+                            <div
+                                class="flex justify-between text-xs mb-1.5 font-bold text-slate-500 dark:text-slate-400">
+                                Warmth (Sepia)</div><input type="range" id="edit-sepia" min="0" max="100" value="0"
+                                class="w-full">
+                        </div>
+                        <div>
+                            <div
+                                class="flex justify-between text-xs mb-1.5 font-bold text-slate-500 dark:text-slate-400">
+                                Hue Rotate</div><input type="range" id="edit-hue" min="0" max="360" value="0"
+                                class="w-full">
+                        </div>
+                        <div>
+                            <div
+                                class="flex justify-between text-xs mb-1.5 font-bold text-slate-500 dark:text-slate-400">
+                                Blur</div><input type="range" id="edit-blur" min="0" max="10" value="0" step="0.5"
+                                class="w-full">
+                        </div>
+                        <div>
+                            <div
+                                class="flex justify-between text-xs mb-1.5 font-bold text-slate-500 dark:text-slate-400">
+                                Grayscale</div><input type="range" id="edit-grayscale" min="0" max="100" value="0"
+                                class="w-full">
+                        </div>
+                    </div>
+
+                    <!-- FILTERS TAB -->
+                    <div id="panel-filters" class="hide grid grid-cols-2 gap-3 animate-slide-up">
+                        <button onclick="applyPreset('normal')"
+                            class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-indigo-500 dark:hover:border-indigo-500 transition-all text-xs font-bold text-slate-600 dark:text-slate-300">Normal</button>
+                        <button onclick="applyPreset('grayscale')"
+                            class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-indigo-500 dark:hover:border-indigo-500 transition-all text-xs font-bold text-slate-600 dark:text-slate-300"
+                            style="filter: grayscale(1)">B&W</button>
+                        <button onclick="applyPreset('sepia')"
+                            class="p-3 rounded-xl bg-[#f4e4bc] border border-slate-200 hover:border-indigo-500 transition-all text-xs font-bold text-slate-800">Vintage</button>
+                        <button onclick="applyPreset('high-contrast')"
+                            class="p-3 rounded-xl bg-slate-900 border border-slate-700 hover:border-indigo-500 transition-all text-xs font-bold text-white">Punchy</button>
+                        <button onclick="applyPreset('cool')"
+                            class="p-3 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 hover:border-indigo-500 transition-all text-xs font-bold text-blue-600 dark:text-blue-300">Cool</button>
+                        <button onclick="applyPreset('warm')"
+                            class="p-3 rounded-xl bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 hover:border-indigo-500 transition-all text-xs font-bold text-orange-600 dark:text-orange-300">Warm</button>
+                        <button onclick="applyPreset('invert')"
+                            class="p-3 rounded-xl bg-slate-800 text-white border border-slate-700 hover:border-indigo-500 transition-all text-xs font-bold">Invert</button>
+                    </div>
+
+                    <!-- TRANSFORM TAB -->
+                    <div id="panel-transform" class="hide space-y-6 animate-slide-up">
+                        <div>
+                            <label class="text-xs font-bold text-slate-400 uppercase mb-3 block">Rotate</label>
+                            <div class="grid grid-cols-2 gap-3">
+                                <button onclick="editorRotate(-90)"
+                                    class="p-4 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 text-slate-600 dark:text-slate-300 hover:text-indigo-600 transition-colors flex flex-col items-center gap-2"><i
+                                        data-lucide="rotate-ccw" class="w-6 h-6"></i><span
+                                        class="text-[10px] font-bold">Left</span></button>
+                                <button onclick="editorRotate(90)"
+                                    class="p-4 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 text-slate-600 dark:text-slate-300 hover:text-indigo-600 transition-colors flex flex-col items-center gap-2"><i
+                                        data-lucide="rotate-cw" class="w-6 h-6"></i><span
+                                        class="text-[10px] font-bold">Right</span></button>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="text-xs font-bold text-slate-400 uppercase mb-3 block">Flip</label>
+                            <div class="grid grid-cols-2 gap-3">
+                                <button onclick="editorFlip('h')"
+                                    class="p-4 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 text-slate-600 dark:text-slate-300 hover:text-indigo-600 transition-colors flex flex-col items-center gap-2"><i
+                                        data-lucide="flip-horizontal" class="w-6 h-6"></i><span
+                                        class="text-[10px] font-bold">Horizontal</span></button>
+                                <button onclick="editorFlip('v')"
+                                    class="p-4 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 text-slate-600 dark:text-slate-300 hover:text-indigo-600 transition-colors flex flex-col items-center gap-2"><i
+                                        data-lucide="flip-vertical" class="w-6 h-6"></i><span
+                                        class="text-[10px] font-bold">Vertical</span></button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TEXT TAB -->
+                    <div id="panel-text" class="hide space-y-6 animate-slide-up">
+                        <div>
+                            <label class="text-xs font-bold text-slate-400 uppercase mb-2 block">Watermark Text</label>
+                            <input type="text" id="edit-text-val" placeholder="Enter text..."
+                                class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="text-xs font-bold text-slate-400 uppercase mb-2 block">Color</label>
+                            <div class="flex gap-2">
+                                <input type="color" id="edit-text-color" value="#ffffff"
+                                    class="h-8 w-12 rounded cursor-pointer">
+                                <button onclick="$('edit-text-color').value='#ffffff'; triggerTextUpdate()"
+                                    class="w-8 h-8 rounded-full bg-white border border-slate-200"></button>
+                                <button onclick="$('edit-text-color').value='#000000'; triggerTextUpdate()"
+                                    class="w-8 h-8 rounded-full bg-black border border-slate-200"></button>
+                            </div>
+                        </div>
+                        <div>
+                            <div
+                                class="flex justify-between text-xs mb-1.5 font-bold text-slate-500 dark:text-slate-400">
+                                Size</div><input type="range" id="edit-text-size" min="10" max="200" value="50"
+                                class="w-full">
+                        </div>
+                        <div>
+                            <div
+                                class="flex justify-between text-xs mb-1.5 font-bold text-slate-500 dark:text-slate-400">
+                                Position X</div><input type="range" id="edit-text-x" min="0" max="100" value="50"
+                                class="w-full">
+                        </div>
+                        <div>
+                            <div
+                                class="flex justify-between text-xs mb-1.5 font-bold text-slate-500 dark:text-slate-400">
+                                Position Y</div><input type="range" id="edit-text-y" min="0" max="100" value="50"
+                                class="w-full">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer -->
+                <div
+                    class="p-6 border-t border-slate-200 dark:border-slate-800 hidden md:block bg-slate-50/50 dark:bg-slate-900/50">
+                    <button onclick="saveEditorChanges()"
+                        class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-lg shadow-indigo-500/30 transition-all flex items-center justify-center gap-2 transform active:scale-95">
+                        <i data-lucide="check" class="w-5 h-5"></i> Apply Changes
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast"
+        class="fixed top-6 left-1/2 -translate-x-1/2 bg-slate-900/90 dark:bg-white/90 backdrop-blur-md text-white dark:text-slate-900 px-6 py-3 rounded-full shadow-2xl -translate-y-32 opacity-0 transition-all duration-500 z-[100] flex items-center gap-3 border border-white/10">
+        <div class="bg-green-500 rounded-full p-1"><i data-lucide="check" class="w-3.5 h-3.5 text-white"></i></div>
+        <span id="toast-msg" class="font-bold text-sm">Action Complete</span>
+    </div>
+
+    <script>
+        // --- CONSTANTS ---
+        const AVAILABLE_FORMATS = [
+            { value: 'image/jpeg', label: 'JPG', lossless: false },
+            { value: 'image/png', label: 'PNG', lossless: true },
+            { value: 'image/webp', label: 'WEBP', lossless: false },
+            { value: 'image/bmp', label: 'BMP', lossless: true },
+            { value: 'image/avif', label: 'AVIF', lossless: false }
+        ];
+
+        // DEFAULT STATE for edits
+        const DEFAULT_EDITS = {
+            rotation: 0, flipH: 1, flipV: 1,
+            brightness: 100, contrast: 100, saturation: 100, grayscale: 0, sepia: 0, hue: 0, blur: 0, invert: 0,
+            text: '', textColor: '#ffffff', textSize: 50, textX: 50, textY: 50
+        };
+
+        const state = {
+            files: [],
+            globalFormat: 'image/jpeg',
+            quality: 0.9,
+            prioritizeQuality: false, // Renamed from forceQuality
+            resizeScale: 1,
+            isProcessing: false,
+            debounceTimer: null,
+            anim: { visible: false, interval: null, index: 0, speed: 200, playing: true },
+            editor: { activeId: null, ...DEFAULT_EDITS, originalImg: null }
+        };
+
+        const $ = (id) => document.getElementById(id);
+        const formatBytes = (bytes, decimals = 1) => {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const dm = decimals < 0 ? 0 : decimals;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+        };
+
+        const dom = {
+            dropzone: $('dropzone'), fileInput: $('file-input'), fileList: $('file-list-items'),
+            container: $('file-list-container'), batchToolbar: $('batch-toolbar'),
+            convertBtn: $('btn-convert'), downloadBtn: $('btn-download-all'),
+            formatOpts: $('format-options-container'), countLabel: $('count-text'), qualitySlider: $('quality-slider'),
+            qualityVal: $('quality-val'), resizeSelect: $('resize-select'), losslessWarning: $('lossless-warning'),
+            forceQuality: $('force-quality'),
+            modal: $('editor-modal'), canvas: $('editor-canvas'), animCard: $('animation-card'),
+            lightbox: $('lightbox-modal'), lightboxImg: $('lightbox-image'), lightboxCap: $('lightbox-caption'),
+            confirmModal: $('confirm-modal')
+        };
+
+        function init() {
+            renderFormatButtons();
+            setupEvents();
+            lucide.createIcons();
+            if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            }
+        }
+
+        function setupEvents() {
+            $('theme-toggle').onclick = () => {
+                document.documentElement.classList.toggle('dark');
+                localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+            };
+
+            dom.dropzone.onclick = () => dom.fileInput.click();
+            $('btn-add-more').onclick = () => dom.fileInput.click();
+            dom.fileInput.onchange = (e) => handleFiles(e.target.files);
+
+            dom.dropzone.ondragover = (e) => { e.preventDefault(); dom.dropzone.classList.add('border-indigo-500', 'bg-indigo-50', 'dark:bg-indigo-900/20'); };
+            dom.dropzone.ondragleave = (e) => { e.preventDefault(); dom.dropzone.classList.remove('border-indigo-500', 'bg-indigo-50', 'dark:bg-indigo-900/20'); };
+            dom.dropzone.ondrop = (e) => {
+                e.preventDefault();
+                dom.dropzone.classList.remove('border-indigo-500', 'bg-indigo-50', 'dark:bg-indigo-900/20');
+                handleFiles(e.dataTransfer.files);
+            };
+
+            dom.qualitySlider.oninput = (e) => { state.quality = e.target.value / 100; dom.qualityVal.innerText = e.target.value + '%'; triggerSizeEstimation(); };
+            dom.resizeSelect.onchange = (e) => { state.resizeScale = parseFloat(e.target.value); triggerSizeEstimation(); };
+
+            // Prioritize Quality Toggle
+            dom.forceQuality.onchange = (e) => {
+                state.prioritizeQuality = e.target.checked;
+                triggerSizeEstimation();
+            };
+
+            $('btn-toggle-animation').onclick = () => { state.anim.visible = !state.anim.visible; state.anim.visible ? (dom.animCard.classList.remove('hide'), startAnim()) : (dom.animCard.classList.add('hide'), stopAnim()); };
+            $('close-anim').onclick = () => { state.anim.visible = false; dom.animCard.classList.add('hide'); stopAnim(); };
+            $('btn-anim-play').onclick = toggleAnim;
+            $('anim-speed').oninput = (e) => { state.anim.speed = parseInt(e.target.value); if (state.anim.playing) startAnim(); };
+
+            // Editor Sliders
+            ['brightness', 'contrast', 'saturation', 'sepia', 'hue', 'blur', 'grayscale'].forEach(key => {
+                $(`edit-${key}`).oninput = (e) => { state.editor[key] = parseFloat(e.target.value); drawEditor(); };
+            });
+            // Text Inputs
+            $('edit-text-val').oninput = (e) => { state.editor.text = e.target.value; drawEditor(); };
+            $('edit-text-size').oninput = (e) => { state.editor.textSize = parseInt(e.target.value); drawEditor(); };
+            $('edit-text-x').oninput = (e) => { state.editor.textX = parseInt(e.target.value); drawEditor(); };
+            $('edit-text-y').oninput = (e) => { state.editor.textY = parseInt(e.target.value); drawEditor(); };
+            $('edit-text-color').oninput = (e) => { state.editor.textColor = e.target.value; drawEditor(); };
+
+            // Updated Clear Button to Trigger Modal
+            $('btn-clear-all').onclick = requestClear;
+
+            dom.convertBtn.onclick = processQueue;
+            dom.downloadBtn.onclick = downloadZip;
+
+            window.addEventListener('resize', () => { if (state.editor.activeId) drawEditor(); });
+        }
+
+        // --- CORE LOGIC ---
+        function handleFiles(files) {
+            const validFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
+            if (validFiles.length === 0) return;
+
+            validFiles.forEach((f, i) => {
+                let target = state.globalFormat;
+                if (f.type === target) target = target === 'image/jpeg' ? 'image/png' : 'image/jpeg';
+                const now = new Date();
+                const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+                const rawUrl = URL.createObjectURL(f);
+                state.files.push({
+                    id: crypto.randomUUID(), file: f,
+                    originalPreview: rawUrl, // Store original for editor base
+                    preview: rawUrl, // This will be updated if edited
+                    name: f.name, timestamp: timeString,
+                    originalSize: f.size, estimatedSize: null, targetFormat: target, status: 'pending',
+                    edits: { ...DEFAULT_EDITS }, animDelay: (i * 0.05)
+                });
+            });
+            renderList();
+            showToast(`${validFiles.length} files added`);
+            triggerSizeEstimation();
+            if (state.anim.visible) startAnim();
+
+            // RESET INPUT SO SAME FILES CAN BE SELECTED AGAIN
+            dom.fileInput.value = '';
+        }
+
+        function triggerSizeEstimation() {
+            clearTimeout(state.debounceTimer);
+
+            const fmt = AVAILABLE_FORMATS.find(f => f.value === state.globalFormat);
+            // Hide warning if Prioritize Quality is enabled OR if format is naturally lossy
+            if (state.prioritizeQuality || (fmt && !fmt.lossless)) {
+                dom.losslessWarning.classList.add('hidden');
+            } else if (fmt && fmt.lossless) {
+                dom.losslessWarning.classList.remove('hidden');
+            }
+
+            state.debounceTimer = setTimeout(updateEstimatedSizes, 500);
+        }
+
+        async function updateEstimatedSizes() {
+            for (let file of state.files) {
+                if (file.status === 'pending') {
+                    const el = $(`size-est-${file.id}`);
+                    if (el) {
+                        el.innerHTML = `<span class="animate-pulse">Calc...</span>`;
+                        try {
+                            const blob = await getProcessedBlob(file);
+                            file.estimatedSize = blob.size;
+                            el.innerHTML = `<span class="text-indigo-600 dark:text-indigo-400 font-bold">~${formatBytes(blob.size)}</span>`;
+                            if (blob.size > file.originalSize * 1.5) el.innerHTML += ` <span class="text-[9px] text-amber-500" title="Format is uncompressed">▲</span>`;
+                            else if (blob.size > file.originalSize) el.innerHTML += ` <span class="text-[9px] text-amber-500" title="Size increased">▲</span>`;
+                            else {
+                                const saving = Math.round((1 - (blob.size / file.originalSize)) * 100);
+                                if (saving > 0) el.innerHTML += ` <span class="text-[9px] text-emerald-500" title="Space saved">-${saving}%</span>`;
+                            }
+                        } catch (e) { console.error(e); el.innerHTML = `<span class="text-slate-400">?</span>`; }
+                    }
+                }
+            }
+        }
+
+        // --- SHARED RENDERING LOGIC ---
+        // Used by both Editor Preview and Final File Conversion for 1:1 match
+        function applyImageToContext(ctx, img, width, height, edits) {
+            // Background for non-transparency
+            ctx.fillStyle = '#FFFFFF';
+            // Simple check: if saturation/hue/invert used, transparency might look weird if not handled, but we assume BG fill for consistent export
+            // Actually, keep transparent for PNG/WEBP if no "lossy" BG forced.
+            // But rotating usually needs clear rect.
+            ctx.clearRect(0, 0, width, height);
+
+            ctx.save();
+            ctx.translate(width / 2, height / 2);
+            ctx.rotate(edits.rotation * Math.PI / 180);
+            ctx.scale(edits.flipH, edits.flipV);
+
+            // Apply Filters
+            // Note: Canvas filter syntax is specific
+            ctx.filter = `brightness(${edits.brightness}%) contrast(${edits.contrast}%) saturate(${edits.saturation}%) grayscale(${edits.grayscale}%) sepia(${edits.sepia}%) hue-rotate(${edits.hue}deg) blur(${edits.blur}px) invert(${edits.invert}%)`;
+
+            const rot = Math.abs(edits.rotation % 180);
+            const isVertical = rot === 90;
+
+            if (isVertical) ctx.drawImage(img, -height / 2, -width / 2, height, width);
+            else ctx.drawImage(img, -width / 2, -height / 2, width, height);
+
+            ctx.restore();
+
+            // Apply Text Watermark
+            if (edits.text && edits.text.trim() !== '') {
+                ctx.save();
+                // Scale text size relative to image height to be responsive
+                const fontSize = (height * edits.textSize) / 1000;
+                ctx.font = `bold ${Math.max(10, fontSize)}px sans-serif`;
+                ctx.fillStyle = edits.textColor;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                // Add shadow for visibility
+                ctx.shadowColor = 'rgba(0,0,0,0.5)';
+                ctx.shadowBlur = 4;
+                ctx.shadowOffsetX = 2;
+                ctx.shadowOffsetY = 2;
+
+                const x = (width * edits.textX) / 100;
+                const y = (height * edits.textY) / 100;
+
+                ctx.fillText(edits.text, x, y);
+                ctx.restore();
+            }
+        }
+
+        // --- NEW: COLOR QUANTIZATION HELPER FOR PNG/BMP ---
+        // Reduces color depth to simulate compression when "Prioritize Quality" is ON for lossless formats
+        function applyColorQuantization(ctx, width, height, quality) {
+            // Only apply if quality is < 100%
+            if (quality >= 1) return;
+
+            const imageData = ctx.getImageData(0, 0, width, height);
+            const data = imageData.data;
+
+            // Calculate a reduction factor. 
+            // Quality 0.9 -> factor 1 (minor)
+            // Quality 0.1 -> factor ~32 (major posterization)
+            // We map 0.1-1.0 to a quantization step of 255 down to 1
+            const factor = Math.max(1, Math.floor((1 - quality) * 64));
+
+            if (factor <= 1) return; // No effective change
+
+            for (let i = 0; i < data.length; i += 4) {
+                // R, G, B channels
+                data[i] = Math.round(data[i] / factor) * factor;
+                data[i + 1] = Math.round(data[i + 1] / factor) * factor;
+                data[i + 2] = Math.round(data[i + 2] / factor) * factor;
+                // Alpha (i+3) usually kept as is to avoid jagged transparency edges unless very low quality
+            }
+            ctx.putImageData(imageData, 0, 0);
+        }
+
+        function getProcessedBlob(fileData) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    const scale = state.resizeScale;
+                    const rot = fileData.edits.rotation % 360;
+                    const isVertical = Math.abs(rot) === 90 || Math.abs(rot) === 270;
+
+                    let w = img.width * scale;
+                    let h = img.height * scale;
+
+                    canvas.width = isVertical ? h : w;
+                    canvas.height = isVertical ? w : h;
+
+                    const fmt = fileData.targetFormat;
+                    // Note: We don't force white BG for PNG if transparency exists, unless user really wants it
+                    // But to be safe and consistent with previous behavior:
+                    if (fmt === 'image/jpeg' || fmt === 'image/bmp') {
+                        ctx.fillStyle = '#FFFFFF';
+                        ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    }
+
+                    applyImageToContext(ctx, img, canvas.width, canvas.height, fileData.edits);
+
+                    // --- PRIORITIZE QUALITY LOGIC (Manual Quantization) ---
+                    // If Lossless Format + Prioritize Quality is checked + Quality < 100%
+                    if (state.prioritizeQuality && (fmt === 'image/png' || fmt === 'image/bmp') && state.quality < 1) {
+                        applyColorQuantization(ctx, canvas.width, canvas.height, state.quality);
+                    }
+
+                    // For JPEG/WEBP, we pass the quality param directly
+                    // For PNG/BMP, the param is ignored by browser, but we already pre-processed the pixels above
+                    const qualityParam = (fmt === 'image/jpeg' || fmt === 'image/webp') ? state.quality : undefined;
+
+                    canvas.toBlob((blob) => {
+                        if (blob) resolve(blob); else reject(new Error("Canvas failure"));
+                    }, fmt, qualityParam);
+                };
+                img.onerror = reject;
+                // Always use original preview to apply edits on top of clean slate
+                img.src = fileData.originalPreview || fileData.preview;
+            });
+        }
+
+        async function processQueue() {
+            if (state.files.every(f => f.status === 'done')) state.files.forEach(f => f.status = 'pending');
+            state.isProcessing = true;
+            renderList();
+            for (let file of state.files) {
+                if (file.status === 'pending') {
+                    try {
+                        const blob = await getProcessedBlob(file);
+                        const reader = new FileReader();
+                        reader.readAsDataURL(blob);
+                        await new Promise(r => reader.onloadend = r);
+                        let ext = file.targetFormat.split('/')[1];
+                        if (ext === 'jpeg') ext = 'jpg'; if (ext === 'x-icon') ext = 'ico';
+                        file.dataUrl = reader.result;
+                        file.finalName = file.name.substring(0, file.name.lastIndexOf('.')) + '.' + ext;
+                        file.status = 'done';
+                        file.finalSize = blob.size;
+                    } catch (e) { console.error(e); file.status = 'error'; }
+                    renderList();
+                }
+            }
+            state.isProcessing = false;
+            renderList();
+            showToast('Batch conversion complete!');
+        }
+
+        // --- EDITOR UI FUNCTIONS ---
+        window.openEditor = (id) => {
+            const file = state.files.find(x => x.id === id);
+            if (!file) return;
+            state.editor.activeId = id;
+            // Merge defaults in case new fields were added
+            state.editor = { ...state.editor, ...DEFAULT_EDITS, ...file.edits, originalImg: new Image() };
+
+            // Populate Inputs
+            ['brightness', 'contrast', 'saturation', 'sepia', 'hue', 'blur', 'grayscale'].forEach(k => $(`edit-${k}`).value = state.editor[k]);
+            $('edit-text-val').value = state.editor.text || '';
+            $('edit-text-size').value = state.editor.textSize;
+            $('edit-text-x').value = state.editor.textX;
+            $('edit-text-y').value = state.editor.textY;
+            $('edit-text-color').value = state.editor.textColor;
+
+            state.editor.originalImg.onload = () => { dom.modal.classList.remove('hide'); drawEditor(); };
+            // Ensure editor always loads the ORIGINAL base image
+            state.editor.originalImg.src = file.originalPreview || file.preview;
+            setTab('tune');
+        };
+
+        window.setTab = (tabName) => {
+            ['tune', 'filters', 'transform', 'text'].forEach(t => {
+                $(`panel-${t}`).classList.add('hide');
+                $(`tab-${t}`).classList.remove('active');
+            });
+            $(`panel-${tabName}`).classList.remove('hide');
+            $(`tab-${tabName}`).classList.add('active');
+        };
+
+        window.applyPreset = (preset) => {
+            const defaults = { brightness: 100, contrast: 100, saturation: 100, grayscale: 0, sepia: 0, hue: 0, invert: 0 };
+            let edits = {};
+
+            if (preset === 'normal') edits = { ...defaults };
+            else if (preset === 'grayscale') edits = { ...defaults, grayscale: 100 };
+            else if (preset === 'sepia') edits = { ...defaults, sepia: 80, brightness: 110 };
+            else if (preset === 'high-contrast') edits = { ...defaults, contrast: 150, brightness: 110, saturation: 120 };
+            else if (preset === 'cool') edits = { ...defaults, hue: 180, brightness: 110, saturation: 80 }; // Fake cool via hue
+            else if (preset === 'warm') edits = { ...defaults, sepia: 40, brightness: 105, saturation: 110 };
+            else if (preset === 'invert') edits = { ...defaults, invert: 100 };
+
+            // Update state and sliders
+            Object.keys(edits).forEach(k => {
+                state.editor[k] = edits[k];
+                const slider = $(`edit-${k}`);
+                if (slider) slider.value = edits[k];
+            });
+            drawEditor();
+        };
+
+        window.triggerTextUpdate = () => { state.editor.textColor = $('edit-text-color').value; drawEditor(); };
+
+        function drawEditor() {
+            const ctx = dom.canvas.getContext('2d');
+            const img = state.editor.originalImg;
+
+            const maxW = dom.canvas.parentElement.clientWidth;
+            const maxH = dom.canvas.parentElement.clientHeight;
+
+            const rot = Math.abs(state.editor.rotation % 180);
+            const isVertical = rot === 90;
+            const boxW = isVertical ? img.height : img.width;
+            const boxH = isVertical ? img.width : img.height;
+
+            let scale = Math.min(maxW / boxW, maxH / boxH) * 0.95;
+
+            dom.canvas.width = boxW * scale;
+            dom.canvas.height = boxH * scale;
+
+            applyImageToContext(ctx, img, dom.canvas.width, dom.canvas.height, state.editor);
+        }
+
+        window.editorRotate = (deg) => { state.editor.rotation += deg; drawEditor(); };
+        window.editorFlip = (dir) => { dir === 'h' ? state.editor.flipH *= -1 : state.editor.flipV *= -1; drawEditor(); };
+        window.resetEditor = () => {
+            const img = state.editor.originalImg;
+            state.editor = { activeId: state.editor.activeId, ...DEFAULT_EDITS, originalImg: img };
+            window.openEditor(state.editor.activeId); // refresh UI
+        };
+
+        window.saveEditorChanges = async () => {
+            const file = state.files.find(x => x.id === state.editor.activeId);
+            if (file) {
+                // 1. Save all edit properties
+                Object.keys(DEFAULT_EDITS).forEach(k => {
+                    file.edits[k] = state.editor[k];
+                });
+
+                // 2. GENERATE NEW VISUAL PREVIEW FOR UI
+                try {
+                    // Create a blob of the edited state so thumbnails/lightbox reflect changes
+                    const blob = await getProcessedBlob(file);
+                    // Revoke old if exists and distinct
+                    if (file.preview !== file.originalPreview) URL.revokeObjectURL(file.preview);
+                    // Update preview URL
+                    file.preview = URL.createObjectURL(blob);
+                } catch (e) { console.error("Preview Update Failed", e); }
+
+                if (file.status === 'done') file.status = 'pending';
+                renderList();
+                triggerSizeEstimation();
+                showToast('Edits Applied');
+            }
+            dom.modal.classList.add('hide'); state.editor.activeId = null;
+        };
+
+        // --- CONFIRMATION & CLEAR LOGIC ---
+        window.requestClear = () => {
+            if (state.files.length > 0) dom.confirmModal.classList.remove('hide');
+        };
+
+        window.confirmClear = () => {
+            // CLEAN UP MEMORY
+            state.files.forEach(f => {
+                if (f.preview) URL.revokeObjectURL(f.preview);
+                if (f.originalPreview && f.originalPreview !== f.preview) URL.revokeObjectURL(f.originalPreview);
+            });
+
+            state.files = [];
+            state.anim.visible = false;
+            dom.animCard.classList.add('hide');
+            renderList();
+
+            // RESET INPUT SO SAME FILES CAN BE SELECTED AGAIN
+            dom.fileInput.value = '';
+
+            dom.confirmModal.classList.add('hide');
+            showToast('All files cleared');
+        };
+
+        window.closeConfirm = () => {
+            dom.confirmModal.classList.add('hide');
+        };
+
+        // --- STANDARD LIST FUNCTIONS ---
+        function renderFormatButtons() {
+            dom.formatOpts.innerHTML = '';
+            AVAILABLE_FORMATS.forEach(opt => {
+                const btn = document.createElement('button');
+                const active = state.globalFormat === opt.value;
+                btn.className = `shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${active ? 'bg-indigo-600 text-white border-indigo-600 shadow-md' : 'bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-transparent hover:bg-slate-100 dark:hover:bg-slate-700'}`;
+                btn.innerText = opt.label;
+                btn.onclick = () => {
+                    state.globalFormat = opt.value;
+                    state.files.forEach(f => { if (f.status !== 'error') f.targetFormat = opt.value; if (f.status === 'done') f.status = 'pending'; });
+                    renderFormatButtons(); renderList(); triggerSizeEstimation();
+                };
+                dom.formatOpts.appendChild(btn);
+            });
+        }
+
+        function renderList() {
+            const list = dom.fileList; list.innerHTML = '';
+            if (state.files.length === 0) {
+                dom.dropzone.classList.remove('hide'); dom.container.classList.add('hide'); $('btn-toggle-animation').classList.add('hide');
+                $('btn-clear-all').classList.add('hide'); dom.batchToolbar.classList.add('hide'); dom.downloadBtn.classList.add('hide');
+                dom.convertBtn.disabled = true; dom.convertBtn.className = "w-full py-3 md:py-4 rounded-xl font-bold text-sm md:text-lg flex items-center justify-center gap-2 transition-all bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed";
+                dom.convertBtn.innerHTML = `<span class="relative z-10">Convert Images</span>`; dom.countLabel.innerText = `0 Files`;
+                return;
+            }
+            dom.dropzone.classList.add('hide'); dom.container.classList.remove('hide'); $('btn-clear-all').classList.remove('hide');
+            dom.batchToolbar.classList.remove('hide'); if (state.files.length > 1) $('btn-toggle-animation').classList.remove('hide');
+            dom.countLabel.innerText = `${state.files.length} Files`;
+
+            const hasPending = state.files.some(f => f.status === 'pending');
+            const hasDone = state.files.some(f => f.status === 'done');
+
+            if (state.isProcessing) {
+                dom.convertBtn.disabled = true; dom.convertBtn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 md:w-5 md:h-5 animate-spin"></i> Converting...`;
+                dom.convertBtn.className = "w-full py-3 md:py-4 rounded-xl font-bold text-sm md:text-lg flex items-center justify-center gap-2 transition-all bg-indigo-600 text-white cursor-wait opacity-80";
+            } else {
+                dom.convertBtn.disabled = !hasPending && !hasDone;
+                dom.convertBtn.innerHTML = hasPending ? `Convert ${state.files.filter(f => f.status === 'pending').length} Files` : 'Convert Again';
+                dom.convertBtn.className = "group relative w-full py-3 md:py-4 rounded-xl font-bold text-sm md:text-lg flex items-center justify-center gap-2 transition-all bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-500/30 active:scale-95";
+            }
+            if (hasDone && !state.isProcessing) dom.downloadBtn.classList.remove('hide'); else dom.downloadBtn.classList.add('hide');
+
+            state.files.forEach(file => {
+                const el = document.createElement('div');
+                el.className = `group relative bg-white dark:bg-slate-900 p-2 md:p-3 rounded-2xl border ${file.status === 'done' ? 'border-emerald-500/50 dark:border-emerald-500/30' : 'border-slate-200 dark:border-slate-800'} shadow-sm hover:shadow-md transition-all animate-slide-up overflow-hidden`;
+                const opts = AVAILABLE_FORMATS.map(fmt => `<option value="${fmt.value}" ${file.targetFormat === fmt.value ? 'selected' : ''}>${fmt.label}</option>`).join('');
+                el.innerHTML = `
+                    <div class="flex items-center gap-3 md:gap-4">
+                        <div class="relative w-12 h-12 xs:w-16 xs:h-16 bg-slate-100 dark:bg-slate-800 rounded-xl overflow-hidden shrink-0 border border-slate-200 dark:border-slate-700 cursor-pointer" onclick="openLightbox('${file.id}')">
+                            <img src="${file.preview}" class="w-full h-full object-cover">
+                            ${file.status === 'done' ? '<div class="absolute inset-0 bg-emerald-500/80 flex items-center justify-center animate-scale-in"><i data-lucide="check" class="w-5 h-5 md:w-6 md:h-6 text-white"></i></div>' : ''}
+                            ${file.status === 'error' ? '<div class="absolute inset-0 bg-red-500/80 flex items-center justify-center animate-scale-in"><i data-lucide="alert-triangle" class="w-5 h-5 md:w-6 md:h-6 text-white"></i></div>' : ''}
+                            <div class="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100"><i data-lucide="maximize-2" class="w-4 h-4 md:w-5 md:h-5 text-white drop-shadow-md"></i></div>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex justify-between items-start"><h4 class="font-bold text-xs md:text-sm text-slate-800 dark:text-slate-100 truncate pr-4">${file.name}</h4><button onclick="removeFile('${file.id}')" class="text-slate-400 hover:text-red-500 transition-colors"><i data-lucide="x" class="w-3.5 h-3.5 md:w-4 md:h-4"></i></button></div>
+                            <div class="flex items-center gap-2 mt-1 text-[9px] md:text-[10px] xs:text-xs font-mono text-slate-500 dark:text-slate-400">
+                                <span class="bg-slate-100 dark:bg-slate-800 px-1 rounded text-[9px] font-sans text-slate-400 hidden xs:inline">Added ${file.timestamp}</span><span class="w-px h-3 bg-slate-300 dark:bg-slate-700 hidden xs:inline"></span><span>${formatBytes(file.originalSize)}</span><i data-lucide="arrow-right" class="w-3 h-3"></i>
+                                <span id="size-est-${file.id}" class="transition-colors">${file.status === 'done' ? `<span class="text-emerald-600 font-bold">${formatBytes(file.finalSize)}</span>` : (file.estimatedSize ? `~${formatBytes(file.estimatedSize)}` : 'Est...')}</span>
+                            </div>
+                            <div class="flex items-center gap-2 md:gap-3 mt-2">
+                                <div class="relative"><select onchange="changeFileFormat('${file.id}', this.value)" class="bg-slate-100 dark:bg-slate-800 border border-transparent hover:border-indigo-300 dark:hover:border-indigo-700 rounded-lg py-1 pl-2 pr-4 md:pr-6 text-[10px] md:text-xs font-bold text-indigo-600 dark:text-indigo-400 outline-none appearance-none cursor-pointer transition-all">${opts}</select><i data-lucide="chevron-down" class="absolute right-1 md:right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 text-indigo-400 pointer-events-none"></i></div>
+                                <button onclick="openEditor('${file.id}')" class="p-1 md:p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all" title="Edit Image"><i data-lucide="wand-2" class="w-3.5 h-3.5"></i></button>
+                                <button onclick="openLightbox('${file.id}')" class="p-1 md:p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all" title="View Fullscreen"><i data-lucide="eye" class="w-3.5 h-3.5"></i></button>
+                                ${file.status === 'done' ? `<button onclick="downloadOne('${file.id}')" class="p-1 md:p-1.5 rounded-lg text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-all ml-auto" title="Download"><i data-lucide="download" class="w-3.5 h-3.5 md:w-4 md:h-4"></i></button>` : ''}
+                            </div>
+                        </div>
+                    </div>`;
+                list.appendChild(el);
+            });
+            lucide.createIcons();
+        }
+
+        window.changeFileFormat = (id, val) => { const f = state.files.find(x => x.id === id); if (f) { f.targetFormat = val; if (f.status === 'done') f.status = 'pending'; f.estimatedSize = null; renderList(); triggerSizeEstimation(); } };
+        window.removeFile = (id) => { state.files = state.files.filter(x => x.id !== id); renderList(); };
+        window.clearAll = () => { requestClear(); };
+        window.openLightbox = (id) => { const file = state.files.find(x => x.id === id); if (file) { dom.lightboxImg.src = file.preview; dom.lightboxCap.innerText = `${file.name} - ${formatBytes(file.originalSize)}`; dom.lightbox.classList.remove('hide'); } };
+        window.closeLightbox = () => dom.lightbox.classList.add('hide');
+        window.closeEditor = () => { dom.modal.classList.add('hide'); state.editor.activeId = null; };
+        function startAnim() { clearInterval(state.anim.interval); if (state.files.length === 0) return; state.anim.playing = true; $('btn-anim-play').innerHTML = `<i data-lucide="pause" class="w-4 h-4"></i>`; state.anim.interval = setInterval(() => { state.anim.index = (state.anim.index + 1) % state.files.length; $('anim-image').src = state.files[state.anim.index].preview; $('anim-frame-indicator').innerText = `${state.anim.index + 1}/${state.files.length}`; }, state.anim.speed); }
+        function stopAnim() { clearInterval(state.anim.interval); }
+        function toggleAnim() { if (state.anim.playing) { stopAnim(); state.anim.playing = false; $('btn-anim-play').innerHTML = `<i data-lucide="play" class="w-4 h-4"></i>`; } else { startAnim(); } lucide.createIcons(); }
+        window.downloadOne = (id) => { const f = state.files.find(x => x.id === id); if (f && f.dataUrl) saveAs(f.dataUrl, f.finalName); };
+        async function downloadZip() { const zip = new JSZip(); let count = 0; state.files.forEach(f => { if (f.status === 'done' && f.dataUrl) { zip.file(f.finalName, f.dataUrl.split(',')[1], { base64: true }); count++; } }); if (count > 0) { const content = await zip.generateAsync({ type: "blob" }); saveAs(content, "converted_images.zip"); } }
+        function showToast(msg) { const t = $('toast'); $('toast-msg').innerText = msg; t.classList.remove('-translate-y-32', 'opacity-0'); setTimeout(() => t.classList.add('-translate-y-32', 'opacity-0'), 2500); }
+
+        init();
+    </script>
+</body>
+
+</html>

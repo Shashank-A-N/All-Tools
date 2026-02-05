@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Trimmer - Shadow Audio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;500;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="../../styles.css">
+    <style>
+        .handle {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            cursor: ew-resize;
+            z-index: 10;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-900 text-white font-sans antialiased overflow-x-hidden">
+
+    <nav
+        class="sticky top-0 z-50 glass-effect border-b border-white/5 px-6 py-4 flex items-center justify-between backdrop-blur-md">
+        <div class="flex items-center gap-3">
+            <a href="../index.html" class="flex items-center gap-2 group">
+                <div
+                    class="relative w-10 h-10 flex items-center justify-center bg-purple-600/20 rounded-lg border border-purple-500/30 group-hover:border-purple-500/50 transition-all">
+                    <i class="fas fa-crop-alt text-purple-400 text-xl group-hover:scale-110 transition-transform"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-orbitron font-bold tracking-widest text-white">SHADOW<span
+                            class="text-purple-500">AUDIO</span></h1>
+                    <span class="text-xs text-slate-400 font-mono tracking-wider">TRIMMER</span>
+                </div>
+            </a>
+        </div>
+        <a href="../index.html" class="text-slate-400 hover:text-white transition-colors"><i
+                class="fas fa-times text-xl"></i></a>
+    </nav>
+
+    <main class="container mx-auto px-4 py-12 max-w-4xl">
+        <div class="text-center mb-10">
+            <h2 class="text-4xl font-bold font-orbitron mb-2">Audio Cutter</h2>
+            <p class="text-slate-400 text-sm">Select and keep only the best parts.</p>
+        </div>
+
+        <div class="glass p-8 rounded-3xl border border-white/5 shadow-2xl">
+            <!-- File Upload -->
+            <div id="upload-area"
+                class="border-2 border-dashed border-white/10 rounded-2xl p-10 text-center hover:border-purple-500/50 transition-colors cursor-pointer mb-8 bg-black/20">
+                <input type="file" id="file-input" accept="audio/*" class="hidden">
+                <i class="fas fa-cloud-upload-alt text-4xl text-slate-500 mb-4"></i>
+                <p class="text-lg font-bold text-slate-300">Drop Audio File Here</p>
+                <p class="text-sm text-slate-500">or click to browse</p>
+            </div>
+
+            <div id="controls" class="hidden space-y-8">
+                <!-- Timeline Visual -->
+                <div class="relative h-32 bg-black/60 rounded-xl border border-white/10 overflow-hidden select-none"
+                    id="timeline">
+                    <!-- Waveform simulated by CSS bars or canvas -->
+                    <canvas id="waveform-canvas" class="w-full h-full opacity-50"></canvas>
+
+                    <!-- Selection Overlay -->
+                    <div id="selection-overlay"
+                        class="absolute top-0 bottom-0 bg-purple-500/20 border-x border-purple-400"
+                        style="left: 0%; right: 0%;"></div>
+
+                    <!-- Handles (Invisible hitboxes) -->
+                    <div id="handle-start" class="handle bg-purple-400 shadow-[0_0_10px_#a855f7]" style="left: 0%">
+                    </div>
+                    <div id="handle-end" class="handle bg-purple-400 shadow-[0_0_10px_#a855f7]" style="left: 100%">
+                    </div>
+                </div>
+
+                <div class="flex justify-between font-mono text-xs text-slate-400">
+                    <span id="start-time">0.00s</span>
+                    <span id="duration-sel">Duration: --</span>
+                    <span id="end-time">--</span>
+                </div>
+
+                <div class="flex justify-center gap-4">
+                    <button id="preview-btn"
+                        class="px-6 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm font-bold">
+                        <i class="fas fa-play"></i> PREVIEW SELECTION
+                    </button>
+                    <button id="trim-btn"
+                        class="px-6 py-2 bg-purple-600 hover:bg-purple-500 rounded-lg text-sm font-bold shadow-lg shadow-purple-900/40">
+                        <i class="fas fa-cut"></i> TRIM & SAVE
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script type="module">
+        import { audioEngine } from '../shared/audio-utils.js';
+
+        const uploadArea = document.getElementById('upload-area');
+        const fileInput = document.getElementById('file-input');
+        const controls = document.getElementById('controls');
+        const timeline = document.getElementById('timeline');
+        const overlay = document.getElementById('selection-overlay');
+        const handleStart = document.getElementById('handle-start');
+        const handleEnd = document.getElementById('handle-end');
+
+        const previewBtn = document.getElementById('preview-btn');
+        const trimBtn = document.getElementById('trim-btn');
+
+        const timeStart = document.getElementById('start-time');
+        const timeEnd = document.getElementById('end-time');
+        const timeDur = document.getElementById('duration-sel');
+
+        let audioBuffer = null;
+        let sourceNode = null;
+        let dragging = null;
+        let startPct = 0;
+        let endPct = 100;
+
+        uploadArea.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+
+        async function handleFile(file) {
+            if (!file) return;
+            controls.classList.remove('hidden');
+            uploadArea.classList.add('hidden');
+
+            const ctx = audioEngine.init();
+            const arrayBuffer = await file.arrayBuffer();
+            audioBuffer = await ctx.decodeAudioData(arrayBuffer);
+
+            drawWaveform(audioBuffer);
+            updateTimes();
+        }
+
+        function drawWaveform(buffer) {
+            const canvas = document.getElementById('waveform-canvas');
+            canvas.width = timeline.offsetWidth;
+            canvas.height = timeline.offsetHeight;
+            const ctx = canvas.getContext('2d');
+            const data = buffer.getChannelData(0);
+            const step = Math.ceil(data.length / canvas.width);
+            const amp = canvas.height / 2;
+
+            ctx.fillStyle = '#a855f7';
+            ctx.beginPath();
+            for (let i = 0; i < canvas.width; i++) {
+                let min = 1.0;
+                let max = -1.0;
+                for (let j = 0; j < step; j++) {
+                    const datum = data[i * step + j];
+                    if (datum < min) min = datum;
+                    if (datum > max) max = datum;
+                }
+                ctx.fillRect(i, (1 + min) * amp, 1, Math.max(1, (max - min) * amp));
+            }
+        }
+
+        // Dragging Logic
+        timeline.addEventListener('mousedown', (e) => {
+            const rect = timeline.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const pct = (x / rect.width) * 100;
+
+            // Check proximity to handles
+            if (Math.abs(pct - startPct) < 5) dragging = 'start';
+            else if (Math.abs(pct - endPct) < 5) dragging = 'end';
+            else {
+                // If clicking middle, maybe move both? Simplified: just no-op or jump closest
+                if (Math.abs(pct - startPct) < Math.abs(pct - endPct)) {
+                    startPct = pct; dragging = 'start';
+                } else {
+                    endPct = pct; dragging = 'end';
+                }
+                updateUI();
+            }
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!dragging) return;
+            const rect = timeline.getBoundingClientRect();
+            let pct = ((e.clientX - rect.left) / rect.width) * 100;
+            pct = Math.max(0, Math.min(100, pct));
+
+            if (dragging === 'start') {
+                startPct = Math.min(pct, endPct - 1);
+            } else {
+                endPct = Math.max(pct, startPct + 1);
+            }
+            updateUI();
+        });
+
+        window.addEventListener('mouseup', () => dragging = null);
+
+        function updateUI() {
+            handleStart.style.left = startPct + '%';
+            handleEnd.style.left = endPct + '%'; // Actually left position of end handle
+            // Overlay uses left and right css props usually, or width
+            overlay.style.left = startPct + '%';
+            overlay.style.width = (endPct - startPct) + '%';
+            updateTimes();
+        }
+
+        function updateTimes() {
+            if (!audioBuffer) return;
+            const dur = audioBuffer.duration;
+            const s = (startPct / 100) * dur;
+            const e = (endPct / 100) * dur;
+
+            timeStart.textContent = s.toFixed(2) + 's';
+            timeEnd.textContent = e.toFixed(2) + 's';
+            timeDur.textContent = `Len: ${(e - s).toFixed(2)}s`;
+        }
+
+        previewBtn.addEventListener('click', () => {
+            if (sourceNode) sourceNode.stop();
+            const ctx = audioEngine.init();
+            sourceNode = ctx.createBufferSource();
+            sourceNode.buffer = audioBuffer;
+            sourceNode.connect(ctx.destination);
+
+            const dur = audioBuffer.duration;
+            const s = (startPct / 100) * dur;
+            const len = ((endPct - startPct) / 100) * dur;
+
+            sourceNode.start(0, s, len);
+        });
+
+        trimBtn.addEventListener('click', () => {
+            trimBtn.textContent = 'TRIMMED (SIMULATION)';
+            trimBtn.classList.replace('bg-purple-600', 'bg-green-600');
+            // Real implementation would slice buffer and offer download
+        });
+    </script>
+</body>
+
+</html>

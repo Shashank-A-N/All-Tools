@@ -1,0 +1,1261 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Format Forge // 2077</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.2/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
+    <!-- Highlight.js for Code Syntax -->
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/atom-one-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+    <!-- Google Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Exo 2"', 'sans-serif'],
+                        mono: ['"JetBrains Mono"', 'monospace'],
+                    },
+                    fontSize: {
+                        'xxs': '0.65rem', // Extra small for mobile
+                        'tiny': '0.55rem', // Tiny labels
+                    },
+                    colors: {
+                        cyber: {
+                            black: '#050510',
+                            dark: '#0f172a',
+                            card: '#1e293b',
+                            primary: '#0ea5e9', // Sky blue
+                            accent: '#8b5cf6',  // Violet
+                            neon: '#22d3ee',    // Cyan
+                            danger: '#ef4444',
+                            success: '#10b981',
+                            warning: '#f59e0b',
+                        }
+                    },
+                    animation: {
+                        'grid-flow': 'gridMove 20s linear infinite',
+                        'pulse-fast': 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                    keyframes: {
+                        gridMove: {
+                            '0%': { transform: 'translateY(0)' },
+                            '100%': { transform: 'translateY(50px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Cyberpunk Scrollbar */
+        ::-webkit-scrollbar {
+            width: 4px;
+            /* Thinner for mobile */
+            height: 4px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #0ea5e9;
+        }
+
+        /* Animated Background Grid */
+        .bg-grid {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image:
+                linear-gradient(to right, rgba(14, 165, 233, 0.05) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(14, 165, 233, 0.05) 1px, transparent 1px);
+            background-size: 40px 40px;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        /* Glassmorphism */
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.36);
+        }
+
+        /* Input Glows */
+        .input-cyber:focus {
+            box-shadow: 0 0 15px rgba(14, 165, 233, 0.3);
+            border-color: #0ea5e9;
+        }
+
+        /* Tool Visibility */
+        .tool-section {
+            display: none;
+            width: 100%;
+            height: 100%;
+        }
+
+        .tool-section.active {
+            display: flex;
+            animation: slideFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes slideFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Nav Active State - Desktop */
+        @media (min-width: 768px) {
+            .nav-item.active {
+                background: linear-gradient(90deg, rgba(14, 165, 233, 0.2) 0%, transparent 100%);
+                border-left: 3px solid #0ea5e9;
+                color: #22d3ee;
+            }
+        }
+
+        /* Nav Active State - Mobile */
+        @media (max-width: 767px) {
+            .nav-item {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                padding: 0.5rem;
+                border-radius: 0.5rem;
+            }
+
+            .nav-item.active {
+                color: #22d3ee;
+                background: rgba(14, 165, 233, 0.1);
+                box-shadow: 0 0 10px rgba(14, 165, 233, 0.2);
+            }
+
+            .nav-item i {
+                margin-bottom: 0;
+            }
+        }
+
+        .nav-item.active i {
+            color: #22d3ee;
+            filter: drop-shadow(0 0 5px #22d3ee);
+        }
+
+        /* Toast Animation */
+        .toast {
+            transform: translateX(100%);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .toast.show {
+            transform: translateX(0);
+        }
+
+        /* Terminal Logs */
+        .terminal-line {
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        /* PERFECTING Markdown Styles for Cyberpunk Theme */
+        .prose h1,
+        .prose h2,
+        .prose h3 {
+            color: #22d3ee !important;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .prose h1 {
+            border-bottom: 1px solid rgba(34, 211, 238, 0.3);
+            padding-bottom: 0.5rem;
+            font-size: 1.25rem;
+        }
+
+        .prose h2 {
+            font-size: 1.1rem;
+        }
+
+        .prose h3 {
+            font-size: 1rem;
+        }
+
+        .prose p {
+            font-size: 0.8rem;
+            line-height: 1.4;
+        }
+
+        /* Smaller base text */
+
+        .prose a {
+            color: #0ea5e9 !important;
+            text-decoration: none;
+            border-bottom: 1px dashed #0ea5e9;
+            transition: all 0.2s;
+        }
+
+        .prose a:hover {
+            color: #22d3ee !important;
+            border-bottom-style: solid;
+            text-shadow: 0 0 8px rgba(34, 211, 238, 0.5);
+        }
+
+        .prose code {
+            color: #f472b6 !important;
+            background: rgba(0, 0, 0, 0.3) !important;
+            padding: 2px 5px !important;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace !important;
+            font-weight: 500;
+            font-size: 0.75rem !important;
+        }
+
+        .prose pre {
+            background: #050510 !important;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 0.5rem;
+        }
+
+        .prose blockquote {
+            border-left-color: #8b5cf6 !important;
+            background: linear-gradient(to right, rgba(139, 92, 246, 0.1), transparent);
+            color: #cbd5e1 !important;
+            font-style: italic;
+            padding: 0.5rem 0 0.5rem 1rem;
+        }
+
+        .prose strong {
+            color: #fff !important;
+        }
+
+        .prose ul>li::marker {
+            color: #8b5cf6;
+        }
+
+        /* Mobile specific adjustments */
+        @media (max-width: 768px) {
+            .mobile-hide-text {
+                display: none;
+            }
+
+            .mobile-compact-btn {
+                padding: 0.4rem;
+                font-size: 0.65rem;
+            }
+        }
+    </style>
+</head>
+
+<body
+    class="bg-cyber-black text-slate-300 font-sans h-[100dvh] flex flex-col overflow-hidden selection:bg-cyber-primary selection:text-white text-xs md:text-sm">
+
+    <!-- Background FX -->
+    <div class="bg-grid"></div>
+    <div
+        class="fixed top-0 left-0 w-full h-1 bg-gradient-to-r from-cyber-primary via-cyber-accent to-cyber-neon shadow-[0_0_15px_rgba(34,211,238,0.5)] z-50">
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container"
+        class="fixed top-6 right-6 z-[60] flex flex-col gap-3 pointer-events-none w-64 max-w-full px-4 md:px-0"></div>
+
+    <div class="max-w-[1600px] mx-auto w-full p-2 md:p-6 h-full flex flex-col relative">
+
+        <!-- Header -->
+        <header
+            class="mb-2 md:mb-4 flex items-center justify-between shrink-0 glass-panel p-2 md:p-4 rounded-xl md:rounded-2xl">
+            <div class="flex items-center gap-3 md:gap-4">
+                <div
+                    class="bg-slate-800/50 p-2 md:p-2.5 rounded-lg md:rounded-xl border border-white/10 shadow-[0_0_15px_rgba(14,165,233,0.2)]">
+                    <i data-lucide="cpu" class="text-cyber-neon w-5 h-5 md:w-7 md:h-7"></i>
+                </div>
+                <!-- Title hidden on mobile -->
+                <div class="hidden md:block">
+                    <h1 class="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
+                        FORMAT FORGE <span
+                            class="text-xs font-mono text-cyber-primary border border-cyber-primary/30 px-2 py-0.5 rounded">v2.1.0</span>
+                    </h1>
+                    <p class="text-slate-400 text-xs tracking-wide uppercase">Advanced Data Translation Protocol</p>
+                </div>
+                <!-- Mobile Title Compact -->
+                <div class="block md:hidden">
+                    <h1 class="text-lg font-bold tracking-tight text-white flex items-center gap-2">
+                        V2.1.0
+                    </h1>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 md:gap-3">
+                <div class="hidden md:flex items-center gap-2 px-3 py-1 bg-black/30 rounded border border-white/5">
+                    <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                    <span class="text-xs font-mono text-green-500">NET_UPLINK: ACTIVE</span>
+                </div>
+                <button onclick="toggleFullScreen()"
+                    class="p-2 hover:bg-white/5 rounded-lg text-slate-400 hover:text-white transition-colors"
+                    title="Toggle Layout">
+                    <i data-lucide="maximize" class="w-4 h-4 md:w-5 md:h-5"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Interface -->
+        <!-- Fixed: Changed lg:flex-row to md:flex-row to fix tablet disappearing content issue -->
+        <div class="flex-1 flex flex-col md:flex-row gap-4 md:gap-6 min-h-0 overflow-hidden relative pb-16 md:pb-0">
+
+            <!-- Content Area -->
+            <!-- Fixed: Changed lg:order-2 to md:order-2 -->
+            <main
+                class="flex-1 glass-panel rounded-xl md:rounded-2xl overflow-hidden flex flex-col relative order-1 md:order-2">
+
+                <!-- 1. Markdown Studio -->
+                <div id="md-section" class="tool-section active flex-col lg:flex-row">
+                    <!-- Editor -->
+                    <div class="flex-1 flex flex-col border-b lg:border-b-0 lg:border-r border-white/10 min-w-0">
+                        <div
+                            class="flex justify-between items-center p-2 md:p-3 border-b border-white/10 bg-black/20 shrink-0">
+                            <label
+                                class="text-[10px] md:text-xs font-bold text-cyber-primary uppercase tracking-wider flex items-center gap-2">
+                                <i data-lucide="edit-3" class="w-3 h-3 md:w-4 md:h-4"></i> Input
+                            </label>
+                            <div class="flex gap-1 md:gap-2">
+                                <button onclick="loadSample('md')"
+                                    class="text-[10px] md:text-xs text-slate-400 hover:text-white flex items-center gap-1 hover:bg-white/5 px-2 py-1 rounded">
+                                    <i data-lucide="flask-conical" class="w-3 h-3"></i> <span
+                                        class="hidden sm:inline">Sample</span>
+                                </button>
+                                <button onclick="clearInput('md-input')"
+                                    class="text-[10px] md:text-xs text-slate-400 hover:text-cyber-danger flex items-center gap-1 hover:bg-white/5 px-2 py-1 rounded">
+                                    <i data-lucide="trash-2" class="w-3 h-3"></i> <span
+                                        class="hidden sm:inline">Clear</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="relative flex-1" ondrop="handleDrop(event, 'md-input')"
+                            ondragover="event.preventDefault()">
+                            <textarea id="md-input"
+                                class="w-full h-full p-2 md:p-4 font-mono text-[10px] md:text-sm bg-transparent border-none focus:ring-0 outline-none text-slate-300 resize-none leading-relaxed"
+                                placeholder="# Drag & Drop markdown file here..."></textarea>
+                            <div class="absolute bottom-1 right-2 text-[8px] md:text-xs font-mono text-slate-600 pointer-events-none"
+                                id="md-stats">0 words | 0 chars</div>
+                        </div>
+                    </div>
+
+                    <!-- Preview -->
+                    <div class="flex-1 flex flex-col min-w-0 bg-slate-900/50">
+                        <div
+                            class="flex justify-between items-center p-2 md:p-3 border-b border-white/10 bg-black/20 shrink-0">
+                            <label
+                                class="text-[10px] md:text-xs font-bold text-cyber-accent uppercase tracking-wider flex items-center gap-2">
+                                <i data-lucide="eye" class="w-3 h-3 md:w-4 md:h-4"></i> Render
+                            </label>
+                            <div class="flex gap-1 md:gap-2">
+                                <button onclick="exportStyledHtml()"
+                                    class="p-1.5 text-slate-400 hover:text-cyber-primary hover:bg-white/10 rounded transition-colors"
+                                    title="Export Styled HTML">
+                                    <i data-lucide="file-check" class="w-3 h-3 md:w-4 md:h-4"></i>
+                                </button>
+                                <button onclick="downloadFile('md-output-raw', 'document.html', 'text/html')"
+                                    class="p-1.5 text-slate-400 hover:text-white hover:bg-white/10 rounded transition-colors"
+                                    title="Export Raw HTML">
+                                    <i data-lucide="download" class="w-3 h-3 md:w-4 md:h-4"></i>
+                                </button>
+                                <button onclick="copyToClipboard('md-output-raw')"
+                                    class="p-1.5 text-slate-400 hover:text-cyber-primary hover:bg-white/10 rounded transition-colors"
+                                    title="Copy HTML">
+                                    <i data-lucide="copy" class="w-3 h-3 md:w-4 md:h-4"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="flex-1 relative overflow-hidden">
+                            <div id="md-preview"
+                                class="absolute inset-0 p-3 md:p-6 prose prose-invert prose-slate max-w-none overflow-y-auto scroll-smooth">
+                            </div>
+                        </div>
+                        <textarea id="md-output-raw" class="hidden"></textarea>
+                    </div>
+                </div>
+
+                <!-- 2. Data Converter (CSV/JSON/SQL) -->
+                <div id="csv-section" class="tool-section flex-col">
+                    <div
+                        class="p-2 md:p-4 border-b border-white/10 flex flex-wrap justify-between items-center shrink-0 gap-2 bg-black/20">
+                        <div class="flex flex-wrap gap-1 md:gap-2">
+                            <div class="flex bg-black/40 p-0.5 md:p-1 rounded-lg border border-white/5">
+                                <button onclick="setCsvMode('csv2json')" id="btn-csv2json"
+                                    class="px-2 py-1 md:px-3 md:py-1.5 rounded text-[10px] md:text-xs font-bold uppercase transition-all bg-cyber-primary text-black">CSV
+                                    <i data-lucide="arrow-right" class="inline w-2 md:w-3 mx-0.5"></i> JSON</button>
+                                <button onclick="setCsvMode('json2csv')" id="btn-json2csv"
+                                    class="px-2 py-1 md:px-3 md:py-1.5 rounded text-[10px] md:text-xs font-bold uppercase transition-all text-slate-500 hover:text-white">JSON
+                                    <i data-lucide="arrow-right" class="inline w-2 md:w-3 mx-0.5"></i> CSV</button>
+                                <button onclick="setCsvMode('csv2sql')" id="btn-csv2sql"
+                                    class="px-2 py-1 md:px-3 md:py-1.5 rounded text-[10px] md:text-xs font-bold uppercase transition-all text-slate-500 hover:text-white">CSV
+                                    <i data-lucide="arrow-right" class="inline w-2 md:w-3 mx-0.5"></i> SQL</button>
+                            </div>
+                        </div>
+                        <div class="flex gap-1 md:gap-2 overflow-x-auto no-scrollbar">
+                            <button onclick="transposeData()"
+                                class="text-[10px] md:text-xs font-mono text-slate-400 hover:text-cyber-warning flex items-center gap-1 md:gap-2 px-2 py-1 md:px-3 md:py-1.5 border border-white/10 rounded-lg hover:bg-white/5 transition-all whitespace-nowrap">
+                                <i data-lucide="arrow-up-right" class="w-3 h-3 md:w-4 md:h-4"></i> <span
+                                    class="hidden sm:inline">Transpose</span>
+                            </button>
+                            <button onclick="toggleTable()" id="btn-view-toggle"
+                                class="text-[10px] md:text-xs font-mono text-slate-400 hover:text-cyber-neon flex items-center gap-1 md:gap-2 px-2 py-1 md:px-3 md:py-1.5 border border-white/10 rounded-lg hover:bg-white/5 transition-all whitespace-nowrap">
+                                <i data-lucide="table" class="w-3 h-3 md:w-4 md:h-4"></i> <span
+                                    class="hidden sm:inline">Table</span>
+                            </button>
+                            <button onclick="toggleMinify()" id="btn-minify"
+                                class="text-[10px] md:text-xs font-mono text-slate-400 hover:text-cyber-neon flex items-center gap-1 md:gap-2 px-2 py-1 md:px-3 md:py-1.5 border border-white/10 rounded-lg hover:bg-white/5 transition-all whitespace-nowrap">
+                                <i data-lucide="minimize" class="w-3 h-3 md:w-4 md:h-4"></i> <span
+                                    class="hidden sm:inline">Minify</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="flex-1 flex flex-col lg:flex-row h-full min-h-0">
+                        <!-- Input -->
+                        <div
+                            class="flex-1 flex flex-col border-b lg:border-b-0 lg:border-r border-white/10 min-w-0 relative">
+                            <div class="absolute top-2 right-2 z-10 flex gap-1 md:gap-2">
+                                <button onclick="loadSample('csv')"
+                                    class="text-[9px] md:text-xs bg-black/50 backdrop-blur text-slate-500 hover:text-white px-2 py-0.5 rounded border border-white/5">Sample</button>
+                                <button onclick="clearInput('csv-input')"
+                                    class="text-[9px] md:text-xs bg-black/50 backdrop-blur text-slate-500 hover:text-cyber-danger px-2 py-0.5 rounded border border-white/5">Clear</button>
+                            </div>
+                            <textarea id="csv-input"
+                                class="flex-1 w-full p-3 md:p-4 font-mono text-[10px] md:text-sm bg-transparent border-none focus:ring-0 outline-none text-slate-300 resize-none input-cyber transition-all leading-relaxed"
+                                placeholder="Paste data or drop file..."></textarea>
+                            <div id="csv-error"
+                                class="hidden absolute bottom-4 left-4 right-4 bg-cyber-danger/10 border border-cyber-danger/30 text-cyber-danger text-[10px] md:text-xs p-1 md:p-2 rounded backdrop-blur flex items-center gap-2">
+                                <i data-lucide="alert-triangle" class="w-3 h-3 md:w-4 md:h-4"></i> <span
+                                    id="csv-error-msg"></span>
+                            </div>
+                        </div>
+
+                        <!-- Output -->
+                        <div class="flex-1 flex flex-col min-w-0 bg-slate-900/30 relative">
+                            <div class="absolute top-2 right-2 z-10 flex gap-1">
+                                <button onclick="copyToClipboard('csv-output')"
+                                    class="bg-black/50 backdrop-blur p-1 md:p-1.5 rounded border border-white/10 hover:border-cyber-primary text-slate-400 hover:text-cyber-primary transition-all">
+                                    <i data-lucide="copy" class="w-3 h-3 md:w-4 md:h-4"></i>
+                                </button>
+                            </div>
+                            <!-- Text Output -->
+                            <textarea id="csv-output" readonly
+                                class="flex-1 w-full p-3 md:p-4 font-mono text-[10px] md:text-sm bg-transparent border-none outline-none text-cyber-neon/80 resize-none leading-relaxed"></textarea>
+                            <!-- Table Output -->
+                            <div id="csv-table-view"
+                                class="hidden absolute inset-0 overflow-auto bg-slate-900/80 p-2 md:p-4">
+                                <table class="w-full text-left border-collapse text-[9px] md:text-xs font-mono">
+                                    <thead class="bg-white/5 text-cyber-primary sticky top-0 backdrop-blur-md">
+                                        <tr id="table-head"></tr>
+                                    </thead>
+                                    <tbody id="table-body" class="divide-y divide-white/5 text-slate-400"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. Config Parser (YAML) -->
+                <div id="yaml-section" class="tool-section flex-col lg:flex-row">
+                    <div class="flex-1 flex flex-col border-b lg:border-b-0 lg:border-r border-white/10">
+                        <div class="flex justify-between items-center p-2 md:p-3 border-b border-white/10 bg-black/20">
+                            <label class="text-[10px] md:text-xs font-bold text-slate-400 uppercase">YAML Source</label>
+                            <div class="flex gap-1 md:gap-2">
+                                <button onclick="loadSample('yaml')"
+                                    class="text-[10px] md:text-xs text-slate-500 hover:text-white">Sample</button>
+                                <button onclick="clearInput('yaml-input')"
+                                    class="text-[10px] md:text-xs text-slate-500 hover:text-cyber-danger">Clear</button>
+                            </div>
+                        </div>
+                        <textarea id="yaml-input"
+                            class="flex-1 w-full p-3 md:p-4 font-mono text-[10px] md:text-sm bg-transparent border-none focus:ring-0 outline-none text-slate-300 resize-none leading-relaxed"
+                            placeholder="server:\n  port: 8080"></textarea>
+                        <div id="yaml-error"
+                            class="hidden bg-cyber-danger/10 text-cyber-danger text-xs p-2 text-center border-t border-cyber-danger/20">
+                            Invalid YAML Syntax
+                        </div>
+                    </div>
+
+                    <div class="flex-1 flex flex-col bg-slate-900/30">
+                        <div class="flex justify-between items-center p-2 md:p-3 border-b border-white/10 bg-black/20">
+                            <div class="flex items-center gap-2">
+                                <select id="yaml-mode" onchange="processYaml()"
+                                    class="bg-black/30 text-[10px] md:text-xs text-slate-300 border border-white/10 rounded px-1 py-0.5 md:px-2 md:py-1 outline-none focus:border-cyber-primary">
+                                    <option value="json">JSON Object</option>
+                                    <option value="props">Properties (.env)</option>
+                                </select>
+                                <label
+                                    class="flex items-center gap-1 md:gap-2 text-[10px] md:text-xs text-slate-400 cursor-pointer hover:text-white">
+                                    <input type="checkbox" id="yaml-sort" onchange="processYaml()"
+                                        class="accent-cyber-primary scale-75 md:scale-100">
+                                    Sort
+                                </label>
+                            </div>
+                            <button onclick="copyToClipboard('yaml-output')"
+                                class="text-[10px] md:text-xs flex items-center gap-1 text-slate-400 hover:text-cyber-primary">
+                                <i data-lucide="copy" class="w-3 h-3 md:w-4 md:h-4"></i> Copy
+                            </button>
+                        </div>
+                        <textarea id="yaml-output" readonly
+                            class="flex-1 w-full p-3 md:p-4 font-mono text-[10px] md:text-sm bg-transparent border-none outline-none text-cyber-neon/80 resize-none leading-relaxed"></textarea>
+                    </div>
+                </div>
+
+                <!-- 4. Crypto / Hash Module -->
+                <div id="crypto-section" class="tool-section flex-col p-3 md:p-6 overflow-y-auto">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 h-full">
+
+                        <!-- Input Column -->
+                        <div class="flex flex-col gap-3 md:gap-4">
+                            <div class="glass-panel rounded-xl p-3 md:p-4 flex flex-col flex-1 min-h-[200px]">
+                                <div class="flex justify-between items-center mb-2">
+                                    <label class="text-[10px] md:text-xs font-bold text-cyber-warning uppercase">Input
+                                        Payload</label>
+                                    <button onclick="clearInput('crypto-input')"
+                                        class="text-[10px] md:text-xs text-slate-500 hover:text-cyber-danger">Clear</button>
+                                </div>
+                                <textarea id="crypto-input"
+                                    class="flex-1 bg-black/30 border border-white/10 rounded-lg p-2 md:p-3 font-mono text-[10px] md:text-sm text-slate-300 focus:border-cyber-warning outline-none resize-none mb-4"
+                                    placeholder="Enter text to hash or encode..."></textarea>
+
+                                <div class="grid grid-cols-2 gap-2">
+                                    <button onclick="runCrypto('b64e')"
+                                        class="p-1.5 md:p-2 bg-slate-800 hover:bg-slate-700 border border-white/10 rounded text-[10px] md:text-xs font-mono text-cyber-primary mobile-compact-btn">Base64
+                                        Encode</button>
+                                    <button onclick="runCrypto('b64d')"
+                                        class="p-1.5 md:p-2 bg-slate-800 hover:bg-slate-700 border border-white/10 rounded text-[10px] md:text-xs font-mono text-cyber-primary mobile-compact-btn">Base64
+                                        Decode</button>
+                                    <button onclick="runCrypto('urle')"
+                                        class="p-1.5 md:p-2 bg-slate-800 hover:bg-slate-700 border border-white/10 rounded text-[10px] md:text-xs font-mono text-cyber-neon mobile-compact-btn">URL
+                                        Encode</button>
+                                    <button onclick="runCrypto('urld')"
+                                        class="p-1.5 md:p-2 bg-slate-800 hover:bg-slate-700 border border-white/10 rounded text-[10px] md:text-xs font-mono text-cyber-neon mobile-compact-btn">URL
+                                        Decode</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Output Column -->
+                        <div class="flex flex-col gap-3 md:gap-4">
+                            <div class="glass-panel rounded-xl p-3 md:p-4 flex flex-col flex-1 min-h-[200px]">
+                                <div class="flex justify-between items-center mb-2">
+                                    <label class="text-[10px] md:text-xs font-bold text-cyber-success uppercase">Result
+                                        / Hash</label>
+                                    <button onclick="copyToClipboard('crypto-output')"
+                                        class="text-[10px] md:text-xs text-slate-500 hover:text-white">Copy</button>
+                                </div>
+                                <textarea id="crypto-output" readonly
+                                    class="flex-1 bg-slate-900/50 border border-white/10 rounded-lg p-2 md:p-3 font-mono text-[10px] md:text-sm text-cyber-success resize-none mb-4"></textarea>
+
+                                <div class="grid grid-cols-3 gap-2">
+                                    <button onclick="runHash('SHA-1')"
+                                        class="p-1.5 md:p-2 bg-slate-800 hover:bg-slate-700 border border-white/10 rounded text-[10px] md:text-xs font-mono text-slate-400 hover:text-white mobile-compact-btn">SHA-1</button>
+                                    <button onclick="runHash('SHA-256')"
+                                        class="p-1.5 md:p-2 bg-slate-800 hover:bg-slate-700 border border-white/10 rounded text-[10px] md:text-xs font-mono text-slate-400 hover:text-white mobile-compact-btn">SHA-256</button>
+                                    <button onclick="runHash('SHA-512')"
+                                        class="p-1.5 md:p-2 bg-slate-800 hover:bg-slate-700 border border-white/10 rounded text-[10px] md:text-xs font-mono text-slate-400 hover:text-white mobile-compact-btn">SHA-512</button>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- 5. Encoding Matrix -->
+                <div id="enc-section" class="tool-section flex-col p-3 md:p-6 overflow-y-auto">
+
+                    <div class="flex flex-col lg:flex-row gap-4 md:gap-6 mb-4 md:mb-6 shrink-0">
+                        <!-- Drop Zone -->
+                        <div class="flex-1">
+                            <div onclick="document.getElementById('enc-file-input').click()"
+                                class="h-full min-h-[120px] md:min-h-[150px] border-2 border-dashed border-white/10 rounded-xl p-4 md:p-8 text-center cursor-pointer hover:bg-white/5 hover:border-cyber-primary/50 transition-all group flex flex-col items-center justify-center relative overflow-hidden">
+                                <div
+                                    class="absolute inset-0 bg-cyber-primary/5 translate-y-full group-hover:translate-y-0 transition-transform duration-500">
+                                </div>
+                                <i data-lucide="upload-cloud"
+                                    class="text-slate-500 group-hover:text-cyber-primary mb-2 md:mb-3 transition-colors w-8 h-8 md:w-10 md:h-10"></i>
+                                <p id="enc-filename" class="text-xs md:text-sm font-bold text-slate-300 relative z-10">
+                                    Upload Artifact</p>
+                                <p class="text-[10px] md:text-xs text-slate-500 mt-1 relative z-10">Supports all text
+                                    formats</p>
+                                <input type="file" id="enc-file-input" class="hidden">
+                            </div>
+                        </div>
+
+                        <!-- Controls -->
+                        <div class="flex-1 space-y-3 md:space-y-4">
+                            <div class="glass-panel p-3 md:p-4 rounded-xl">
+                                <label
+                                    class="block text-[10px] md:text-xs font-bold text-slate-400 mb-2 uppercase">Source
+                                    Encoding
+                                    Protocol</label>
+                                <select id="enc-select"
+                                    class="w-full p-2 md:p-3 rounded-lg bg-black/30 border border-white/10 text-slate-300 focus:border-cyber-primary outline-none font-mono text-[10px] md:text-sm">
+                                    <option value="windows-1252">Windows-1252 (Western)</option>
+                                    <option value="iso-8859-1">ISO-8859-1 (Western)</option>
+                                    <option value="windows-1251">Windows-1251 (Cyrillic)</option>
+                                    <option value="shift_jis">Shift_JIS (Japanese)</option>
+                                    <option value="euc-kr">EUC-KR (Korean)</option>
+                                    <option value="gb18030">GB18030 (Chinese)</option>
+                                    <option value="big5">Big5 (Traditional Chinese)</option>
+                                    <option value="koi8-r">KOI8-R (Russian)</option>
+                                    <option value="macintosh">Macintosh</option>
+                                    <option value="utf-16le">UTF-16 LE</option>
+                                </select>
+                            </div>
+
+                            <button id="enc-download-btn" disabled onclick="downloadUtf8()"
+                                class="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-cyber-primary to-blue-600 hover:from-cyber-neon hover:to-cyber-primary text-black font-bold p-2 md:p-3 rounded-xl transition-all shadow-lg shadow-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed transform active:scale-95 text-[10px] md:text-sm">
+                                <i data-lucide="download" class="w-4 h-4 md:w-[18px]"></i> Extract UTF-8 Payload
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Analysis View -->
+                    <div class="flex-1 flex flex-col lg:flex-row gap-4 min-h-0">
+                        <!-- Hex View -->
+                        <div class="lg:w-1/3 flex flex-col glass-panel rounded-xl overflow-hidden h-40 lg:h-auto">
+                            <div
+                                class="p-2 bg-black/20 border-b border-white/5 text-[10px] md:text-xs font-mono text-slate-500">
+                                HEX
+                                PREVIEW (First 128 Bytes)</div>
+                            <div class="flex-1 p-2 md:p-3 overflow-auto bg-black/40">
+                                <pre id="hex-preview"
+                                    class="text-[9px] md:text-xs font-mono text-cyber-accent break-all whitespace-pre-wrap">Waiting for data stream...</pre>
+                            </div>
+                        </div>
+
+                        <!-- Text Preview -->
+                        <div class="flex-1 flex flex-col glass-panel rounded-xl overflow-hidden h-40 lg:h-auto">
+                            <div
+                                class="p-2 bg-black/20 border-b border-white/5 text-[10px] md:text-xs font-mono text-slate-500">
+                                DECODED TEXT PREVIEW</div>
+                            <div class="flex-1 p-2 md:p-4 overflow-auto bg-slate-900/30">
+                                <pre id="enc-preview"
+                                    class="text-[10px] md:text-sm font-mono text-slate-300 whitespace-pre-wrap break-words">No file loaded.</pre>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Footer / System Log -->
+                <div
+                    class="border-t border-white/5 p-2 px-4 bg-black/40 flex justify-between items-center text-[9px] md:text-[10px] font-mono tracking-wider shrink-0 hidden md:flex">
+                    <div class="flex-1 overflow-hidden h-4 flex items-center relative">
+                        <div id="system-log"
+                            class="absolute left-0 top-0 flex flex-col justify-center h-full text-slate-500">
+                            <span class="terminal-line">> SYSTEM_READY</span>
+                        </div>
+                    </div>
+                    <span id="clock" class="text-cyber-primary ml-4">00:00:00</span>
+                </div>
+            </main>
+
+            <!-- Sidebar Navigation (Bottom Dock on Mobile) -->
+            <!-- Fixed: Changed lg:order-1 to md:order-1 -->
+            <nav id="sidebar"
+                class="fixed bottom-0 left-0 right-0 z-50 md:static md:w-64 md:h-full md:bg-transparent flex flex-row md:flex-col justify-around md:justify-start gap-1 md:gap-2 glass-panel p-1 md:p-2 rounded-t-2xl md:rounded-2xl border-t md:border border-white/10 md:overflow-y-auto transition-all duration-300 bg-cyber-dark/95 backdrop-blur-xl order-2 md:order-1 h-[60px] md:h-auto">
+                <div class="text-xs font-mono text-slate-500 uppercase px-4 py-2 mt-2 hidden md:block">Core Modules
+                </div>
+
+                <button onclick="switchTab('md')"
+                    class="nav-item active md:w-full md:text-left p-2 md:p-3 rounded-lg transition-all flex md:flex-row items-center gap-1 md:gap-3 text-slate-400 hover:bg-white/5 hover:text-slate-200 group">
+                    <i data-lucide="file-code"
+                        class="w-5 h-5 md:w-[18px] md:h-[18px] group-hover:text-cyber-primary transition-colors"></i>
+                    <span class="font-medium text-[10px] md:text-sm mobile-hide-text">Markdown</span>
+                </button>
+                <button onclick="switchTab('csv')"
+                    class="nav-item md:w-full md:text-left p-2 md:p-3 rounded-lg transition-all flex md:flex-row items-center gap-1 md:gap-3 text-slate-400 hover:bg-white/5 hover:text-slate-200 group">
+                    <i data-lucide="database"
+                        class="w-5 h-5 md:w-[18px] md:h-[18px] group-hover:text-cyber-primary transition-colors"></i>
+                    <span class="font-medium text-[10px] md:text-sm mobile-hide-text">Data</span>
+                </button>
+                <button onclick="switchTab('yaml')"
+                    class="nav-item md:w-full md:text-left p-2 md:p-3 rounded-lg transition-all flex md:flex-row items-center gap-1 md:gap-3 text-slate-400 hover:bg-white/5 hover:text-slate-200 group">
+                    <i data-lucide="settings-2"
+                        class="w-5 h-5 md:w-[18px] md:h-[18px] group-hover:text-cyber-primary transition-colors"></i>
+                    <span class="font-medium text-[10px] md:text-sm mobile-hide-text">Config</span>
+                </button>
+                <button onclick="switchTab('crypto')"
+                    class="nav-item md:w-full md:text-left p-2 md:p-3 rounded-lg transition-all flex md:flex-row items-center gap-1 md:gap-3 text-slate-400 hover:bg-white/5 hover:text-slate-200 group">
+                    <i data-lucide="lock"
+                        class="w-5 h-5 md:w-[18px] md:h-[18px] group-hover:text-cyber-primary transition-colors"></i>
+                    <span class="font-medium text-[10px] md:text-sm mobile-hide-text">Crypto</span>
+                </button>
+                <button onclick="switchTab('enc')"
+                    class="nav-item md:w-full md:text-left p-2 md:p-3 rounded-lg transition-all flex md:flex-row items-center gap-1 md:gap-3 text-slate-400 hover:bg-white/5 hover:text-slate-200 group">
+                    <i data-lucide="binary"
+                        class="w-5 h-5 md:w-[18px] md:h-[18px] group-hover:text-cyber-primary transition-colors"></i>
+                    <span class="font-medium text-[10px] md:text-sm mobile-hide-text">Encoding</span>
+                </button>
+
+                <div class="mt-auto p-4 border-t border-white/5 hidden md:block">
+                    <div class="text-[10px] font-mono text-slate-600">
+                        MEM: <span id="mem-usage">--</span><br>
+                        LAT: <span class="text-cyber-success">12ms</span>
+                    </div>
+                </div>
+            </nav>
+
+        </div>
+    </div>
+
+    <!-- Application Logic -->
+    <script>
+        // --- Global State & Utils ---
+        const LS_KEY = 'format_forge_v2_data';
+        let state = {
+            activeTab: 'md',
+            mdInput: localStorage.getItem(LS_KEY + '_md') || '',
+            csvInput: localStorage.getItem(LS_KEY + '_csv') || '',
+            yamlInput: localStorage.getItem(LS_KEY + '_yaml') || '',
+            csvMode: 'csv2json',
+            isCompact: false,
+            isTableView: false
+        };
+
+        // --- 0. UI Interaction ---
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+
+            let colorClass = type === 'error' ? 'border-cyber-danger text-cyber-danger' : 'border-cyber-primary text-cyber-primary';
+            let icon = type === 'error' ? 'alert-octagon' : 'check-circle-2';
+
+            toast.className = `toast glass-panel p-2 md:p-3 rounded-lg border-l-4 ${colorClass} flex items-center gap-2 md:gap-3 shadow-2xl min-w-[200px] pointer-events-auto backdrop-blur-md`;
+            toast.innerHTML = `<i data-lucide="${icon}" class="w-4 h-4 md:w-[18px]"></i> <span class="text-xs md:text-sm font-medium text-slate-200">${message}</span>`;
+
+            container.appendChild(toast);
+            lucide.createIcons();
+            requestAnimationFrame(() => toast.classList.add('show'));
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+
+            logSystem(message);
+        }
+
+        function logSystem(msg) {
+            const logEl = document.getElementById('system-log');
+            if (logEl) {
+                // Animate log change
+                logEl.innerHTML = `<span class="terminal-line text-cyber-primary">> ${msg.toUpperCase()}</span>`;
+            }
+        }
+
+        function toggleFullScreen() {
+            // Simplified for mobile: just toggles header visibility maybe?
+            // Actually original behavior was toggling sidebar. 
+            // On mobile, bottom bar is critical, maybe we don't hide it on mobile.
+            const sidebar = document.getElementById('sidebar');
+            if (window.innerWidth >= 768) {
+                sidebar.classList.toggle('hidden');
+            } else {
+                showToast("Layout locked on mobile");
+            }
+        }
+
+        function updateClock() {
+            const now = new Date();
+            const clockEl = document.getElementById('clock');
+            if (clockEl) clockEl.textContent = now.toLocaleTimeString('en-US', { hour12: false }) + " UTC";
+
+            // Sim fake memory usage
+            const memEl = document.getElementById('mem-usage');
+            if (memEl && Math.random() > 0.9) {
+                memEl.innerText = (Math.random() * 20 + 30).toFixed(1) + ' MB';
+            }
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // --- 1. Navigation ---
+        function switchTab(tabId) {
+            state.activeTab = tabId;
+            document.querySelectorAll('.nav-item').forEach(btn => {
+                // Remove desktop active classes
+                btn.classList.remove('active', 'text-cyber-neon', 'border-l-2', 'border-cyber-neon', 'bg-white/5');
+            });
+            const activeBtn = document.querySelector(`button[onclick="switchTab('${tabId}')"]`);
+            if (activeBtn) activeBtn.classList.add('active');
+
+            document.querySelectorAll('.tool-section').forEach(el => el.classList.remove('active'));
+            document.getElementById(`${tabId}-section`).classList.add('active');
+        }
+
+        // --- 2. Markdown ---
+        const mdInput = document.getElementById('md-input');
+        const mdPreview = document.getElementById('md-preview');
+        const mdOutputRaw = document.getElementById('md-output-raw');
+        const mdStats = document.getElementById('md-stats');
+
+        marked.setOptions({
+            highlight: function (code, lang) {
+                const language = hljs.getLanguage(lang) ? lang : 'plaintext';
+                return hljs.highlight(code, { language }).value;
+            },
+            langPrefix: 'hljs language-'
+        });
+
+        function processMarkdown() {
+            const raw = mdInput.value;
+            localStorage.setItem(LS_KEY + '_md', raw);
+
+            const words = raw.trim() ? raw.trim().split(/\s+/).length : 0;
+            const chars = raw.length;
+            mdStats.textContent = `${words} words | ${chars} chars`;
+
+            try {
+                const html = marked.parse(raw);
+                mdPreview.innerHTML = html;
+                mdOutputRaw.value = html;
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        mdInput.addEventListener('input', debounce(processMarkdown, 300));
+
+        function exportStyledHtml() {
+            const content = mdOutputRaw.value;
+            const styles = document.getElementsByTagName('style')[0].innerHTML;
+            const fullDoc = `<!DOCTYPE html><html><head><title>Format Forge Export</title><style>body { background: #050510; color: #cbd5e1; font-family: sans-serif; padding: 2rem; max-width: 800px; margin: 0 auto; } ${styles}</style></head><body><div class="prose">${content}</div></body></html>`;
+            downloadFile(null, 'forge_export.html', 'text/html', fullDoc);
+        }
+
+        // --- 3. CSV / JSON / SQL ---
+        function setCsvMode(mode) {
+            state.csvMode = mode;
+            const btns = {
+                'csv2json': document.getElementById('btn-csv2json'),
+                'json2csv': document.getElementById('btn-json2csv'),
+                'csv2sql': document.getElementById('btn-csv2sql')
+            };
+
+            // Reset all
+            Object.values(btns).forEach(btn => {
+                btn.className = "px-2 py-1 md:px-3 md:py-1.5 rounded text-[10px] md:text-xs font-bold uppercase transition-all text-slate-500 hover:text-white";
+            });
+
+            // Activate one
+            btns[mode].className = "px-2 py-1 md:px-3 md:py-1.5 rounded text-[10px] md:text-xs font-bold uppercase transition-all bg-cyber-primary text-black shadow-lg shadow-cyber-primary/20";
+
+            if (mode === 'csv2json') document.getElementById('csv-input').placeholder = "Paste CSV data...";
+            else if (mode === 'json2csv') document.getElementById('csv-input').placeholder = "Paste JSON data...";
+            else document.getElementById('csv-input').placeholder = "Paste CSV to generate SQL...";
+
+            processCsvJson();
+        }
+
+        function toggleMinify() {
+            state.isCompact = !state.isCompact;
+            document.getElementById('btn-minify').classList.toggle('text-cyber-neon');
+            processCsvJson();
+        }
+
+        function toggleTable() {
+            state.isTableView = !state.isTableView;
+            const tableContainer = document.getElementById('csv-table-view');
+            const textOutput = document.getElementById('csv-output');
+            const btn = document.getElementById('btn-view-toggle');
+
+            if (state.isTableView) {
+                tableContainer.classList.remove('hidden');
+                textOutput.classList.add('hidden');
+                btn.classList.add('text-cyber-neon', 'bg-white/10');
+            } else {
+                tableContainer.classList.add('hidden');
+                textOutput.classList.remove('hidden');
+                btn.classList.remove('text-cyber-neon', 'bg-white/10');
+            }
+        }
+
+        function parseCSVLine(str) {
+            const result = [];
+            let current = '';
+            let inQuote = false;
+            for (let i = 0; i < str.length; i++) {
+                const char = str[i];
+                if (char === '"') inQuote = !inQuote;
+                else if (char === ',' && !inQuote) {
+                    result.push(current.trim().replace(/^"|"$/g, ''));
+                    current = '';
+                } else current += char;
+            }
+            result.push(current.trim().replace(/^"|"$/g, ''));
+            return result;
+        }
+
+        function transposeData() {
+            try {
+                const input = document.getElementById('csv-input').value.trim();
+                if (!input) return;
+
+                // Assuming CSV input for transpose currently
+                const lines = input.split(/\r?\n/).map(parseCSVLine);
+                const transposed = lines[0].map((_, colIndex) => lines.map(row => row[colIndex]));
+
+                // Convert back to CSV string
+                const newCsv = transposed.map(row => row.join(',')).join('\n');
+                document.getElementById('csv-input').value = newCsv;
+                processCsvJson();
+                showToast("Data Transposed");
+            } catch (e) {
+                showToast("Transpose Failed: Check format", "error");
+            }
+        }
+
+        function processCsvJson() {
+            const input = document.getElementById('csv-input').value;
+            localStorage.setItem(LS_KEY + '_csv', input);
+
+            const output = document.getElementById('csv-output');
+            const errorEl = document.getElementById('csv-error');
+            const errorMsg = document.getElementById('csv-error-msg');
+
+            errorEl.classList.add('hidden');
+
+            try {
+                if (!input.trim()) {
+                    output.value = '';
+                    renderTable([]);
+                    return;
+                }
+
+                let jsonData = null;
+
+                // 1. Parse Input
+                if (state.csvMode === 'csv2json' || state.csvMode === 'csv2sql') {
+                    const lines = input.trim().split(/\r?\n/);
+                    if (lines.length < 1) throw new Error("Empty CSV");
+                    const headers = parseCSVLine(lines[0]);
+                    jsonData = lines.slice(1).filter(l => l.trim()).map(line => {
+                        const values = parseCSVLine(line);
+                        return headers.reduce((obj, header, i) => {
+                            obj[header] = values[i] !== undefined ? values[i] : '';
+                            return obj;
+                        }, {});
+                    });
+                } else {
+                    jsonData = JSON.parse(input);
+                }
+
+                // 2. Generate Output
+                if (state.csvMode === 'csv2json') {
+                    output.value = JSON.stringify(jsonData, null, state.isCompact ? 0 : 2);
+                } else if (state.csvMode === 'json2csv') {
+                    const arrayData = Array.isArray(jsonData) ? jsonData : [jsonData];
+                    const headers = Object.keys(arrayData[0] || {});
+                    const csvRows = [
+                        headers.join(','),
+                        ...arrayData.map(row => headers.map(fieldName => {
+                            const val = row[fieldName] || '';
+                            return typeof val === 'string' && val.includes(',') ? `"${val}"` : val;
+                        }).join(','))
+                    ];
+                    output.value = csvRows.join('\n');
+                } else if (state.csvMode === 'csv2sql') {
+                    const arrayData = Array.isArray(jsonData) ? jsonData : [jsonData];
+                    const tableName = "exported_data";
+                    const stmts = arrayData.map(row => {
+                        const cols = Object.keys(row).join(', ');
+                        const vals = Object.values(row).map(v => isNaN(v) ? `'${v}'` : v).join(', ');
+                        return `INSERT INTO ${tableName} (${cols}) VALUES (${vals});`;
+                    });
+                    output.value = stmts.join('\n');
+                }
+
+                renderTable(Array.isArray(jsonData) ? jsonData : [jsonData]);
+
+            } catch (e) {
+                errorEl.classList.remove('hidden');
+                errorMsg.textContent = e.message;
+            }
+        }
+
+        function renderTable(data) {
+            const thead = document.getElementById('table-head');
+            const tbody = document.getElementById('table-body');
+            thead.innerHTML = '';
+            tbody.innerHTML = '';
+            if (!Array.isArray(data) || data.length === 0) return;
+            const headers = Object.keys(data[0]);
+            headers.forEach(h => {
+                const th = document.createElement('th');
+                th.className = "p-1 md:p-2 border-b border-white/10 font-bold uppercase";
+                th.textContent = h;
+                thead.appendChild(th);
+            });
+            data.slice(0, 100).forEach(row => {
+                const tr = document.createElement('tr');
+                headers.forEach(h => {
+                    const td = document.createElement('td');
+                    td.className = "p-1 md:p-2 border-b border-white/5 truncate max-w-[100px] md:max-w-[200px]";
+                    const val = typeof row[h] === 'object' ? JSON.stringify(row[h]) : row[h];
+                    td.textContent = val;
+                    td.title = val;
+                    tr.appendChild(td);
+                });
+                tbody.appendChild(tr);
+            });
+        }
+        document.getElementById('csv-input').addEventListener('input', debounce(processCsvJson, 500));
+
+
+        // --- 4. YAML ---
+        function flattenObject(obj, prefix = '') {
+            return Object.keys(obj).reduce((acc, k) => {
+                const isArray = Array.isArray(obj);
+                const pre = prefix.length ? (isArray ? `${prefix}[${k}]` : `${prefix}.${k}`) : k;
+                if (typeof obj[k] === 'object' && obj[k] !== null) Object.assign(acc, flattenObject(obj[k], pre));
+                else acc[pre] = obj[k];
+                return acc;
+            }, {});
+        }
+
+        function sortObjectKeys(obj) {
+            if (typeof obj !== 'object' || obj === null || Array.isArray(obj)) return obj;
+            return Object.keys(obj).sort().reduce((acc, key) => {
+                acc[key] = sortObjectKeys(obj[key]);
+                return acc;
+            }, {});
+        }
+
+        function processYaml() {
+            const input = document.getElementById('yaml-input').value;
+            localStorage.setItem(LS_KEY + '_yaml', input);
+            const output = document.getElementById('yaml-output');
+            const mode = document.getElementById('yaml-mode').value;
+            const shouldSort = document.getElementById('yaml-sort').checked;
+            const errorEl = document.getElementById('yaml-error');
+            errorEl.classList.add('hidden');
+            if (!window.jsyaml || !input.trim()) return;
+            try {
+                let obj = jsyaml.load(input);
+                if (shouldSort) obj = sortObjectKeys(obj);
+
+                if (mode === 'props') {
+                    const flattened = flattenObject(obj || {});
+                    const props = Object.entries(flattened).map(([k, v]) => `${k}=${v}`).join('\n');
+                    output.value = props;
+                } else {
+                    output.value = JSON.stringify(obj, null, 2);
+                }
+            } catch (e) {
+                errorEl.classList.remove('hidden');
+            }
+        }
+        document.getElementById('yaml-input').addEventListener('input', debounce(processYaml, 500));
+
+        // --- 5. Crypto Logic ---
+        async function runHash(algo) {
+            const text = document.getElementById('crypto-input').value;
+            if (!text) return;
+
+            const msgBuffer = new TextEncoder().encode(text);
+            const hashBuffer = await crypto.subtle.digest(algo, msgBuffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+            document.getElementById('crypto-output').value = hashHex;
+            showToast(`${algo} Hash Generated`);
+        }
+
+        function runCrypto(action) {
+            const input = document.getElementById('crypto-input').value;
+            const outputEl = document.getElementById('crypto-output');
+            try {
+                if (action === 'b64e') outputEl.value = btoa(input);
+                if (action === 'b64d') outputEl.value = atob(input);
+                if (action === 'urle') outputEl.value = encodeURIComponent(input);
+                if (action === 'urld') outputEl.value = decodeURIComponent(input);
+            } catch (e) {
+                outputEl.value = "Error: Invalid Input for Operation";
+                showToast("Operation Failed", "error");
+            }
+        }
+
+
+        // --- 6. Encoding ---
+        let currentFile = null;
+        document.getElementById('enc-file-input').addEventListener('change', (e) => handleFileSelect(e.target.files[0]));
+        document.getElementById('enc-select').addEventListener('change', decodeFile);
+
+        function handleFileSelect(file) {
+            if (file) {
+                currentFile = file;
+                document.getElementById('enc-filename').textContent = file.name;
+                document.getElementById('enc-download-btn').disabled = false;
+                const hexReader = new FileReader();
+                hexReader.onload = (e) => {
+                    const buffer = new Uint8Array(e.target.result);
+                    let hexString = '';
+                    const limit = Math.min(buffer.length, 128);
+                    for (let i = 0; i < limit; i++) {
+                        hexString += buffer[i].toString(16).padStart(2, '0') + ' ';
+                        if ((i + 1) % 16 === 0) hexString += '\n';
+                    }
+                    if (buffer.length > 128) hexString += '\n...';
+                    document.getElementById('hex-preview').textContent = hexString.toUpperCase();
+                }
+                hexReader.readAsArrayBuffer(file.slice(0, 128));
+                decodeFile();
+            }
+        }
+
+        function decodeFile() {
+            if (!currentFile) return;
+            const encoding = document.getElementById('enc-select').value;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const decoder = new TextDecoder(encoding);
+                    const text = decoder.decode(e.target.result);
+                    document.getElementById('enc-preview').textContent = text.slice(0, 5000) + (text.length > 5000 ? '\n...[Preview Truncated]' : '');
+                } catch (err) {
+                    document.getElementById('enc-preview').textContent = "Error decoding file.";
+                }
+            };
+            reader.readAsArrayBuffer(currentFile);
+        }
+
+        function downloadUtf8() {
+            if (!currentFile) return;
+            const encoding = document.getElementById('enc-select').value;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const decoder = new TextDecoder(encoding);
+                const text = decoder.decode(e.target.result);
+                downloadFile(null, `utf8_${currentFile.name}`, 'text/plain;charset=utf-8', text);
+            }
+            reader.readAsArrayBuffer(currentFile);
+        }
+
+        // --- Shared Utils ---
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => { clearTimeout(timeout); func(...args); };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        function copyToClipboard(elementId) {
+            const el = document.getElementById(elementId);
+            if (!el) return;
+            navigator.clipboard.writeText(el.value || el.textContent);
+            showToast("Copied to clipboard");
+        }
+
+        function downloadFile(elementId, filename, type, contentOverride = null) {
+            const content = contentOverride || document.getElementById(elementId).value;
+            const blob = new Blob([content], { type: type });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast("Download started");
+        }
+
+        function clearInput(id) {
+            document.getElementById(id).value = '';
+            document.getElementById(id).dispatchEvent(new Event('input'));
+            showToast("Input cleared");
+        }
+
+        function handleDrop(e, inputId) {
+            e.preventDefault();
+            const file = e.dataTransfer.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    document.getElementById(inputId).value = e.target.result;
+                    document.getElementById(inputId).dispatchEvent(new Event('input'));
+                    showToast("File loaded");
+                };
+                reader.readAsText(file);
+            }
+        }
+
+        // --- COMPLETED: loadSample ---
+        function loadSample(type) {
+            if (type === 'md') {
+                mdInput.value = "# Cyberpunk Manifesto\n\n> High tech. Low life.\n\n## Core Systems\n\n* [ ] Neural Link\n* [x] Optical Camo\n* [ ] Cyberdeck\n\n```javascript\nconst wakeUp = () => {\n  console.log('Follow the white rabbit');\n}\n```\n\n### Mission Status\n\n| ID | Agent | Status |\n| -- | ----- | ------ |\n| 01 | Neo   | Active |\n| 02 | Ghost | Offline|";
+                processMarkdown();
+            } else if (type === 'csv') {
+                if (state.csvMode === 'json2csv') {
+                    const data = [
+                        { id: 101, codename: "GHOST", status: "Active" },
+                        { id: 102, codename: "PHANTOM", status: "MIA" }
+                    ];
+                    document.getElementById('csv-input').value = JSON.stringify(data, null, 2);
+                } else {
+                    const data = "id,codename,clearance,status\n101,GHOST,Level-5,Active\n102,PHANTOM,Level-4,MIA\n103,SPECTRE,Level-5,Compromised\n104,WRAITH,Level-3,Active";
+                    document.getElementById('csv-input').value = data;
+                }
+                processCsvJson();
+            } else if (type === 'yaml') {
+                const data = "network:\n  grid_id: 'NEO-TOKYO-01'\n  security: high\n  proxies:\n    - ip: 192.168.1.55\n      status: online\n    - ip: 10.0.0.5\n      status: offline";
+                document.getElementById('yaml-input').value = data;
+                processYaml();
+            }
+            showToast(`${type.toUpperCase()} Sample Loaded`);
+        }
+
+        // Initialize Icons
+        lucide.createIcons();
+
+        // Init load if state exists
+        if (state.mdInput) processMarkdown();
+        if (state.csvInput) processCsvJson();
+        if (state.yamlInput) processYaml();
+
+    </script>
+</body>
+
+</html>

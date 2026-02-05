@@ -1,0 +1,1416 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PrivacyBlur Ultimate - Pro Video Privacy Tool</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --bg-panel: #1e293b;
+            --accent: #3b82f6;
+            --timeline-bg: #0f172a;
+            --timeline-track: #1e293b;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: #e2e8f0;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-dark);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+
+        /* Canvas Background Pattern */
+        .canvas-bg {
+            background-color: #020617;
+            background-image:
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        /* Timeline Styling */
+        .timeline-ruler {
+            background-image: linear-gradient(90deg, #475569 1px, transparent 1px);
+            background-size: 100px 100%;
+        }
+
+        /* Range Sliders */
+        input[type=range] {
+            -webkit-appearance: none;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 14px;
+            width: 14px;
+            border-radius: 50%;
+            background: #3b82f6;
+            margin-top: -5px;
+            cursor: pointer;
+            border: 2px solid #1e293b;
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #334155;
+            border-radius: 2px;
+        }
+
+        /* Utilities */
+        .no-select {
+            user-select: none;
+        }
+
+        .cursor-grab-active {
+            cursor: grabbing !important;
+        }
+
+        /* Toast Animation */
+        @keyframes slideUp {
+            from {
+                transform: translateY(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .toast-enter {
+            animation: slideUp 0.3s ease-out forwards;
+        }
+    </style>
+</head>
+
+<body class="h-screen flex flex-col font-sans">
+
+    <!-- Top Menu Bar -->
+    <header class="h-12 bg-slate-900 border-b border-slate-800 flex justify-between items-center px-4 shrink-0 z-30">
+        <div class="flex items-center gap-3">
+            <div class="bg-gradient-to-br from-blue-600 to-blue-700 p-1.5 rounded-lg shadow-lg shadow-blue-900/50">
+                <i data-lucide="shield" class="w-4 h-4 text-white"></i>
+            </div>
+            <h1 class="font-bold text-sm tracking-wide text-white">PrivacyBlur <span
+                    class="text-blue-400 text-[10px] uppercase border border-blue-900 bg-blue-900/30 px-1.5 py-0.5 rounded ml-1 tracking-wider">Ultimate</span>
+            </h1>
+
+            <div class="h-4 w-px bg-slate-700 mx-2"></div>
+
+            <!-- File Menu -->
+            <div class="flex gap-1">
+                <button id="btn-save-project"
+                    class="flex items-center gap-1.5 text-xs text-slate-400 hover:text-white hover:bg-slate-800 px-2 py-1.5 rounded transition">
+                    <i data-lucide="save" class="w-3 h-3"></i> Save Project
+                </button>
+                <button onclick="document.getElementById('project-input').click()"
+                    class="flex items-center gap-1.5 text-xs text-slate-400 hover:text-white hover:bg-slate-800 px-2 py-1.5 rounded transition">
+                    <i data-lucide="folder-open" class="w-3 h-3"></i> Load Project
+                </button>
+                <input type="file" id="project-input" accept=".json" class="hidden">
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+            <button id="btn-undo"
+                class="p-1.5 hover:bg-slate-800 rounded text-slate-400 hover:text-white transition opacity-50 cursor-not-allowed"
+                title="Undo (Ctrl+Z)">
+                <i data-lucide="undo-2" class="w-4 h-4"></i>
+            </button>
+            <button id="btn-redo"
+                class="p-1.5 hover:bg-slate-800 rounded text-slate-400 hover:text-white transition opacity-50 cursor-not-allowed"
+                title="Redo (Ctrl+Y)">
+                <i data-lucide="redo-2" class="w-4 h-4"></i>
+            </button>
+            <button id="btn-help" class="p-1.5 hover:bg-slate-800 rounded text-slate-400 hover:text-white transition"
+                title="Shortcuts (?)">
+                <i data-lucide="keyboard" class="w-4 h-4"></i>
+            </button>
+            <div class="h-4 w-px bg-slate-700 mx-2"></div>
+            <button id="btn-export-trigger" disabled
+                class="flex items-center gap-2 text-xs font-bold bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:bg-slate-700 text-white px-3 py-1.5 rounded transition shadow-lg shadow-blue-900/20">
+                <i data-lucide="download" class="w-3 h-3"></i> Export Video
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <div class="flex-1 flex overflow-hidden relative">
+
+        <!-- Upload Overlay (Initial State) -->
+        <div id="upload-screen"
+            class="absolute inset-0 z-50 bg-slate-950 flex flex-col items-center justify-center p-6">
+            <div
+                class="w-full max-w-lg border border-dashed border-slate-700 rounded-2xl bg-slate-900/50 hover:bg-slate-900 transition-all p-12 flex flex-col items-center text-center cursor-pointer group relative overflow-hidden">
+                <div
+                    class="absolute inset-0 bg-gradient-to-b from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                </div>
+                <input type="file" id="file-input" accept="video/*"
+                    class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+                <div
+                    class="bg-slate-800 p-4 rounded-full mb-4 group-hover:scale-110 transition-transform duration-300 shadow-xl border border-slate-700">
+                    <i data-lucide="film" class="w-8 h-8 text-blue-500"></i>
+                </div>
+                <h2 class="text-xl font-bold text-white mb-2">Start New Project</h2>
+                <p class="text-slate-400 text-xs mb-6">Drop video file here or click to browse</p>
+                <div class="flex gap-2 text-[10px] text-slate-500 font-mono uppercase tracking-wider">
+                    <span>MP4</span> <span>•</span> <span>WEBM</span> <span>•</span> <span>MOV</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Left Toolbar -->
+        <div id="toolbar"
+            class="w-12 bg-slate-900 border-r border-slate-800 flex flex-col items-center py-4 gap-3 hidden z-20">
+            <div class="flex flex-col gap-2 w-full px-2">
+                <button id="tool-select"
+                    class="p-2 rounded hover:bg-slate-800 transition text-blue-500 bg-blue-500/10 tool-btn"
+                    title="Select & Move (V)">
+                    <i data-lucide="mouse-pointer-2" class="w-4 h-4"></i>
+                </button>
+                <button id="tool-draw-rect" class="p-2 rounded hover:bg-slate-800 transition text-slate-400 tool-btn"
+                    title="Rectangle Blur (R)">
+                    <i data-lucide="square" class="w-4 h-4"></i>
+                </button>
+                <button id="tool-draw-circle" class="p-2 rounded hover:bg-slate-800 transition text-slate-400 tool-btn"
+                    title="Circle Blur (C)">
+                    <i data-lucide="circle" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <div class="w-6 h-px bg-slate-800"></div>
+
+            <div class="flex flex-col gap-2 w-full px-2">
+                <button id="btn-zoom-in" class="p-2 rounded hover:bg-slate-800 transition text-slate-400"
+                    title="Zoom In (+)">
+                    <i data-lucide="zoom-in" class="w-4 h-4"></i>
+                </button>
+                <button id="btn-zoom-out" class="p-2 rounded hover:bg-slate-800 transition text-slate-400"
+                    title="Zoom Out (-)">
+                    <i data-lucide="zoom-out" class="w-4 h-4"></i>
+                </button>
+                <button id="btn-fit" class="p-2 rounded hover:bg-slate-800 transition text-slate-400"
+                    title="Fit to Screen (F)">
+                    <i data-lucide="maximize" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Center Canvas -->
+        <div id="workspace" class="flex-1 flex flex-col bg-slate-950 relative hidden">
+            <!-- Canvas Container -->
+            <div class="flex-1 overflow-hidden relative canvas-bg cursor-default" id="canvas-container">
+                <!-- Video/Canvas Stage -->
+                <div id="stage-transform"
+                    class="origin-center transition-transform duration-75 ease-out will-change-transform">
+                    <video id="source-video" class="hidden" crossorigin="anonymous" playsinline></video>
+                    <canvas id="main-canvas" class="block shadow-2xl shadow-black"></canvas>
+                </div>
+
+                <!-- Hints -->
+                <div
+                    class="absolute bottom-4 left-4 bg-black/60 backdrop-blur px-3 py-1.5 rounded-full text-[10px] text-slate-300 pointer-events-none border border-white/10">
+                    Middle Click or Space + Drag to Pan
+                </div>
+            </div>
+
+            <!-- Global Video Filters (Mini Panel) -->
+            <div
+                class="absolute top-4 right-4 bg-slate-900/90 backdrop-blur border border-slate-700 p-3 rounded-lg w-48 shadow-xl z-10 transition-opacity hover:opacity-100 opacity-60">
+                <h4 class="text-[10px] font-bold text-slate-400 uppercase mb-2 flex justify-between">
+                    Global Correction
+                    <button id="btn-reset-filters" class="hover:text-white" title="Reset"><i data-lucide="rotate-ccw"
+                            class="w-3 h-3"></i></button>
+                </h4>
+                <div class="space-y-2">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="sun" class="w-3 h-3 text-slate-500"></i>
+                        <input type="range" id="filter-brightness" min="0" max="200" value="100" class="flex-1">
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="contrast" class="w-3 h-3 text-slate-500"></i>
+                        <input type="range" id="filter-contrast" min="0" max="200" value="100" class="flex-1">
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="palette" class="w-3 h-3 text-slate-500"></i>
+                        <input type="range" id="filter-saturation" min="0" max="200" value="100" class="flex-1">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Export Overlay -->
+            <div id="export-overlay"
+                class="hidden absolute inset-0 z-50 bg-slate-950 flex flex-col items-center justify-center">
+                <div class="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-6">
+                </div>
+                <h2 class="text-2xl font-bold text-white">Rendering Video...</h2>
+                <div class="w-64 h-2 bg-slate-800 rounded-full mt-4 overflow-hidden">
+                    <div id="export-progress-bar" class="h-full bg-blue-600 w-0 transition-all duration-300"></div>
+                </div>
+                <p class="text-sm text-slate-400 mt-2 font-mono" id="export-status">0%</p>
+                <p class="text-xs text-slate-600 mt-8">Please do not close this tab or switch windows.</p>
+            </div>
+        </div>
+
+        <!-- Right Properties Panel -->
+        <div id="properties-panel"
+            class="w-72 bg-slate-900 border-l border-slate-800 flex flex-col hidden z-20 overflow-y-auto">
+            <div class="p-3 border-b border-slate-800 bg-slate-900 sticky top-0 z-10">
+                <h3 class="font-bold text-xs text-slate-300 uppercase tracking-wider">Properties</h3>
+            </div>
+
+            <!-- Empty State -->
+            <div id="prop-empty" class="p-8 text-center text-slate-500 flex flex-col items-center mt-10">
+                <i data-lucide="layers" class="w-8 h-8 mb-3 opacity-30"></i>
+                <p class="text-xs">No region selected.</p>
+            </div>
+
+            <!-- Content -->
+            <div id="prop-content" class="hidden pb-10">
+
+                <!-- Header -->
+                <div class="p-4 border-b border-slate-800">
+                    <div class="flex justify-between items-center mb-3">
+                        <div class="flex items-center gap-2">
+                            <div class="w-3 h-3 rounded-full bg-blue-500"></div>
+                            <span class="text-sm font-semibold text-white" id="prop-label">Region 1</span>
+                        </div>
+                        <div class="flex gap-1">
+                            <button id="btn-lock" class="p-1.5 hover:bg-slate-800 rounded text-slate-400"
+                                title="Lock Layer"><i data-lucide="lock" class="w-3 h-3"></i></button>
+                            <button id="btn-hide" class="p-1.5 hover:bg-slate-800 rounded text-slate-400"
+                                title="Hide Layer"><i data-lucide="eye" class="w-3 h-3"></i></button>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 text-xs">
+                        <div class="bg-slate-800 p-2 rounded">
+                            <span class="text-slate-500 block text-[9px] mb-0.5">START</span>
+                            <span class="font-mono text-blue-400" id="prop-start-display">00:00</span>
+                        </div>
+                        <div class="bg-slate-800 p-2 rounded">
+                            <span class="text-slate-500 block text-[9px] mb-0.5">DURATION</span>
+                            <span class="font-mono text-slate-300" id="prop-duration-display">3.0s</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Effect Settings -->
+                <div class="p-4 border-b border-slate-800 space-y-4">
+                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Effect</span>
+
+                    <div class="flex bg-slate-800 p-1 rounded-lg border border-slate-700">
+                        <button class="flex-1 py-1 text-[10px] rounded transition hover:bg-slate-700 text-slate-400"
+                            data-type="blur">Blur</button>
+                        <button class="flex-1 py-1 text-[10px] rounded transition hover:bg-slate-700 text-slate-400"
+                            data-type="pixel">Pixel</button>
+                        <button class="flex-1 py-1 text-[10px] rounded transition hover:bg-slate-700 text-slate-400"
+                            data-type="solid">Solid</button>
+                    </div>
+
+                    <div class="space-y-1">
+                        <div class="flex justify-between">
+                            <label class="text-[10px] text-slate-400">Strength</label>
+                            <span class="text-[10px] text-slate-400" id="prop-intensity-val">15</span>
+                        </div>
+                        <input type="range" id="prop-intensity" min="0" max="50" class="w-full">
+                    </div>
+
+                    <div class="flex items-center justify-between pt-1">
+                        <label class="text-[11px] text-slate-300">Invert Mask</label>
+                        <input type="checkbox" id="prop-invert"
+                            class="w-4 h-4 rounded bg-slate-800 border-slate-600 accent-blue-500 cursor-pointer">
+                    </div>
+                    <p class="text-[9px] text-slate-500">If checked, blurs the background instead of the shape.</p>
+                </div>
+
+                <!-- Keyframes -->
+                <div class="p-4 border-b border-slate-800 space-y-3">
+                    <div class="flex justify-between items-center">
+                        <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Keyframes</span>
+                        <button id="btn-add-keyframe"
+                            class="text-[10px] bg-blue-600 hover:bg-blue-500 text-white px-2 py-0.5 rounded flex items-center gap-1">
+                            <i data-lucide="plus" class="w-3 h-3"></i> Add
+                        </button>
+                    </div>
+
+                    <div id="keyframe-list" class="space-y-1 max-h-32 overflow-y-auto pr-1 custom-scrollbar">
+                        <!-- Dynamic list -->
+                    </div>
+                    <p class="text-[9px] text-slate-500 italic">Position the playhead and move/resize the shape to
+                        automatically update/add a keyframe.</p>
+                </div>
+
+                <!-- Delete -->
+                <div class="p-4">
+                    <button id="btn-delete"
+                        class="w-full flex items-center justify-center gap-2 py-2 text-xs font-medium bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 rounded transition">
+                        <i data-lucide="trash-2" class="w-3 h-3"></i> Delete Layer
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Timeline -->
+    <div id="timeline-panel"
+        class="h-48 bg-slate-900 border-t border-slate-800 flex flex-col shrink-0 z-30 hidden relative select-none">
+
+        <!-- Timeline Toolbar -->
+        <div class="h-8 border-b border-slate-800 flex items-center px-2 justify-between bg-slate-800/50">
+            <div class="flex items-center gap-2">
+                <button id="btn-play-pause"
+                    class="w-6 h-6 flex items-center justify-center text-white hover:text-blue-400">
+                    <i data-lucide="play" class="w-4 h-4 fill-current"></i>
+                </button>
+                <button id="btn-stop" class="w-6 h-6 flex items-center justify-center text-slate-400 hover:text-white">
+                    <i data-lucide="square" class="w-3 h-3 fill-current"></i>
+                </button>
+                <div class="h-4 w-px bg-slate-700 mx-1"></div>
+                <span class="text-xs font-mono text-blue-400" id="time-current">00:00:00</span>
+                <span class="text-xs font-mono text-slate-500">/</span>
+                <span class="text-xs font-mono text-slate-500" id="time-total">00:00:00</span>
+            </div>
+
+            <div class="flex items-center gap-3 pr-2">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="search" class="w-3 h-3 text-slate-500"></i>
+                    <input type="range" id="timeline-zoom" min="10" max="200" value="50" class="w-20"
+                        title="Timeline Zoom">
+                </div>
+                <div class="h-4 w-px bg-slate-700 mx-1"></div>
+                <div class="flex items-center gap-1">
+                    <i data-lucide="volume-2" class="w-3 h-3 text-slate-400"></i>
+                    <input type="range" id="volume-slider" min="0" max="1" step="0.1" value="1" class="w-16">
+                </div>
+            </div>
+        </div>
+
+        <!-- Timeline Tracks Area -->
+        <div class="flex-1 overflow-x-scroll overflow-y-auto relative bg-[#0f172a]" id="timeline-scroll-area">
+
+            <!-- Ruler -->
+            <div id="timeline-ruler"
+                class="h-6 border-b border-slate-700 sticky top-0 bg-slate-900 z-10 w-[2000px] timeline-ruler cursor-pointer">
+            </div>
+
+            <!-- Playhead -->
+            <div id="playhead" class="absolute top-0 bottom-0 w-px bg-red-500 z-20 pointer-events-none h-full"
+                style="left: 0px;">
+                <div class="w-3 h-3 bg-red-500 transform -translate-x-1.5 rotate-45 -mt-1.5 shadow-sm"></div>
+                <div class="w-px h-full bg-red-500/50"></div>
+            </div>
+
+            <!-- Tracks Container -->
+            <div id="tracks-container" class="relative w-[2000px] min-h-full py-2 space-y-1">
+                <!-- Clips generated here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+
+    <!-- Export Modal -->
+    <div id="modal-export"
+        class="hidden fixed inset-0 z-[60] bg-black/70 backdrop-blur-sm flex items-center justify-center">
+        <div
+            class="bg-slate-900 border border-slate-700 p-6 rounded-xl w-96 shadow-2xl transform scale-100 transition-all">
+            <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                <i data-lucide="film" class="w-5 h-5 text-blue-500"></i> Export Video
+            </h3>
+            <div class="space-y-4">
+                <div>
+                    <label class="text-[11px] text-slate-400 uppercase tracking-wider block mb-1">Filename</label>
+                    <input type="text" id="export-filename" value="privacy_edit"
+                        class="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-sm focus:border-blue-500 outline-none">
+                </div>
+                <div>
+                    <label class="text-[11px] text-slate-400 uppercase tracking-wider block mb-1">Format &
+                        Quality</label>
+                    <select id="export-quality"
+                        class="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-sm focus:border-blue-500 outline-none">
+                        <option value="high">WEBM - High Quality (VP9)</option>
+                        <option value="medium">WEBM - Balanced</option>
+                        <option value="low">WEBM - Low Size</option>
+                    </select>
+                </div>
+            </div>
+            <div class="flex gap-3 mt-6">
+                <button onclick="document.getElementById('modal-export').classList.add('hidden')"
+                    class="flex-1 py-2 text-sm bg-slate-800 hover:bg-slate-700 rounded transition text-slate-300">Cancel</button>
+                <button id="btn-export-confirm"
+                    class="flex-1 py-2 text-sm bg-blue-600 hover:bg-blue-500 rounded transition text-white font-medium">Export</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Shortcuts Modal -->
+    <div id="modal-help"
+        class="hidden fixed inset-0 z-[60] bg-black/70 backdrop-blur-sm flex items-center justify-center">
+        <div class="bg-slate-900 border border-slate-700 p-6 rounded-xl w-[500px] shadow-2xl">
+            <h3 class="text-lg font-bold text-white mb-4">Keyboard Shortcuts</h3>
+            <div class="grid grid-cols-2 gap-4 text-sm">
+                <div class="space-y-2">
+                    <div class="flex justify-between border-b border-slate-800 pb-1"><span class="text-slate-400">Play /
+                            Pause</span> <kbd class="bg-slate-800 px-1.5 rounded text-slate-200 font-mono">Space</kbd>
+                    </div>
+                    <div class="flex justify-between border-b border-slate-800 pb-1"><span
+                            class="text-slate-400">Undo</span> <kbd
+                            class="bg-slate-800 px-1.5 rounded text-slate-200 font-mono">Ctrl+Z</kbd></div>
+                    <div class="flex justify-between border-b border-slate-800 pb-1"><span
+                            class="text-slate-400">Redo</span> <kbd
+                            class="bg-slate-800 px-1.5 rounded text-slate-200 font-mono">Ctrl+Y</kbd></div>
+                    <div class="flex justify-between border-b border-slate-800 pb-1"><span class="text-slate-400">Delete
+                            Region</span> <kbd class="bg-slate-800 px-1.5 rounded text-slate-200 font-mono">Delete</kbd>
+                    </div>
+                </div>
+                <div class="space-y-2">
+                    <div class="flex justify-between border-b border-slate-800 pb-1"><span class="text-slate-400">Select
+                            Tool</span> <kbd class="bg-slate-800 px-1.5 rounded text-slate-200 font-mono">V</kbd></div>
+                    <div class="flex justify-between border-b border-slate-800 pb-1"><span class="text-slate-400">Rect
+                            Tool</span> <kbd class="bg-slate-800 px-1.5 rounded text-slate-200 font-mono">R</kbd></div>
+                    <div class="flex justify-between border-b border-slate-800 pb-1"><span class="text-slate-400">Circle
+                            Tool</span> <kbd class="bg-slate-800 px-1.5 rounded text-slate-200 font-mono">C</kbd></div>
+                    <div class="flex justify-between border-b border-slate-800 pb-1"><span class="text-slate-400">Fit
+                            Canvas</span> <kbd class="bg-slate-800 px-1.5 rounded text-slate-200 font-mono">F</kbd>
+                    </div>
+                </div>
+            </div>
+            <p class="mt-4 text-xs text-slate-500">Scroll wheel to Zoom Canvas. Space + Drag to Pan.</p>
+            <button onclick="document.getElementById('modal-help').classList.add('hidden')"
+                class="mt-4 w-full py-2 bg-blue-600 hover:bg-blue-500 text-white rounded text-sm">Got it</button>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="fixed bottom-6 right-6 z-[70] flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- Application Logic -->
+    <script>
+        /**
+         * PrivacyBlur Ultimate
+         * Logic Architecture:
+         * 1. State Management (Immutable-ish History)
+         * 2. Canvas Engine (Pan/Zoom/Render)
+         * 3. Timeline Engine (Tracks/Dragging/Resizing)
+         * 4. Interaction Controller
+         */
+
+        // --- Config ---
+        const CFG = {
+            HANDLE_SZ: 8,
+            MIN_CLIP_W: 10,
+            PIXELS_PER_SEC: 50, // Default zoom level
+            WHEEL_SENSITIVITY: 0.001
+        };
+
+        // --- State ---
+        const state = {
+            // Media
+            videoSrc: null,
+            duration: 0,
+            videoWidth: 0,
+            videoHeight: 0,
+
+            // Playback
+            isPlaying: false,
+            currentTime: 0,
+            volume: 1,
+
+            // Canvas Transform
+            zoom: 1,
+            panX: 0,
+            panY: 0,
+
+            // Global Filter
+            filters: { brightness: 100, contrast: 100, saturation: 100 },
+
+            // Project
+            regions: [], // { id, type, start, end, label, locked, hidden, invert, intensity, keyframes: [{time, x, y, w, h}] }
+            selectedIds: [],
+
+            // Interaction
+            tool: 'select', // select, rect, circle
+            isDrawing: false,
+            drawStart: null,
+
+            // Timeline Dragging
+            timelineAction: null, // 'move', 'resize-l', 'resize-r', 'scrub'
+            activeClipId: null,
+            dragStartX: 0,
+            initialClipState: null, // {start, end}
+
+            // History
+            history: [],
+            historyIdx: -1
+        };
+
+        // --- DOM Cache ---
+        const $ = (id) => document.getElementById(id);
+        const els = {
+            upload: $('upload-screen'),
+            fileIn: $('file-input'),
+            projIn: $('project-input'),
+            workspace: $('workspace'),
+            toolbar: $('toolbar'),
+            propPanel: $('properties-panel'),
+            timelinePanel: $('timeline-panel'),
+
+            video: $('source-video'),
+            canvas: $('main-canvas'),
+            stage: $('stage-transform'),
+            container: $('canvas-container'),
+
+            tracks: $('tracks-container'),
+            tlScroll: $('timeline-scroll-area'),
+            tlRuler: $('timeline-ruler'),
+            playhead: $('playhead'),
+
+            propContent: $('prop-content'),
+            propEmpty: $('prop-empty'),
+
+            exportModal: $('modal-export'),
+            exportOverlay: $('export-overlay'),
+            exportProgress: $('export-progress-bar'),
+            exportStatus: $('export-status')
+        };
+
+        const ctx = els.canvas.getContext('2d', { willReadFrequently: true });
+        let animationFrame;
+
+        // --- Core: Initialization ---
+        lucide.createIcons();
+
+        function initProject(url) {
+            state.videoSrc = url;
+            els.video.src = url;
+
+            // Reset
+            state.regions = [];
+            state.history = [];
+            state.historyIdx = -1;
+            state.zoom = 1;
+            state.panX = 0;
+            state.panY = 0;
+            updateTransform();
+
+            // UI
+            els.upload.classList.add('hidden');
+            els.workspace.classList.remove('hidden');
+            els.toolbar.classList.remove('hidden');
+            els.propPanel.classList.remove('hidden');
+            els.timelinePanel.classList.remove('hidden');
+            $('btn-export-trigger').disabled = false;
+
+            saveHistory("Init Project");
+        }
+
+        els.fileIn.addEventListener('change', e => {
+            const file = e.target.files[0];
+            if (file) initProject(URL.createObjectURL(file));
+        });
+
+        els.video.addEventListener('loadedmetadata', () => {
+            state.duration = els.video.duration;
+            state.videoWidth = els.video.videoWidth;
+            state.videoHeight = els.video.videoHeight;
+
+            els.canvas.width = state.videoWidth;
+            els.canvas.height = state.videoHeight;
+
+            // Fit to screen initially
+            fitCanvas();
+            renderTimeline();
+            renderCanvas();
+            updateTimeDisplay();
+        });
+
+        // --- History System ---
+        function saveHistory(action) {
+            // Slice future
+            if (state.historyIdx < state.history.length - 1) {
+                state.history = state.history.slice(0, state.historyIdx + 1);
+            }
+
+            const snapshot = JSON.stringify({
+                regions: state.regions,
+                filters: state.filters
+            });
+
+            state.history.push(snapshot);
+            state.historyIdx++;
+
+            // Limit history size
+            if (state.history.length > 30) {
+                state.history.shift();
+                state.historyIdx--;
+            }
+
+            updateUndoRedoUI();
+            if (action) showToast(action);
+        }
+
+        function restoreHistory(idx) {
+            const data = JSON.parse(state.history[idx]);
+            state.regions = data.regions;
+            state.filters = data.filters;
+            state.selectedIds = [];
+
+            // Refresh UI
+            renderCanvas();
+            renderTimeline();
+            updatePropertiesPanel();
+            updateFiltersUI();
+            updateUndoRedoUI();
+        }
+
+        function undo() {
+            if (state.historyIdx > 0) {
+                state.historyIdx--;
+                restoreHistory(state.historyIdx);
+                showToast("Undo");
+            }
+        }
+
+        function redo() {
+            if (state.historyIdx < state.history.length - 1) {
+                state.historyIdx++;
+                restoreHistory(state.historyIdx);
+                showToast("Redo");
+            }
+        }
+
+        function updateUndoRedoUI() {
+            const undoBtn = $('btn-undo');
+            const redoBtn = $('btn-redo');
+
+            undoBtn.classList.toggle('opacity-50', state.historyIdx <= 0);
+            undoBtn.classList.toggle('cursor-not-allowed', state.historyIdx <= 0);
+
+            redoBtn.classList.toggle('opacity-50', state.historyIdx >= state.history.length - 1);
+            redoBtn.classList.toggle('cursor-not-allowed', state.historyIdx >= state.history.length - 1);
+        }
+
+        // --- Canvas Navigation ---
+        function updateTransform() {
+            els.stage.style.transform = `translate(${state.panX}px, ${state.panY}px) scale(${state.zoom})`;
+        }
+
+        function fitCanvas() {
+            const containerW = els.container.clientWidth;
+            const containerH = els.container.clientHeight;
+            const scaleW = (containerW - 40) / state.videoWidth;
+            const scaleH = (containerH - 40) / state.videoHeight;
+            state.zoom = Math.min(scaleW, scaleH);
+            state.panX = 0;
+            state.panY = 0;
+            updateTransform();
+        }
+
+        els.container.addEventListener('wheel', e => {
+            e.preventDefault();
+            if (e.ctrlKey || e.metaKey) {
+                // Zoom
+                const delta = -e.deltaY * CFG.WHEEL_SENSITIVITY;
+                const newZoom = Math.min(Math.max(0.1, state.zoom * (1 + delta)), 5);
+                state.zoom = newZoom;
+            } else {
+                // Pan
+                state.panX -= e.deltaX;
+                state.panY -= e.deltaY;
+            }
+            updateTransform();
+        }, { passive: false });
+
+        // --- Canvas Logic ---
+        function screenToCanvas(sx, sy) {
+            const rect = els.stage.getBoundingClientRect();
+            // The stage is centered by flex, but transform origin center makes it tricky.
+            // Best way: get rect of the canvas element itself which is transformed
+            const canvasRect = els.canvas.getBoundingClientRect();
+            return {
+                x: (sx - canvasRect.left) / (canvasRect.width / state.videoWidth),
+                y: (sy - canvasRect.top) / (canvasRect.height / state.videoHeight)
+            };
+        }
+
+        function getCurrentRect(region) {
+            // Logic for Keyframe interpolation
+            const t = state.currentTime;
+            const keys = region.keyframes.sort((a, b) => a.time - b.time);
+
+            if (keys.length === 0) return { x: 0, y: 0, w: 0, h: 0 };
+            if (keys.length === 1) return { ...keys[0] };
+
+            // Find surrounding keyframes
+            let prev = keys[0];
+            let next = keys[keys.length - 1];
+
+            for (let i = 0; i < keys.length - 1; i++) {
+                if (t >= keys[i].time && t < keys[i + 1].time) {
+                    prev = keys[i];
+                    next = keys[i + 1];
+                    break;
+                }
+            }
+
+            if (t <= prev.time) return { ...prev };
+            if (t >= next.time) return { ...next };
+
+            // Interpolate
+            const progress = (t - prev.time) / (next.time - prev.time);
+            return {
+                x: prev.x + (next.x - prev.x) * progress,
+                y: prev.y + (next.y - prev.y) * progress,
+                w: prev.w + (next.w - prev.w) * progress,
+                h: prev.h + (next.h - prev.h) * progress
+            };
+        }
+
+        function renderCanvas() {
+            // Draw Video
+            ctx.filter = `brightness(${state.filters.brightness}%) contrast(${state.filters.contrast}%) saturate(${state.filters.saturation}%)`;
+            ctx.drawImage(els.video, 0, 0, state.videoWidth, state.videoHeight);
+            ctx.filter = 'none';
+
+            // Draw Regions
+            state.regions.forEach(r => {
+                if (r.hidden) return;
+                if (state.currentTime < r.start || state.currentTime > r.end) return;
+
+                const rect = getCurrentRect(r);
+
+                ctx.save();
+                ctx.beginPath();
+
+                if (r.shape === 'circle') {
+                    ctx.ellipse(rect.x + rect.w / 2, rect.y + rect.h / 2, rect.w / 2, rect.h / 2, 0, 0, Math.PI * 2);
+                } else {
+                    ctx.rect(rect.x, rect.y, rect.w, rect.h);
+                }
+
+                if (r.invert) {
+                    // Workaround: Path(Full Screen) + Path(Shape) using 'evenodd' rule.
+                    ctx.beginPath();
+                    ctx.rect(0, 0, state.videoWidth, state.videoHeight); // Full rect
+                    if (r.shape === 'circle') {
+                        ctx.ellipse(rect.x + rect.w / 2, rect.y + rect.h / 2, rect.w / 2, rect.h / 2, 0, 0, Math.PI * 2);
+                    } else {
+                        ctx.rect(rect.x, rect.y, rect.w, rect.h);
+                    }
+                    ctx.clip('evenodd'); // Holes out the shape
+
+                    // Now draw effect
+                    if (r.type === 'blur') {
+                        ctx.filter = `blur(${r.intensity}px)`;
+                        ctx.drawImage(els.video, 0, 0, state.videoWidth, state.videoHeight);
+                        ctx.filter = 'none';
+                    } else if (r.type === 'solid') {
+                        ctx.fillStyle = 'black';
+                        ctx.fill();
+                    }
+                    // Pixelate is hard inverted efficiently, skip or approximate
+                } else {
+                    // Normal Mode (Blur inside)
+                    ctx.clip();
+                    if (r.type === 'blur') {
+                        ctx.filter = `blur(${r.intensity}px)`;
+                        ctx.drawImage(els.video, 0, 0, state.videoWidth, state.videoHeight);
+                        ctx.filter = 'none';
+                    } else if (r.type === 'solid') {
+                        ctx.fillStyle = 'black';
+                        ctx.fill();
+                    } else if (r.type === 'pixel') {
+                        const size = Math.max(2, 52 - r.intensity);
+                        const w = rect.w / size;
+                        const h = rect.h / size;
+                        ctx.imageSmoothingEnabled = false;
+                        ctx.drawImage(els.video, rect.x, rect.y, rect.w, rect.h, rect.x, rect.y, w, h);
+                        ctx.drawImage(els.canvas, rect.x, rect.y, w, h, rect.x, rect.y, rect.w, rect.h);
+                        ctx.imageSmoothingEnabled = true;
+                    }
+                }
+                ctx.restore();
+
+                // UI Overlay (Selection) - Only if not exporting
+                if (!state.isExporting && state.selectedIds.includes(r.id)) {
+                    ctx.strokeStyle = '#3b82f6';
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(rect.x, rect.y, rect.w, rect.h);
+
+                    // Handles
+                    drawHandle(rect.x, rect.y);
+                    drawHandle(rect.x + rect.w, rect.y + rect.h);
+
+                    // Label
+                    ctx.fillStyle = '#3b82f6';
+                    ctx.fillRect(rect.x, rect.y - 14, ctx.measureText(r.label).width + 8, 14);
+                    ctx.fillStyle = 'white';
+                    ctx.font = '10px sans-serif';
+                    ctx.fillText(r.label, rect.x + 4, rect.y - 3);
+                }
+            });
+        }
+
+        function drawHandle(x, y) {
+            ctx.fillStyle = 'white';
+            ctx.beginPath();
+            ctx.arc(x, y, 4, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#3b82f6';
+            ctx.stroke();
+        }
+
+        // --- Interaction Logic (Mouse) ---
+        let isSpaceDown = false;
+
+        window.addEventListener('keydown', e => {
+            if (e.code === 'Space' && !e.repeat && e.target.tagName !== 'INPUT') {
+                isSpaceDown = true;
+                els.container.style.cursor = 'grab';
+            }
+        });
+        window.addEventListener('keyup', e => {
+            if (e.code === 'Space') {
+                isSpaceDown = false;
+                els.container.style.cursor = 'default';
+            }
+        });
+
+        els.container.addEventListener('mousedown', e => {
+            if (isSpaceDown || e.button === 1) {
+                // Pan
+                e.preventDefault();
+                els.container.style.cursor = 'grabbing';
+                const startX = e.clientX;
+                const startY = e.clientY;
+                const initialPanX = state.panX;
+                const initialPanY = state.panY;
+
+                const onMove = (me) => {
+                    state.panX = initialPanX + (me.clientX - startX);
+                    state.panY = initialPanY + (me.clientY - startY);
+                    updateTransform();
+                };
+                const onUp = () => {
+                    window.removeEventListener('mousemove', onMove);
+                    window.removeEventListener('mouseup', onUp);
+                    els.container.style.cursor = isSpaceDown ? 'grab' : 'default';
+                };
+                window.addEventListener('mousemove', onMove);
+                window.addEventListener('mouseup', onUp);
+                return;
+            }
+
+            // Normal Tools
+            const pt = screenToCanvas(e.clientX, e.clientY);
+
+            if (state.tool === 'select') {
+                // Hit test regions
+                // Reverse search for Z-order
+                const hit = state.regions.slice().reverse().find(r => {
+                    if (state.currentTime < r.start || state.currentTime > r.end) return false;
+                    const rect = getCurrentRect(r);
+                    return pt.x >= rect.x && pt.x <= rect.x + rect.w && pt.y >= rect.y && pt.y <= rect.y + rect.h;
+                });
+
+                if (hit) {
+                    if (!e.shiftKey) state.selectedIds = [hit.id];
+                    else if (!state.selectedIds.includes(hit.id)) state.selectedIds.push(hit.id);
+
+                    selectRegion(hit.id);
+
+                    // Drag logic
+                    const dragStart = { ...pt };
+                    const initialRect = getCurrentRect(hit);
+                    // We need to capture the Keyframe at current time or create one?
+                    // Ultimate logic: Update KEYFRAMES. If playhead is on a keyframe, update it. If not, add/update closest?
+                    // Simple logic: If we move, we insert a keyframe at current time.
+
+                    const onDrag = (me) => {
+                        const curPt = screenToCanvas(me.clientX, me.clientY);
+                        const dx = curPt.x - dragStart.x;
+                        const dy = curPt.y - dragStart.y;
+
+                        // Update active keyframe
+                        updateKeyframe(hit, state.currentTime, {
+                            x: initialRect.x + dx,
+                            y: initialRect.y + dy,
+                            w: initialRect.w,
+                            h: initialRect.h
+                        });
+                        renderCanvas();
+                    };
+
+                    const onUp = () => {
+                        window.removeEventListener('mousemove', onDrag);
+                        window.removeEventListener('mouseup', onUp);
+                        saveHistory("Move Region");
+                    };
+                    window.addEventListener('mousemove', onDrag);
+                    window.addEventListener('mouseup', onUp);
+
+                } else {
+                    state.selectedIds = [];
+                    selectRegion(null);
+                    renderCanvas();
+                }
+            }
+            else if (state.tool === 'rect' || state.tool === 'circle') {
+                state.isDrawing = true;
+                state.drawStart = pt;
+
+                const onDraw = (me) => {
+                    const curPt = screenToCanvas(me.clientX, me.clientY);
+                    renderCanvas(); // Clear old draw
+                    ctx.strokeStyle = '#3b82f6';
+                    ctx.setLineDash([5, 5]);
+                    ctx.strokeRect(state.drawStart.x, state.drawStart.y, curPt.x - state.drawStart.x, curPt.y - state.drawStart.y);
+                    ctx.setLineDash([]);
+                };
+
+                const onEndDraw = (me) => {
+                    window.removeEventListener('mousemove', onDraw);
+                    window.removeEventListener('mouseup', onEndDraw);
+                    const curPt = screenToCanvas(me.clientX, me.clientY);
+
+                    const w = curPt.x - state.drawStart.x;
+                    const h = curPt.y - state.drawStart.y;
+
+                    if (Math.abs(w) > 5 && Math.abs(h) > 5) {
+                        createRegion({
+                            x: w < 0 ? curPt.x : state.drawStart.x,
+                            y: h < 0 ? curPt.y : state.drawStart.y,
+                            w: Math.abs(w),
+                            h: Math.abs(h)
+                        });
+                    }
+                    state.tool = 'select'; // Switch back
+                    updateToolbar();
+                    renderCanvas();
+                };
+                window.addEventListener('mousemove', onDraw);
+                window.addEventListener('mouseup', onEndDraw);
+            }
+        });
+
+        function createRegion(rect) {
+            const id = Date.now();
+            const newRegion = {
+                id,
+                label: `Region ${state.regions.length + 1}`,
+                type: 'blur',
+                shape: state.tool === 'circle' ? 'circle' : 'rect',
+                start: state.currentTime,
+                end: Math.min(state.duration, state.currentTime + 3),
+                intensity: 15,
+                invert: false,
+                locked: false,
+                hidden: false,
+                keyframes: [
+                    { time: state.currentTime, ...rect },
+                    { time: Math.min(state.duration, state.currentTime + 3), ...rect }
+                ]
+            };
+            state.regions.push(newRegion);
+            state.selectedIds = [id];
+            saveHistory("Create Region");
+            selectRegion(id);
+            renderTimeline();
+        }
+
+        function updateKeyframe(region, time, rect) {
+            // Check if keyframe exists at this time (tolerance 0.1s)
+            let kf = region.keyframes.find(k => Math.abs(k.time - time) < 0.05);
+            if (kf) {
+                kf.x = rect.x; kf.y = rect.y; kf.w = rect.w; kf.h = rect.h;
+            } else {
+                region.keyframes.push({ time, ...rect });
+                region.keyframes.sort((a, b) => a.time - b.time);
+            }
+            // Update UI list if selected
+            if (state.selectedIds.includes(region.id)) renderKeyframeList(region);
+        }
+
+        // --- Timeline Logic ---
+        function renderTimeline() {
+            // Ruler
+            const pxTotal = state.duration * CFG.PIXELS_PER_SEC;
+            els.tlRuler.style.width = `${pxTotal}px`;
+            els.tracks.style.width = `${pxTotal}px`;
+
+            els.tracks.innerHTML = '';
+
+            // Render Tracks
+            state.regions.forEach((r, idx) => {
+                const track = document.createElement('div');
+                track.className = `relative h-8 mb-1 bg-slate-800/50 rounded overflow-hidden hover:bg-slate-800 transition ${state.selectedIds.includes(r.id) ? 'ring-1 ring-blue-500 bg-slate-800' : ''}`;
+
+                const left = r.start * CFG.PIXELS_PER_SEC;
+                const width = (r.end - r.start) * CFG.PIXELS_PER_SEC;
+
+                const clip = document.createElement('div');
+                clip.className = `absolute top-0 bottom-0 bg-blue-600/30 border border-blue-500/50 rounded-sm cursor-move group flex items-center px-2 text-[10px] truncate text-white select-none`;
+                clip.style.left = `${left}px`;
+                clip.style.width = `${width}px`;
+                clip.textContent = r.label;
+                clip.dataset.id = r.id;
+
+                // Handles
+                const lHandle = document.createElement('div');
+                lHandle.className = 'absolute left-0 top-0 bottom-0 w-2 cursor-ew-resize bg-blue-400/20 hover:bg-blue-400/50 opacity-0 group-hover:opacity-100 transition';
+                lHandle.dataset.action = 'resize-l';
+
+                const rHandle = document.createElement('div');
+                rHandle.className = 'absolute right-0 top-0 bottom-0 w-2 cursor-ew-resize bg-blue-400/20 hover:bg-blue-400/50 opacity-0 group-hover:opacity-100 transition';
+                rHandle.dataset.action = 'resize-r';
+
+                clip.appendChild(lHandle);
+                clip.appendChild(rHandle);
+
+                // Events
+                clip.addEventListener('mousedown', e => handleTimelineDrag(e, r));
+                track.appendChild(clip);
+                els.tracks.appendChild(track);
+            });
+
+            updatePlayhead();
+        }
+
+        function handleTimelineDrag(e, region) {
+            e.stopPropagation();
+            state.activeClipId = region.id;
+            state.selectedIds = [region.id];
+            selectRegion(region.id);
+
+            const action = e.target.dataset.action || 'move';
+            const startX = e.clientX;
+            const startStart = region.start;
+            const startEnd = region.end;
+
+            const onMove = (me) => {
+                const dxPx = me.clientX - startX;
+                const dxSec = dxPx / CFG.PIXELS_PER_SEC;
+
+                if (action === 'move') {
+                    const duration = startEnd - startStart;
+                    region.start = Math.max(0, startStart + dxSec);
+                    region.end = region.start + duration;
+                } else if (action === 'resize-l') {
+                    region.start = Math.min(startEnd - 0.1, Math.max(0, startStart + dxSec));
+                } else if (action === 'resize-r') {
+                    region.end = Math.max(startStart + 0.1, startEnd + dxSec);
+                }
+                renderTimeline();
+                renderCanvas(); // Update visibility
+                updatePropertiesPanel();
+            };
+
+            const onUp = () => {
+                window.removeEventListener('mousemove', onMove);
+                window.removeEventListener('mouseup', onUp);
+                saveHistory("Timeline Edit");
+            };
+            window.addEventListener('mousemove', onMove);
+            window.addEventListener('mouseup', onUp);
+        }
+
+        els.tlRuler.addEventListener('click', e => {
+            const rect = els.tlRuler.getBoundingClientRect();
+            const px = e.clientX - rect.left + els.tlScroll.scrollLeft;
+            const t = Math.max(0, px / CFG.PIXELS_PER_SEC);
+            els.video.currentTime = t;
+        });
+
+        function updatePlayhead() {
+            const left = state.currentTime * CFG.PIXELS_PER_SEC;
+            els.playhead.style.transform = `translateX(${left}px)`;
+            $('time-current').textContent = formatTime(state.currentTime);
+        }
+
+        function updateTimeDisplay() {
+            $('time-current').textContent = formatTime(state.currentTime);
+            $('time-total').textContent = formatTime(state.duration);
+        }
+
+        // --- Properties & Logic ---
+        function updatePropertiesPanel() {
+            const id = state.selectedIds.length > 0 ? state.selectedIds[0] : null;
+            selectRegion(id);
+        }
+
+        function selectRegion(id) {
+            if (id) {
+                const r = state.regions.find(x => x.id === id);
+                if (!r) {
+                    els.propEmpty.classList.remove('hidden');
+                    els.propContent.classList.add('hidden');
+                    return;
+                }
+                els.propEmpty.classList.add('hidden');
+                els.propContent.classList.remove('hidden');
+
+                $('prop-label').textContent = r.label;
+                $('prop-start-display').textContent = formatTime(r.start);
+                $('prop-duration-display').textContent = (r.end - r.start).toFixed(2) + 's';
+                $('prop-intensity').value = r.intensity;
+                $('prop-intensity-val').textContent = r.intensity;
+                $('prop-invert').checked = r.invert;
+
+                renderKeyframeList(r);
+
+                // Highlight timeline
+                renderTimeline();
+            } else {
+                els.propEmpty.classList.remove('hidden');
+                els.propContent.classList.add('hidden');
+            }
+        }
+
+        function renderKeyframeList(region) {
+            const container = $('keyframe-list');
+            container.innerHTML = '';
+            region.keyframes.sort((a, b) => a.time - b.time).forEach(kf => {
+                const row = document.createElement('div');
+                row.className = 'flex justify-between text-[10px] bg-slate-800 px-2 py-1 rounded';
+                row.innerHTML = `<span>${formatTime(kf.time)}</span> <span class="text-slate-500">x:${Math.round(kf.x)}</span>`;
+
+                // Seek on click
+                row.addEventListener('click', () => els.video.currentTime = kf.time);
+                container.appendChild(row);
+            });
+        }
+
+        // --- Tools ---
+        function updateToolbar() {
+            ['select', 'rect', 'circle'].forEach(t => {
+                const btn = $(`tool-${t === 'rect' ? 'draw-rect' : t === 'circle' ? 'draw-circle' : t}`);
+                if (state.tool === t) {
+                    btn.classList.add('text-blue-500', 'bg-blue-500/10');
+                    btn.classList.remove('text-slate-400');
+                } else {
+                    btn.classList.remove('text-blue-500', 'bg-blue-500/10');
+                    btn.classList.add('text-slate-400');
+                }
+            });
+        }
+
+        $('tool-select').onclick = () => { state.tool = 'select'; updateToolbar(); };
+        $('tool-draw-rect').onclick = () => { state.tool = 'rect'; updateToolbar(); };
+        $('tool-draw-circle').onclick = () => { state.tool = 'circle'; updateToolbar(); };
+
+        $('btn-zoom-in').onclick = () => { state.zoom *= 1.2; updateTransform(); };
+        $('btn-zoom-out').onclick = () => { state.zoom /= 1.2; updateTransform(); };
+        $('btn-fit').onclick = fitCanvas;
+
+        // --- Filter Logic ---
+        ['brightness', 'contrast', 'saturation'].forEach(f => {
+            $(`filter-${f}`).addEventListener('input', e => {
+                state.filters[f] = e.target.value;
+                renderCanvas();
+            });
+            $(`filter-${f}`).addEventListener('change', () => saveHistory("Adjust Filter"));
+        });
+        $('btn-reset-filters').onclick = () => {
+            state.filters = { brightness: 100, contrast: 100, saturation: 100 };
+            updateFiltersUI();
+            renderCanvas();
+            saveHistory("Reset Filters");
+        };
+
+        function updateFiltersUI() {
+            $('filter-brightness').value = state.filters.brightness;
+            $('filter-contrast').value = state.filters.contrast;
+            $('filter-saturation').value = state.filters.saturation;
+        }
+
+        // --- Playback ---
+        els.video.addEventListener('timeupdate', () => {
+            state.currentTime = els.video.currentTime;
+            updatePlayhead();
+            renderCanvas();
+        });
+
+        els.video.addEventListener('ended', () => {
+            state.isPlaying = false;
+            updatePlayBtn();
+        });
+
+        $('btn-play-pause').onclick = togglePlay;
+        $('btn-stop').onclick = () => { els.video.pause(); els.video.currentTime = 0; state.isPlaying = false; updatePlayBtn(); };
+
+        function togglePlay() {
+            if (state.isPlaying) els.video.pause();
+            else els.video.play();
+            state.isPlaying = !state.isPlaying;
+            updatePlayBtn();
+        }
+
+        function updatePlayBtn() {
+            $('btn-play-pause').innerHTML = state.isPlaying
+                ? '<i data-lucide="pause" class="w-4 h-4 fill-current"></i>'
+                : '<i data-lucide="play" class="w-4 h-4 fill-current"></i>';
+            lucide.createIcons();
+        }
+
+        $('timeline-zoom').addEventListener('input', e => {
+            CFG.PIXELS_PER_SEC = parseInt(e.target.value);
+            renderTimeline();
+        });
+
+        // --- Property Inputs ---
+        $('prop-intensity').addEventListener('input', e => {
+            const r = state.regions.find(x => x.id === state.selectedIds[0]);
+            if (r) { r.intensity = e.target.value; $('prop-intensity-val').textContent = r.intensity; renderCanvas(); }
+        });
+        $('prop-invert').addEventListener('change', e => {
+            const r = state.regions.find(x => x.id === state.selectedIds[0]);
+            if (r) { r.invert = e.target.checked; renderCanvas(); saveHistory("Toggle Invert"); }
+        });
+
+        // --- Export ---
+        $('btn-export-trigger').onclick = () => els.exportModal.classList.remove('hidden');
+        $('btn-export-confirm').onclick = async () => {
+            els.exportModal.classList.add('hidden');
+            els.exportOverlay.classList.remove('hidden');
+
+            // Lock UI
+            state.selectedIds = [];
+            renderCanvas();
+
+            const quality = $('export-quality').value;
+            const filename = $('export-filename').value;
+
+            const stream = els.canvas.captureStream(30);
+            // Mix audio if present (simple createMediaElementSource approach has CORS issues usually on local, so we skip audio mixing for this pure client demo or try silent video if fail)
+
+            const recorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp9' });
+            const chunks = [];
+            recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+            recorder.onstop = () => {
+                const blob = new Blob(chunks, { type: 'video/webm' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${filename}.webm`;
+                a.click();
+                els.exportOverlay.classList.add('hidden');
+                els.video.currentTime = 0;
+            };
+
+            // Play through
+            recorder.start();
+            els.video.currentTime = 0;
+            els.video.play();
+
+            const checkEnd = () => {
+                if (els.video.ended) {
+                    recorder.stop();
+                    els.video.removeEventListener('ended', checkEnd);
+                } else {
+                    const pct = Math.round((els.video.currentTime / state.duration) * 100);
+                    els.exportProgress.style.width = `${pct}%`;
+                    els.exportStatus.textContent = `${pct}%`;
+                    requestAnimationFrame(checkEnd);
+                }
+            };
+            requestAnimationFrame(checkEnd);
+        };
+
+        // --- Save / Load Project ---
+        $('btn-save-project').onclick = () => {
+            const json = JSON.stringify({ regions: state.regions, filters: state.filters });
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'privacy_project.json';
+            a.click();
+            showToast("Project Saved");
+        };
+
+        els.projIn.addEventListener('change', e => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                const data = JSON.parse(ev.target.result);
+                state.regions = data.regions;
+                state.filters = data.filters || { brightness: 100, contrast: 100, saturation: 100 };
+                updateFiltersUI();
+                renderTimeline();
+                renderCanvas();
+                showToast("Project Loaded");
+            };
+            reader.readAsText(file);
+        });
+
+        // --- Shortcuts & Help ---
+        $('btn-help').onclick = () => $('modal-help').classList.remove('hidden');
+        window.addEventListener('keydown', e => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undo(); }
+            if ((e.ctrlKey || e.metaKey) && e.key === 'y') { e.preventDefault(); redo(); }
+            if (e.key === 'Delete') {
+                if (state.selectedIds.length > 0) {
+                    state.regions = state.regions.filter(r => !state.selectedIds.includes(r.id));
+                    state.selectedIds = [];
+                    selectRegion(null);
+                    renderTimeline();
+                    renderCanvas();
+                    saveHistory("Delete Region");
+                }
+            }
+            if (e.key === 'v') $('tool-select').click();
+            if (e.key === 'r') $('tool-draw-rect').click();
+            if (e.key === 'c') $('tool-draw-circle').click();
+            if (e.key === 'f') fitCanvas();
+        });
+
+        // --- Utils ---
+        function formatTime(s) {
+            if (!s) return "00:00";
+            const m = Math.floor(s / 60);
+            const sec = Math.floor(s % 60);
+            const ms = Math.floor((s % 1) * 100);
+            return `${m}:${sec.toString().padStart(2, '0')}`;
+        }
+
+        function showToast(msg) {
+            const t = document.createElement('div');
+            t.className = 'bg-slate-800 text-white px-4 py-2 rounded shadow-lg border border-slate-700 text-sm toast-enter';
+            t.textContent = msg;
+            $('toast-container').appendChild(t);
+            setTimeout(() => t.remove(), 2000);
+        }
+
+    </script>
+</body>
+
+</html>

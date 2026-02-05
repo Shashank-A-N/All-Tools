@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shadow Video - Watermark</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;500;600;700&display=swap"
+        rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link rel="stylesheet" href="../../styles.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Rajdhani', 'sans-serif'],
+                        orbitron: ['Orbitron', 'sans-serif']
+                    },
+                    colors: {
+                        cyber: {
+                            primary: '#14b8a6', // Teal
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body
+    class="min-h-screen flex flex-col font-sans overflow-x-hidden bg-slate-900 text-white selection:bg-teal-500 selection:text-white">
+
+    <!-- 3D Background -->
+    <div id="bg-3d-container"></div>
+
+    <!-- Navigation -->
+    <nav
+        class="sticky top-0 z-50 glass-effect border-b border-white/5 px-4 md:px-6 py-3 flex items-center justify-between backdrop-blur-md">
+        <a href="../index.html" class="flex items-center gap-3 text-slate-300 hover:text-white transition-colors group">
+            <div
+                class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center border border-white/10 group-hover:border-teal-500/50 transition-all">
+                <i class="fas fa-chevron-left text-xs group-hover:-translate-x-0.5 transition-transform"></i>
+            </div>
+            <span class="font-orbitron font-bold tracking-wider hidden md:block">BACK</span>
+        </a>
+
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded bg-teal-500/20 flex items-center justify-center text-teal-500">
+                <i class="fas fa-copyright"></i>
+            </div>
+            <h1 class="text-lg md:text-xl font-orbitron font-bold tracking-widest text-white">SHADOW<span
+                    class="text-teal-500">MARK</span></h1>
+        </div>
+
+        <div class="w-8"></div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="flex-grow container mx-auto px-4 py-8 relative z-10 flex flex-col items-center gap-6">
+
+        <!-- Upload -->
+        <div id="uploadArea"
+            class="w-full max-w-2xl p-12 glass rounded-3xl border-2 border-dashed border-white/10 hover:border-teal-500/50 transition-all flex flex-col items-center justify-center cursor-pointer group"
+            onclick="document.getElementById('fileInput').click()"
+            ondragover="event.preventDefault(); this.classList.add('border-teal-500')"
+            ondragleave="this.classList.remove('border-teal-500')">
+            <input type="file" id="fileInput" accept="video/*" class="hidden" onchange="handleFile(this.files[0])">
+            <div
+                class="w-20 h-20 rounded-2xl bg-teal-500/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                <i class="fas fa-stamp text-4xl text-teal-400"></i>
+            </div>
+            <h3 class="text-2xl font-orbitron font-bold text-white mb-2">Upload Video</h3>
+            <p class="text-slate-400 text-sm">Drag & drop or click to browse</p>
+        </div>
+
+        <!-- Editor -->
+        <div id="editorArea" class="w-full max-w-6xl hidden flex-col gap-6 animate-fade-in-up">
+
+            <div
+                class="relative w-full aspect-video bg-black/50 rounded-2xl border border-white/10 overflow-hidden flex items-center justify-center">
+                <video id="videoPreview" class="max-w-full max-h-full"></video>
+                <!-- Canvas is updated in loop -->
+                <canvas id="outputCanvas"
+                    class="absolute inset-0 w-full h-full object-contain pointer-events-none"></canvas>
+            </div>
+
+            <div class="glass p-6 rounded-2xl border border-white/5 flex flex-wrap gap-6 items-center justify-center">
+                <div class="flex flex-col gap-2">
+                    <label class="text-xs font-bold text-slate-400 uppercase">Text</label>
+                    <input type="text" id="watermarkText" value="SHADOW"
+                        class="bg-slate-900 border border-white/10 rounded px-4 py-2 text-white">
+                </div>
+
+                <div class="flex flex-col gap-2">
+                    <label class="text-xs font-bold text-slate-400 uppercase">Size</label>
+                    <input type="range" id="size" min="20" max="100" value="48" class="w-32">
+                </div>
+
+                <div class="flex flex-col gap-2">
+                    <label class="text-xs font-bold text-slate-400 uppercase">Position</label>
+                    <div class="flex gap-2">
+                        <button onclick="setPos('tl')" class="px-2 py-1 bg-slate-800 rounded">TL</button>
+                        <button onclick="setPos('tr')" class="px-2 py-1 bg-slate-800 rounded">TR</button>
+                        <button onclick="setPos('bl')" class="px-2 py-1 bg-slate-800 rounded">BL</button>
+                        <button onclick="setPos('br')" class="px-2 py-1 bg-slate-800 rounded">BR</button>
+                    </div>
+                </div>
+
+                <button onclick="processWatermark()" id="saveBtn"
+                    class="px-10 py-4 bg-teal-600 hover:bg-teal-500 text-white font-bold font-orbitron tracking-wider rounded-xl shadow-lg transition-transform hover:-translate-y-1">
+                    SAVE VIDEO
+                </button>
+            </div>
+
+        </div>
+
+    </main>
+
+    <script type="module" src="../../shared/bg-particles.js"></script>
+    <script>
+        const uploadArea = document.getElementById('uploadArea');
+        const editorArea = document.getElementById('editorArea');
+        const video = document.getElementById('videoPreview');
+        const canvas = document.getElementById('outputCanvas');
+        const ctx = canvas.getContext('2d');
+        const saveBtn = document.getElementById('saveBtn');
+
+        let pos = 'br'; // br, bl, tr, tl
+
+        function handleFile(file) {
+            if (!file) return;
+            const url = URL.createObjectURL(file);
+            video.src = url;
+            uploadArea.classList.add('hidden');
+            editorArea.classList.remove('hidden');
+            editorArea.classList.add('flex');
+
+            video.onloadedmetadata = () => {
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                drawLoop(); // Start visual preview loop
+            };
+        }
+
+        function setPos(p) { pos = p; }
+
+        function drawLoop() {
+            if (video.paused && !video.ended) {
+                // For previewing position even when paused, we draw once
+                drawFrame();
+                requestAnimationFrame(drawLoop);
+                return;
+            }
+            if (video.ended) return;
+
+            drawFrame();
+            requestAnimationFrame(drawLoop);
+        }
+
+        function drawFrame() {
+            // Draw video first? No, for preview we just draw text on transparency over video element?
+            // Actually, for consistency and recording, let's draw everything to canvas IF we were recording.
+            // But for preview UI, drawing text on transparent canvas over the video element is efficient.
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw Watermark
+            const text = document.getElementById('watermarkText').value;
+            const size = document.getElementById('size').value;
+
+            ctx.font = `bold ${size}px Rajdhani`;
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+            ctx.lineWidth = 2;
+
+            const req = ctx.measureText(text);
+            const w = req.width;
+            const pad = 40;
+
+            let x, y;
+            if (pos === 'tl') { x = pad; y = parseInt(size) + pad; }
+            if (pos === 'tr') { x = canvas.width - w - pad; y = parseInt(size) + pad; }
+            if (pos === 'bl') { x = pad; y = canvas.height - pad; }
+            if (pos === 'br') { x = canvas.width - w - pad; y = canvas.height - pad; }
+
+            ctx.strokeText(text, x, y);
+            ctx.fillText(text, x, y);
+        }
+
+        async function processWatermark() {
+            saveBtn.disabled = true;
+            saveBtn.textContent = "BURNING IN...";
+
+            // Re-setup canvas to be opaque and contain video
+            ctx.globalCompositeOperation = 'source-over';
+
+            const stream = canvas.captureStream(30);
+            const recorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp9' });
+            const chunks = [];
+
+            recorder.ondataavailable = e => chunks.push(e.data);
+            recorder.onstop = () => {
+                const blob = new Blob(chunks, { type: 'video/webm' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'shadow_watermarked.webm';
+                a.click();
+
+                saveBtn.disabled = false;
+                saveBtn.textContent = "SAVE VIDEO";
+            };
+
+            recorder.start();
+            video.currentTime = 0;
+            video.play();
+
+            const burnLoop = () => {
+                if (video.ended) {
+                    recorder.stop();
+                    return;
+                }
+
+                // Draw Video then Text
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+                // Re-calc text (same logic as drawFrame but now on top of video image)
+                const text = document.getElementById('watermarkText').value;
+                const size = document.getElementById('size').value;
+
+                ctx.font = `bold ${size}px Rajdhani`;
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+                ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+                ctx.lineWidth = 2;
+
+                const req = ctx.measureText(text);
+                const w = req.width;
+                const pad = 40;
+
+                let x, y;
+                if (pos === 'tl') { x = pad; y = parseInt(size) + pad; }
+                if (pos === 'tr') { x = canvas.width - w - pad; y = parseInt(size) + pad; }
+                if (pos === 'bl') { x = pad; y = canvas.height - pad; }
+                if (pos === 'br') { x = canvas.width - w - pad; y = canvas.height - pad; }
+
+                ctx.strokeText(text, x, y);
+                ctx.fillText(text, x, y);
+
+                requestAnimationFrame(burnLoop);
+            };
+            burnLoop();
+        }
+    </script>
+</body>
+
+</html>

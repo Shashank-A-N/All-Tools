@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shadow Video - Metadata</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;500;600;700&display=swap"
+        rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link rel="stylesheet" href="../../styles.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Rajdhani', 'sans-serif'],
+                        orbitron: ['Orbitron', 'sans-serif']
+                    },
+                    colors: {
+                        cyber: {
+                            primary: '#0ea5e9', // Sky
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body
+    class="min-h-screen flex flex-col font-sans overflow-x-hidden bg-slate-900 text-white selection:bg-sky-500 selection:text-white">
+
+    <!-- 3D Background -->
+    <div id="bg-3d-container"></div>
+
+    <!-- Navigation -->
+    <nav
+        class="sticky top-0 z-50 glass-effect border-b border-white/5 px-4 md:px-6 py-3 flex items-center justify-between backdrop-blur-md">
+        <a href="../index.html" class="flex items-center gap-3 text-slate-300 hover:text-white transition-colors group">
+            <div
+                class="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center border border-white/10 group-hover:border-sky-500/50 transition-all">
+                <i class="fas fa-chevron-left text-xs group-hover:-translate-x-0.5 transition-transform"></i>
+            </div>
+            <span class="font-orbitron font-bold tracking-wider hidden md:block">BACK</span>
+        </a>
+
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded bg-sky-500/20 flex items-center justify-center text-sky-500">
+                <i class="fas fa-info-circle"></i>
+            </div>
+            <h1 class="text-lg md:text-xl font-orbitron font-bold tracking-widest text-white">SHADOW<span
+                    class="text-sky-500">DATA</span></h1>
+        </div>
+
+        <div class="w-8"></div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="flex-grow container mx-auto px-4 py-8 relative z-10 flex flex-col items-center gap-6">
+
+        <!-- Upload -->
+        <div id="uploadArea"
+            class="w-full max-w-2xl p-12 glass rounded-3xl border-2 border-dashed border-white/10 hover:border-sky-500/50 transition-all flex flex-col items-center justify-center cursor-pointer group"
+            onclick="document.getElementById('fileInput').click()"
+            ondragover="event.preventDefault(); this.classList.add('border-sky-500')"
+            ondragleave="this.classList.remove('border-sky-500')">
+            <input type="file" id="fileInput" accept="video/*" class="hidden" onchange="handleFile(this.files[0])">
+            <div
+                class="w-20 h-20 rounded-2xl bg-sky-500/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                <i class="fas fa-file-code text-4xl text-sky-400"></i>
+            </div>
+            <h3 class="text-2xl font-orbitron font-bold text-white mb-2">Inspect Video</h3>
+            <p class="text-slate-400 text-sm">Drag & drop or click to browse</p>
+        </div>
+
+        <!-- Details -->
+        <div id="editorArea" class="w-full max-w-4xl hidden flex-col gap-6 animate-fade-in-up">
+
+            <div class="glass p-8 rounded-3xl border border-white/5">
+                <div class="flex items-center gap-6 mb-8 border-b border-white/5 pb-8">
+                    <div
+                        class="w-24 h-24 bg-black/50 rounded-xl flex items-center justify-center border border-white/10">
+                        <i class="fas fa-film text-4xl text-sky-600"></i>
+                    </div>
+                    <div>
+                        <h2 id="fileName" class="text-2xl font-bold font-orbitron text-white">video.mp4</h2>
+                        <p id="fileSize" class="text-sky-400 font-mono mt-1">12.5 MB</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
+                    <div class="flex justify-between border-b border-white/5 pb-2">
+                        <span class="text-slate-400">Duration</span>
+                        <span id="duration" class="font-mono text-white">--:--</span>
+                    </div>
+                    <div class="flex justify-between border-b border-white/5 pb-2">
+                        <span class="text-slate-400">Resolution</span>
+                        <span id="resolution" class="font-mono text-white">-- x --</span>
+                    </div>
+                    <div class="flex justify-between border-b border-white/5 pb-2">
+                        <span class="text-slate-400">Aspect Ratio</span>
+                        <span id="aspect" class="font-mono text-white">--:--</span>
+                    </div>
+                    <div class="flex justify-between border-b border-white/5 pb-2">
+                        <span class="text-slate-400">MIME Type</span>
+                        <span id="mime" class="font-mono text-white">video/mp4</span>
+                    </div>
+                    <div class="flex justify-between border-b border-white/5 pb-2">
+                        <span class="text-slate-400">Last Modified</span>
+                        <span id="modified" class="font-mono text-white">--</span>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="location.reload()"
+                class="w-full py-4 bg-slate-800 hover:bg-slate-700 text-white rounded-xl transition-colors font-bold tracking-wider">
+                INSPECT ANOTHER
+            </button>
+
+            <!-- Correct Video element logic is mostly needed for Duration/Res -->
+            <video id="tempVideo" class="hidden"></video>
+        </div>
+
+    </main>
+
+    <script type="module" src="../../shared/bg-particles.js"></script>
+    <script>
+        const uploadArea = document.getElementById('uploadArea');
+        const editorArea = document.getElementById('editorArea');
+        const tempVideo = document.getElementById('tempVideo');
+
+        function handleFile(file) {
+            if (!file) return;
+            const url = URL.createObjectURL(file);
+            tempVideo.src = url;
+
+            document.getElementById('fileName').textContent = file.name;
+            document.getElementById('fileSize').textContent = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
+            document.getElementById('mime').textContent = file.type || 'Unknown';
+            document.getElementById('modified').textContent = new Date(file.lastModified).toLocaleDateString();
+
+            uploadArea.classList.add('hidden');
+            editorArea.classList.remove('hidden');
+            editorArea.classList.add('flex');
+
+            tempVideo.onloadedmetadata = () => {
+                const w = tempVideo.videoWidth;
+                const h = tempVideo.videoHeight;
+                document.getElementById('resolution').textContent = `${w} x ${h}`;
+
+                // Aspect Ratio
+                const gcd = (a, b) => b == 0 ? a : gcd(b, a % b);
+                const r = gcd(w, h);
+                document.getElementById('aspect').textContent = `${w / r}:${h / r}`;
+
+                // Duration
+                const d = tempVideo.duration;
+                const min = Math.floor(d / 60);
+                const sec = Math.floor(d % 60);
+                document.getElementById('duration').textContent = `${min}:${sec.toString().padStart(2, '0')}`;
+            };
+        }
+    </script>
+</body>
+
+</html>
