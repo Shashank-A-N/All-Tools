@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shadow Text | Neural Operations v3</title>
+    <title>Shadow Audio | Neural Operations v3</title>
 
     <!-- External Dependencies -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -37,12 +37,12 @@
                             900: '#0f172a',
                             950: '#020617',
                         },
-                        // Sky/Cyan Theme for Text Tools
+                        // Emerald Theme for Audio Tools
                         accent: {
-                            400: '#38bdf8', // Sky-400
-                            500: '#0ea5e9', // Sky-500
-                            600: '#0284c7', // Sky-600
-                            glow: 'rgba(56, 189, 248, 0.5)'
+                            400: '#34d399', // Emerald-400
+                            500: '#10b981', // Emerald-500
+                            600: '#059669', // Emerald-600
+                            glow: 'rgba(52, 211, 153, 0.5)'
                         }
                     },
                     backgroundImage: {
@@ -113,7 +113,7 @@
         }
 
         ::-webkit-scrollbar-thumb:hover {
-            background: #38bdf8;
+            background: #34d399;
         }
 
         /* 3D Card Effects */
@@ -132,10 +132,10 @@
         }
 
         .holographic-card:hover {
-            border-color: rgba(56, 189, 248, 0.4);
+            border-color: rgba(52, 211, 153, 0.4);
             box-shadow:
-                0 0 30px -10px rgba(56, 189, 248, 0.15),
-                0 0 0 1px rgba(56, 189, 248, 0.1);
+                0 0 30px -10px rgba(52, 211, 153, 0.15),
+                0 0 0 1px rgba(52, 211, 153, 0.1);
             z-index: 10;
         }
 
@@ -152,7 +152,7 @@
 
         /* Text Scramble Effect Class */
         .dud {
-            color: #38bdf8;
+            color: #34d399;
             opacity: 0.7;
         }
 
@@ -163,8 +163,8 @@
         }
 
         .cmd-item.selected {
-            background: rgba(56, 189, 248, 0.1);
-            border-left-color: #38bdf8;
+            background: rgba(52, 211, 153, 0.1);
+            border-left-color: #34d399;
         }
 
         /* Utility */
@@ -236,12 +236,12 @@
                             <div
                                 class="absolute inset-0 bg-gradient-to-tr from-accent-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
                             </div>
-                            <i class="fas fa-keyboard text-accent-400 text-base sm:text-lg relative z-10"></i>
+                            <i class="fas fa-wave-square text-accent-400 text-base sm:text-lg relative z-10"></i>
                         </div>
                         <div class="flex flex-col">
                             <span
                                 class="text-base sm:text-lg font-display font-bold tracking-tight text-white leading-none">SHADOW<span
-                                    class="text-accent-400">TEXT</span></span>
+                                    class="text-accent-400">AUDIO</span></span>
                             <span class="text-[10px] text-slate-500 font-mono tracking-widest uppercase mt-0.5">OPS:
                                 v3.0.1</span>
                         </div>
@@ -286,10 +286,10 @@
                     <i class="fas fa-video text-xl mb-2 text-slate-400 group-hover:text-red-400"></i>
                     <span class="text-xs font-medium text-slate-300 group-hover:text-white">Video</span>
                 </a>
-                <a href="../audio tools/index.html"
+                <a href="../text tools/index.html"
                     class="flex flex-col items-center justify-center p-4 rounded-lg bg-white/5 hover:bg-emerald-500/10 hover:border-emerald-500/30 border border-transparent transition-all group">
-                    <i class="fas fa-music text-xl mb-2 text-slate-400 group-hover:text-emerald-400"></i>
-                    <span class="text-xs font-medium text-slate-300 group-hover:text-white">Audio</span>
+                    <i class="fas fa-text-width text-xl mb-2 text-slate-400 group-hover:text-emerald-400"></i>
+                    <span class="text-xs font-medium text-slate-300 group-hover:text-white">Text</span>
                 </a>
             </div>
         </div>
@@ -356,7 +356,7 @@
                 class="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-display font-bold tracking-tight mb-6 sm:mb-8 leading-[1.1]">
                 <span id="hero-title-1" class="text-gradient">Advanced</span> <br />
                 <span id="hero-title-2" class="text-white relative inline-block">
-                    Text Ops
+                    Audio Ops
                     <svg class="absolute w-full h-2 sm:h-3 -bottom-1 left-0 text-accent-500 opacity-60"
                         viewBox="0 0 200 9" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M2.00025 6.99997C2.00025 6.99997 101.996 -2.48624 199 7.00003" stroke="currentColor"
@@ -367,8 +367,8 @@
 
             <p
                 class="text-base sm:text-lg md:text-xl text-slate-400 leading-relaxed max-w-2xl mx-auto mb-8 sm:mb-10 font-light px-2">
-                Secure, client-side manipulation suite.
-                <span class="text-slate-300 font-normal block sm:inline">Zero latency. Zero data collection.</span>
+                Advanced audio manipulation suite.
+                <span class="text-slate-300 font-normal block sm:inline">High fidelity. Zero latency.</span>
             </p>
 
             <!-- Search Bar -->
@@ -433,7 +433,7 @@
                 <span class="text-slate-500 text-sm font-mono">ENCODED_BY_SHADOW</span>
             </div>
             <p class="text-slate-600 text-sm text-center">
-                &copy; 2024 Shadow Text Operations. Neural Interface v3.
+                &copy; 2024 Shadow Audio Operations. Neural Interface v3.
             </p>
         </div>
     </footer>
@@ -481,27 +481,496 @@
     <script>
         // --- Configuration & Data ---
         const tools = [
-            { title: "ASCII Art Generator", desc: "Convert text into complex ASCII masterpieces.", icon: "fa-font", color: "text-purple-400", bg: "bg-purple-500/10", category: "generator", link: "./ASCII Art Generator/index.html", tags: "art, drawing, text" },
-            { title: "Base64 Encoder", desc: "Securely encode and decode Base64 strings.", icon: "fa-code", color: "text-blue-400", bg: "bg-blue-500/10", category: "convert", link: "./Base64 Encoder/index.html", tags: "decode, encrypt" },
-            { title: "Binary Converter", desc: "Translate text to 0s and 1s instantly.", icon: "fa-terminal", color: "text-green-400", bg: "bg-green-500/10", category: "convert", link: "./Binary Converter/index.html", tags: "computer, logic" },
-            { title: "CSV to JSON", desc: "Transform spreadsheet data to JSON objects.", icon: "fa-file-csv", color: "text-orange-400", bg: "bg-orange-500/10", category: "convert", link: "./CSV to JSON/index.html", tags: "data, excel" },
-            { title: "Char Frequency", desc: "Deep analysis of character distribution.", icon: "fa-chart-bar", color: "text-pink-400", bg: "bg-pink-500/10", category: "analysis", link: "./Character Frequency/index.html", tags: "count, stats" },
-            { title: "Duplicate Remover", desc: "Clean lists by removing repetitive lines.", icon: "fa-eraser", color: "text-red-400", bg: "bg-red-500/10", category: "utility", link: "./Duplicate Line Remover/index.html", tags: "clean, list" },
-            { title: "Email Extractor", desc: "Scrape valid emails from unstructured text.", icon: "fa-envelope", color: "text-indigo-400", bg: "bg-indigo-500/10", category: "utility", link: "./Email Extractor/index.html", tags: "scrape, find" },
-            { title: "Find & Replace", desc: "Bulk text modification with precision.", icon: "fa-search", color: "text-teal-400", bg: "bg-teal-500/10", category: "utility", link: "./Find & Replace Tool/index.html", tags: "edit, word" },
-            { title: "Hex Converter", desc: "Convert text to Hexadecimal values.", icon: "fa-hashtag", color: "text-cyan-400", bg: "bg-cyan-500/10", category: "convert", link: "./Hex Converter/index.html", tags: "color, code" },
-            { title: "Line Sorter", desc: "Alphabetical and numerical line organizing.", icon: "fa-sort-alpha-down", color: "text-yellow-400", bg: "bg-yellow-500/10", category: "utility", link: "./Line Sorter/index.html", tags: "organize, list" },
-            { title: "Lorem Ipsum", desc: "Generate placeholder text for prototypes.", icon: "fa-paragraph", color: "text-gray-400", bg: "bg-gray-500/10", category: "generator", link: "./Lorem Ipsum Generator/index.html", tags: "dummy, text" },
-            { title: "Morse Code", desc: "Encode text into classic dots and dashes.", icon: "fa-broadcast-tower", color: "text-lime-400", bg: "bg-lime-500/10", category: "convert", link: "./Morse Code Translator/index.html", tags: "radio, secret" },
-            { title: "Password Gen", desc: "Create cryptographically strong passwords.", icon: "fa-key", color: "text-emerald-400", bg: "bg-emerald-500/10", category: "generator", link: "./Password Generator/index.html", tags: "security, lock" },
-            { title: "Slug Generator", desc: "Make strings URL-safe and SEO friendly.", icon: "fa-link", color: "text-amber-400", bg: "bg-amber-500/10", category: "convert", link: "./Slug Generator/index.html", tags: "url, web" },
-            { title: "Text Cleaner", desc: "Sanitize text by removing format artifacts.", icon: "fa-broom", color: "text-blue-400", bg: "bg-blue-500/10", category: "utility", link: "./Text Cleaner/index.html", tags: "format, strip" },
-            { title: "Diff Checker", desc: "Compare two text blocks for differences.", icon: "fa-columns", color: "text-rose-400", bg: "bg-rose-500/10", category: "analysis", link: "./Text Diff Checker/index.html", tags: "compare, code" },
-            { title: "Text Repeater", desc: "Repeat a string X times efficiently.", icon: "fa-redo", color: "text-violet-400", bg: "bg-violet-500/10", category: "generator", link: "./Text Repeater/index.html", tags: "loop, spam" },
-            { title: "URL Encoder", desc: "Encode special characters for web URLs.", icon: "fa-globe", color: "text-fuchsia-400", bg: "bg-fuchsia-500/10", category: "convert", link: "./URL Encoder/index.html", tags: "web, escape" },
-            { title: "Upside Down", desc: "Flip text 180 degrees for creative effect.", icon: "fa-retweet", color: "text-sky-400", bg: "bg-sky-500/10", category: "generator", link: "./Upside Down Text/index.html", tags: "flip, fun" },
-            { title: "Zalgo Glitch", desc: "Summon chaos with glitchy text overlays.", icon: "fa-bug", color: "text-purple-400", bg: "bg-purple-900/40", category: "generator", link: "./Zalgo Glitch Text/index.html", tags: "scary, weird" },
-            { title: "Handwritten", desc: "Convert digital type to human handwriting.", icon: "fa-pen-nib", color: "text-indigo-400", bg: "bg-indigo-500/10", category: "generator", link: "./text-Handwritten/index.html", tags: "paper, script" },
+            {
+                "title": "10-Band Equalizer - Shadow Audio",
+                "desc": "Fine-tune frequencies across the spectrum.",
+                "icon": "fa-sliders-h",
+                "color": "text-emerald-400",
+                "bg": "bg-emerald-500/10",
+                "category": "effect",
+                "link": "./audio-equalizer/index.html",
+                "tags": "effect, 10 Band Equalizer   Shadow Audio, audio"
+            },
+            {
+                "title": "8D Converter - AudioForge",
+                "desc": "No description available.",
+                "icon": "fa-exchange-alt",
+                "color": "text-emerald-400",
+                "bg": "bg-emerald-500/10",
+                "category": "convert",
+                "link": "./8D Converter/index.html",
+                "tags": "convert, 8D Converter   AudioForge, audio"
+            },
+            {
+                "title": "Audio Delay - AudioForge",
+                "desc": "No description available.",
+                "icon": "fa-hourglass-half",
+                "color": "text-emerald-400",
+                "bg": "bg-emerald-500/10",
+                "category": "effect",
+                "link": "./Audio Delay/index.html",
+                "tags": "effect, Audio Delay   AudioForge, audio"
+            },
+            {
+                "title": "Audio Distortion - Shadow Audio",
+                "desc": "Add grit, fuzz, and harmonic saturation.",
+                "icon": "fa-bolt",
+                "color": "text-emerald-400",
+                "bg": "bg-emerald-500/10",
+                "category": "effect",
+                "link": "./audio-distortion/index.html",
+                "tags": "effect, Audio Distortion   Shadow Audio, audio"
+            },
+            {
+                "title": "Audio Joiner - AudioForge",
+                "desc": "Select multiple files to merge",
+                "icon": "fa-object-group",
+                "color": "text-emerald-400",
+                "bg": "bg-emerald-500/10",
+                "category": "editing",
+                "link": "./Audio Joiner/index.html",
+                "tags": "editing, Audio Joiner   AudioForge, audio"
+            },
+            {
+                "title": "Audio Joiner - Shadow Audio",
+                "desc": "Merge multiple audio files into a single track.",
+                "icon": "fa-object-group",
+                "color": "text-emerald-400",
+                "bg": "bg-emerald-500/10",
+                "category": "editing",
+                "link": "./audio-joiner/index.html",
+                "tags": "editing, Audio Joiner   Shadow Audio, audio"
+            },
+            {
+                "title": "Audio Mixer - Shadow Audio",
+                "desc": "Mix levels of multiple tracks.",
+                "icon": "fa-sliders-h",
+                "color": "text-emerald-400",
+                "bg": "bg-emerald-500/10",
+                "category": "editing",
+                "link": "./audio-mixer/index.html",
+                "tags": "editing, Audio Mixer   Shadow Audio, audio"
+            },
+            {
+                "title": "Audio Normalizer - Shadow Audio",
+                "desc": "Automatically adjust volume to the highest peak without clipping.",
+                "icon": "fa-compress-arrows-alt",
+                "color": "text-emerald-400",
+                "bg": "bg-emerald-500/10",
+                "category": "utility",
+                "link": "./audio-normalizer/index.html",
+                "tags": "utility, Audio Normalizer   Shadow Audio, audio"
+            },
+            {
+                "title": "Audio Panner - Shadow Audio",
+                "desc": "Control Left/Right channel balance.",
+                "icon": "fa-arrows-alt-h",
+                "color": "text-emerald-400",
+                "bg": "bg-emerald-500/10",
+                "category": "effect",
+                "link": "./audio-panner/index.html",
+                "tags": "effect, Audio Panner   Shadow Audio, audio"
+            },
+            {
+                "title": "Audio Recorder - AudioForge",
+                "desc": "Recording_001.webm",
+                "icon": "fa-microphone",
+                "color": "text-emerald-400",
+                "bg": "bg-emerald-500/10",
+                "category": "utility",
+                "link": "./Audio Recorder/index.html",
+                "tags": "utility, Audio Recorder   AudioForge, audio"
+            },
+            {
+                "title": "Audio Splitter - Shadow Audio",
+                "desc": "Split long audio files into equal parts.",
+                "icon": "fa-cut",
+                "color": "text-emerald-400",
+                "bg": "bg-emerald-500/10",
+                "category": "editing",
+                "link": "./audio-splitter/index.html",
+                "tags": "editing, Audio Splitter   Shadow Audio, audio"
+            },
+            {
+                "title": "Audio Trimmer - Shadow Audio",
+                "desc": "Select and keep only the best parts.",
+                "icon": "fa-cut",
+                "color": "text-emerald-400",
+                "bg": "bg-emerald-500/10",
+                "category": "editing",
+                "link": "./audio-trimmer/index.html",
+                "tags": "editing, Audio Trimmer   Shadow Audio, audio"
+            },
+            {
+                "title": "AudioForge - Universal Audio Tools",
+                "desc": "Convert audio files between WAV, MP3, FLAC, and OGG formats.",
+                "icon": "fa-music",
+                "color": "text-emerald-400",
+                "bg": "bg-emerald-500/10",
+                "category": "convert",
+                "link": "./Format & Encoding Tools/index.html",
+                "tags": "convert, AudioForge   Universal Audio Tools, audio"
+            },
+            {
+                "title": "AudioForge Pro - Synth Edition",
+                "desc": "Supports MP3, WAV, OGG, FLAC",
+                "icon": "fa-music",
+                "color": "text-emerald-400",
+                "bg": "bg-emerald-500/10",
+                "category": "utility",
+                "link": "./Basic-Manipulation-Tool/index.html",
+                "tags": "utility, AudioForge Pro   Synth Edition, audio"
+            },
+            {
+                "title": "Bass Booster - Shadow Audio",
+                "desc": "Enhance low-end frequencies for deep, punchy sound.",
+                "icon": "fa-level-up-alt",
+                "color": "text-emerald-400",
+                "bg": "bg-emerald-500/10",
+                "category": "effect",
+                "link": "./bass-booster/index.html",
+                "tags": "effect, Bass Booster   Shadow Audio, audio"
+            },
+            {
+                "title": "Binaural Beat Generator - Shadow Audio",
+                "desc": "No description available.",
+                "icon": "fa-wave-square",
+                "color": "text-emerald-400",
+                "bg": "bg-emerald-500/10",
+                "category": "generator",
+                "link": "./binaural-beats/index.html",
+                "tags": "generator, Binaural Beat Generator   Shadow Audio, audio"
+            },
+            {
+                "title": "BPM Finder - Shadow Audio",
+                "desc": "Analyze tempo or use Tap Tempo manually.",
+                "icon": "fa-clock",
+                "color": "text-emerald-400",
+                "bg": "bg-emerald-500/10",
+                "category": "analysis",
+                "link": "./bpm-finder/index.html",
+                "tags": "analysis, BPM Finder   Shadow Audio, audio"
+            },
+            {
+                "title": "BPM Tapper - AudioForge",
+                "desc": "Calculated Tempo",
+                "icon": "fa-clock",
+                "color": "text-emerald-400",
+                "bg": "bg-emerald-500/10",
+                "category": "analysis",
+                "link": "./BPM Tapper/index.html",
+                "tags": "analysis, BPM Tapper   AudioForge, audio"
+            },
+            {
+                "title": "Chord Generator - Shadow Audio",
+                "desc": "Generate chords and visualize intervals.",
+                "icon": "fa-wave-square",
+                "color": "text-emerald-400",
+                "bg": "bg-emerald-500/10",
+                "category": "generator",
+                "link": "./chord-generator/index.html",
+                "tags": "generator, Chord Generator   Shadow Audio, audio"
+            },
+            {
+                "title": "Chorus Effect - Shadow Audio",
+                "desc": "Add wideness and depth to your audio.",
+                "icon": "fa-layer-group",
+                "color": "text-emerald-400",
+                "bg": "bg-emerald-500/10",
+                "category": "effect",
+                "link": "./audio-chorus/index.html",
+                "tags": "effect, Chorus Effect   Shadow Audio, audio"
+            },
+            {
+                "title": "Decibel Meter - Shadow Audio",
+                "desc": "Measure ambient noise levels using your microphone.",
+                "icon": "fa-tachometer-alt",
+                "color": "text-emerald-400",
+                "bg": "bg-emerald-500/10",
+                "category": "analysis",
+                "link": "./decibel-meter/index.html",
+                "tags": "analysis, Decibel Meter   Shadow Audio, audio"
+            },
+            {
+                "title": "DTMF Generator - Shadow Audio",
+                "desc": "Dual-Tone Multi-Frequency signaling emulator.",
+                "icon": "fa-wave-square",
+                "color": "text-emerald-400",
+                "bg": "bg-emerald-500/10",
+                "category": "generator",
+                "link": "./dtmf-generator/index.html",
+                "tags": "generator, DTMF Generator   Shadow Audio, audio"
+            },
+            {
+                "title": "Fade In/Out - Shadow Audio",
+                "desc": "Apply smooth Fade In and Fade Out effects.",
+                "icon": "fa-sort-amount-down",
+                "color": "text-emerald-400",
+                "bg": "bg-emerald-500/10",
+                "category": "effect",
+                "link": "./fade-in-out/index.html",
+                "tags": "effect, Fade In Out   Shadow Audio, audio"
+            },
+            {
+                "title": "Flanger Effect - Shadow Audio",
+                "desc": "Add a sweeping jet-plane effect.",
+                "icon": "fa-wind",
+                "color": "text-emerald-400",
+                "bg": "bg-emerald-500/10",
+                "category": "effect",
+                "link": "./audio-flanger/index.html",
+                "tags": "effect, Flanger Effect   Shadow Audio, audio"
+            },
+            {
+                "title": "Key Detector - Shadow Audio",
+                "desc": "Analyze harmonic content to find the musical key.",
+                "icon": "fa-key",
+                "color": "text-emerald-400",
+                "bg": "bg-emerald-500/10",
+                "category": "analysis",
+                "link": "./key-detector/index.html",
+                "tags": "analysis, Key Detector   Shadow Audio, audio"
+            },
+            {
+                "title": "Lo-Fi Focus",
+                "desc": "FM SYNTHESIS • TAPE SATURATION",
+                "icon": "fa-record-vinyl",
+                "color": "text-emerald-400",
+                "bg": "bg-emerald-500/10",
+                "category": "utility",
+                "link": "./Lo-Fi Noise Generator/index.html",
+                "tags": "utility, Lo Fi Focus, audio"
+            },
+            {
+                "title": "Metronome - AudioForge",
+                "desc": "No description available.",
+                "icon": "fa-clock",
+                "color": "text-emerald-400",
+                "bg": "bg-emerald-500/10",
+                "category": "utility",
+                "link": "./Metronome/index.html",
+                "tags": "utility, Metronome   AudioForge, audio"
+            },
+            {
+                "title": "Mono to Stereo - Shadow Audio",
+                "desc": "Convert mono tracks to dual-channel stereo.",
+                "icon": "fa-headphones",
+                "color": "text-emerald-400",
+                "bg": "bg-emerald-500/10",
+                "category": "convert",
+                "link": "./mono-to-stereo/index.html",
+                "tags": "convert, Mono to Stereo   Shadow Audio, audio"
+            },
+            {
+                "title": "Noise Generator - AudioForge",
+                "desc": "Select a noise color to block distractions.",
+                "icon": "fa-wave-square",
+                "color": "text-emerald-400",
+                "bg": "bg-emerald-500/10",
+                "category": "generator",
+                "link": "./Noise Generator/index.html",
+                "tags": "generator, Noise Generator   AudioForge, audio"
+            },
+            {
+                "title": "Oscilloscope - Shadow Audio",
+                "desc": "Real-time waveform visualization.",
+                "icon": "fa-wave-square",
+                "color": "text-emerald-400",
+                "bg": "bg-emerald-500/10",
+                "category": "analysis",
+                "link": "./oscilloscope-viewer/index.html",
+                "tags": "analysis, Oscilloscope   Shadow Audio, audio"
+            },
+            {
+                "title": "Phase Meter - Shadow Audio",
+                "desc": "Visualize stereo width and phase correlation (Lissajous).",
+                "icon": "fa-circle-notch",
+                "color": "text-emerald-400",
+                "bg": "bg-emerald-500/10",
+                "category": "analysis",
+                "link": "./stereo-phase-meter/index.html",
+                "tags": "analysis, Phase Meter   Shadow Audio, audio"
+            },
+            {
+                "title": "Phaser Effect - Shadow Audio",
+                "desc": "Create swirling, psychedelic phase-shift effects.",
+                "icon": "fa-circle-notch",
+                "color": "text-emerald-400",
+                "bg": "bg-emerald-500/10",
+                "category": "analysis",
+                "link": "./audio-phaser/index.html",
+                "tags": "analysis, Phaser Effect   Shadow Audio, audio"
+            },
+            {
+                "title": "Pitch Shifter - Shadow Audio",
+                "desc": "Drop Audio File Here",
+                "icon": "fa-sort-amount-up",
+                "color": "text-emerald-400",
+                "bg": "bg-emerald-500/10",
+                "category": "effect",
+                "link": "./pitch-shifter/index.html",
+                "tags": "effect, Pitch Shifter   Shadow Audio, audio"
+            },
+            {
+                "title": "Remove Silence - Shadow Audio",
+                "desc": "Automatically trim silence from the beginning and end.",
+                "icon": "fa-comment-slash",
+                "color": "text-emerald-400",
+                "bg": "bg-emerald-500/10",
+                "category": "editing",
+                "link": "./remove-silence/index.html",
+                "tags": "editing, Remove Silence   Shadow Audio, audio"
+            },
+            {
+                "title": "Reverb Studio - Shadow Audio",
+                "desc": "Add spatial ambience using convolution reverb.",
+                "icon": "fa-warehouse",
+                "color": "text-emerald-400",
+                "bg": "bg-emerald-500/10",
+                "category": "effect",
+                "link": "./audio-reverb/index.html",
+                "tags": "effect, Reverb Studio   Shadow Audio, audio"
+            },
+            {
+                "title": "Reverse Audio - AudioForge",
+                "desc": "No description available.",
+                "icon": "fa-backward",
+                "color": "text-emerald-400",
+                "bg": "bg-emerald-500/10",
+                "category": "effect",
+                "link": "./Reverse Audio/index.html",
+                "tags": "effect, Reverse Audio   AudioForge, audio"
+            },
+            {
+                "title": "Reverse Audio - Shadow Audio",
+                "desc": "Play tracks backwards for creative effects.",
+                "icon": "fa-backward",
+                "color": "text-emerald-400",
+                "bg": "bg-emerald-500/10",
+                "category": "effect",
+                "link": "./audio-reverse/index.html",
+                "tags": "effect, Reverse Audio   Shadow Audio, audio"
+            },
+            {
+                "title": "Rhythm Pattern Generator - Shadow Audio",
+                "desc": "Design rhythm patterns.",
+                "icon": "fa-wave-square",
+                "color": "text-emerald-400",
+                "bg": "bg-emerald-500/10",
+                "category": "generator",
+                "link": "./rhythm-pattern-generator/index.html",
+                "tags": "generator, Rhythm Pattern Generator   Shadow Audio, audio"
+            },
+            {
+                "title": "SonicCore - Advanced Audio Engine",
+                "desc": "Tap or Drop File Here",
+                "icon": "fa-microchip",
+                "color": "text-emerald-400",
+                "bg": "bg-emerald-500/10",
+                "category": "utility",
+                "link": "./Audio Analysis Tool/index.html",
+                "tags": "utility, SonicCore   Advanced Audio Engine, audio"
+            },
+            {
+                "title": "SonicMind | AI Audio Tools Suite",
+                "desc": "Next-Gen Audio Intelligence Suite",
+                "icon": "fa-microchip",
+                "color": "text-emerald-400",
+                "bg": "bg-emerald-500/10",
+                "category": "utility",
+                "link": "./AI & Intelligent Audio Tools/index.html",
+                "tags": "utility, SonicMind   AI Audio Tools Suite, audio"
+            },
+            {
+                "title": "Spectrogram - Shadow Audio",
+                "desc": "Visualize audio frequencies over time.",
+                "icon": "fa-chart-bar",
+                "color": "text-emerald-400",
+                "bg": "bg-emerald-500/10",
+                "category": "analysis",
+                "link": "./spectrogram-viewer/index.html",
+                "tags": "analysis, Spectrogram   Shadow Audio, audio"
+            },
+            {
+                "title": "Speed Changer - Shadow Audio",
+                "desc": "Adjust playback speed.",
+                "icon": "fa-tachometer-alt",
+                "color": "text-emerald-400",
+                "bg": "bg-emerald-500/10",
+                "category": "effect",
+                "link": "./speed-changer/index.html",
+                "tags": "effect, Speed Changer   Shadow Audio, audio"
+            },
+            {
+                "title": "Stereo to Mono - Shadow Audio",
+                "desc": "Mixdown stereo tracks into a single channel.",
+                "icon": "fa-headphones",
+                "color": "text-emerald-400",
+                "bg": "bg-emerald-500/10",
+                "category": "editing",
+                "link": "./stereo-to-mono/index.html",
+                "tags": "editing, Stereo to Mono   Shadow Audio, audio"
+            },
+            {
+                "title": "Text to Speech - Shadow Audio",
+                "desc": "No description available.",
+                "icon": "fa-comment-dots",
+                "color": "text-emerald-400",
+                "bg": "bg-emerald-500/10",
+                "category": "generator",
+                "link": "./text-to-speech-gen/index.html",
+                "tags": "generator, Text to Speech   Shadow Audio, audio"
+            },
+            {
+                "title": "Tone Generator - AudioForge",
+                "desc": "No description available.",
+                "icon": "fa-wave-square",
+                "color": "text-emerald-400",
+                "bg": "bg-emerald-500/10",
+                "category": "generator",
+                "link": "./Tone Generator/index.html",
+                "tags": "generator, Tone Generator   AudioForge, audio"
+            },
+            {
+                "title": "Treble Booster - Shadow Audio",
+                "desc": "Enhance high frequencies for clarity and brightness.",
+                "icon": "fa-level-up-alt",
+                "color": "text-emerald-400",
+                "bg": "bg-emerald-500/10",
+                "category": "effect",
+                "link": "./treble-booster/index.html",
+                "tags": "effect, Treble Booster   Shadow Audio, audio"
+            },
+            {
+                "title": "Vocal Remover - AudioForge",
+                "desc": "No description available.",
+                "icon": "fa-microphone-slash",
+                "color": "text-emerald-400",
+                "bg": "bg-emerald-500/10",
+                "category": "editing",
+                "link": "./Vocal Remover/index.html",
+                "tags": "editing, Vocal Remover   AudioForge, audio"
+            },
+            {
+                "title": "Voice Changer - Shadow Audio",
+                "desc": "Transform your voice into different characters.",
+                "icon": "fa-mask",
+                "color": "text-emerald-400",
+                "bg": "bg-emerald-500/10",
+                "category": "effect",
+                "link": "./voice-changer/index.html",
+                "tags": "effect, Voice Changer   Shadow Audio, audio"
+            },
+            {
+                "title": "Volume Booster - Shadow Audio",
+                "desc": "Amplify quiet audio files up to 200%.",
+                "icon": "fa-level-up-alt",
+                "color": "text-emerald-400",
+                "bg": "bg-emerald-500/10",
+                "category": "effect",
+                "link": "./volume-booster/index.html",
+                "tags": "effect, Volume Booster   Shadow Audio, audio"
+            }
         ];
 
         // --- Core Logic: Text Scramble Effect ---
