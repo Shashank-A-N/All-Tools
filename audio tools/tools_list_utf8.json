@@ -1,0 +1,247 @@
+﻿[
+  {
+    "dir": "8D Converter",
+    "title": "8D Converter - AudioForge",
+    "desc": "No description available."
+  },
+  {
+    "dir": "AI & Intelligent Audio Tools",
+    "title": "SonicMind | AI Audio Tools Suite",
+    "desc": "Next-Gen Audio Intelligence Suite"
+  },
+  {
+    "dir": "Audio Analysis Tool",
+    "title": "SonicCore - Advanced Audio Engine",
+    "desc": "Tap or Drop File Here"
+  },
+  {
+    "dir": "Audio Delay",
+    "title": "Audio Delay - AudioForge",
+    "desc": "No description available."
+  },
+  {
+    "dir": "Audio Joiner",
+    "title": "Audio Joiner - AudioForge",
+    "desc": "Select multiple files to merge"
+  },
+  {
+    "dir": "Audio Recorder",
+    "title": "Audio Recorder - AudioForge",
+    "desc": "Recording_001.webm"
+  },
+  {
+    "dir": "audio-chorus",
+    "title": "Chorus Effect - Shadow Audio",
+    "desc": "Add wideness and depth to your audio."
+  },
+  {
+    "dir": "audio-distortion",
+    "title": "Audio Distortion - Shadow Audio",
+    "desc": "Add grit, fuzz, and harmonic saturation."
+  },
+  {
+    "dir": "audio-equalizer",
+    "title": "10-Band Equalizer - Shadow Audio",
+    "desc": "Fine-tune frequencies across the spectrum."
+  },
+  {
+    "dir": "audio-flanger",
+    "title": "Flanger Effect - Shadow Audio",
+    "desc": "Add a sweeping jet-plane effect."
+  },
+  {
+    "dir": "audio-joiner",
+    "title": "Audio Joiner - Shadow Audio",
+    "desc": "Merge multiple audio files into a single track."
+  },
+  {
+    "dir": "audio-mixer",
+    "title": "Audio Mixer - Shadow Audio",
+    "desc": "Mix levels of multiple tracks."
+  },
+  {
+    "dir": "audio-normalizer",
+    "title": "Audio Normalizer - Shadow Audio",
+    "desc": "Automatically adjust volume to the highest peak without clipping."
+  },
+  {
+    "dir": "audio-panner",
+    "title": "Audio Panner - Shadow Audio",
+    "desc": "Control Left/Right channel balance."
+  },
+  {
+    "dir": "audio-phaser",
+    "title": "Phaser Effect - Shadow Audio",
+    "desc": "Create swirling, psychedelic phase-shift effects."
+  },
+  {
+    "dir": "audio-reverb",
+    "title": "Reverb Studio - Shadow Audio",
+    "desc": "Add spatial ambience using convolution reverb."
+  },
+  {
+    "dir": "audio-reverse",
+    "title": "Reverse Audio - Shadow Audio",
+    "desc": "Play tracks backwards for creative effects."
+  },
+  {
+    "dir": "audio-splitter",
+    "title": "Audio Splitter - Shadow Audio",
+    "desc": "Split long audio files into equal parts."
+  },
+  {
+    "dir": "audio-trimmer",
+    "title": "Audio Trimmer - Shadow Audio",
+    "desc": "Select and keep only the best parts."
+  },
+  {
+    "dir": "Basic-Manipulation-Tool",
+    "title": "AudioForge Pro - Synth Edition",
+    "desc": "Supports MP3, WAV, OGG, FLAC"
+  },
+  {
+    "dir": "bass-booster",
+    "title": "Bass Booster - Shadow Audio",
+    "desc": "Enhance low-end frequencies for deep, punchy sound."
+  },
+  {
+    "dir": "binaural-beats",
+    "title": "Binaural Beat Generator - Shadow Audio",
+    "desc": "No description available."
+  },
+  {
+    "dir": "BPM Tapper",
+    "title": "BPM Tapper - AudioForge",
+    "desc": "Calculated Tempo"
+  },
+  {
+    "dir": "bpm-finder",
+    "title": "BPM Finder - Shadow Audio",
+    "desc": "Analyze tempo or use Tap Tempo manually."
+  },
+  {
+    "dir": "chord-generator",
+    "title": "Chord Generator - Shadow Audio",
+    "desc": "Generate chords and visualize intervals."
+  },
+  {
+    "dir": "decibel-meter",
+    "title": "Decibel Meter - Shadow Audio",
+    "desc": "Measure ambient noise levels using your microphone."
+  },
+  {
+    "dir": "dtmf-generator",
+    "title": "DTMF Generator - Shadow Audio",
+    "desc": "Dual-Tone Multi-Frequency signaling emulator."
+  },
+  {
+    "dir": "fade-in-out",
+    "title": "Fade In/Out - Shadow Audio",
+    "desc": "Apply smooth Fade In and Fade Out effects."
+  },
+  {
+    "dir": "Format & Encoding Tools",
+    "title": "AudioForge - Universal Audio Tools",
+    "desc": "Convert audio files between WAV, MP3, FLAC, and OGG formats."
+  },
+  {
+    "dir": "key-detector",
+    "title": "Key Detector - Shadow Audio",
+    "desc": "Analyze harmonic content to find the musical key."
+  },
+  {
+    "dir": "Lo-Fi Noise Generator",
+    "title": "Lo-Fi Focus",
+    "desc": "FM SYNTHESIS • TAPE SATURATION"
+  },
+  {
+    "dir": "Metronome",
+    "title": "Metronome - AudioForge",
+    "desc": "No description available."
+  },
+  {
+    "dir": "mono-to-stereo",
+    "title": "Mono to Stereo - Shadow Audio",
+    "desc": "Convert mono tracks to dual-channel stereo."
+  },
+  {
+    "dir": "Noise Generator",
+    "title": "Noise Generator - AudioForge",
+    "desc": "Select a noise color to block distractions."
+  },
+  {
+    "dir": "oscilloscope-viewer",
+    "title": "Oscilloscope - Shadow Audio",
+    "desc": "Real-time waveform visualization."
+  },
+  {
+    "dir": "pitch-shifter",
+    "title": "Pitch Shifter - Shadow Audio",
+    "desc": "Drop Audio File Here"
+  },
+  {
+    "dir": "remove-silence",
+    "title": "Remove Silence - Shadow Audio",
+    "desc": "Automatically trim silence from the beginning and end."
+  },
+  {
+    "dir": "Reverse Audio",
+    "title": "Reverse Audio - AudioForge",
+    "desc": "No description available."
+  },
+  {
+    "dir": "rhythm-pattern-generator",
+    "title": "Rhythm Pattern Generator - Shadow Audio",
+    "desc": "Design rhythm patterns."
+  },
+  {
+    "dir": "spectrogram-viewer",
+    "title": "Spectrogram - Shadow Audio",
+    "desc": "Visualize audio frequencies over time."
+  },
+  {
+    "dir": "speed-changer",
+    "title": "Speed Changer - Shadow Audio",
+    "desc": "Adjust playback speed."
+  },
+  {
+    "dir": "stereo-phase-meter",
+    "title": "Phase Meter - Shadow Audio",
+    "desc": "Visualize stereo width and phase correlation (Lissajous)."
+  },
+  {
+    "dir": "stereo-to-mono",
+    "title": "Stereo to Mono - Shadow Audio",
+    "desc": "Mixdown stereo tracks into a single channel."
+  },
+  {
+    "dir": "text-to-speech-gen",
+    "title": "Text to Speech - Shadow Audio",
+    "desc": "No description available."
+  },
+  {
+    "dir": "Tone Generator",
+    "title": "Tone Generator - AudioForge",
+    "desc": "No description available."
+  },
+  {
+    "dir": "treble-booster",
+    "title": "Treble Booster - Shadow Audio",
+    "desc": "Enhance high frequencies for clarity and brightness."
+  },
+  {
+    "dir": "Vocal Remover",
+    "title": "Vocal Remover - AudioForge",
+    "desc": "No description available."
+  },
+  {
+    "dir": "voice-changer",
+    "title": "Voice Changer - Shadow Audio",
+    "desc": "Transform your voice into different characters."
+  },
+  {
+    "dir": "volume-booster",
+    "title": "Volume Booster - Shadow Audio",
+    "desc": "Amplify quiet audio files up to 200%."
+  }
+]
