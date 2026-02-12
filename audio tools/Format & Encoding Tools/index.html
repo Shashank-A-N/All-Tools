@@ -4,20 +4,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AudioForge - Universal Audio Tools</title>
+    <title>AudioForge Ultimate</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FFmpeg.wasm (v0.11.x for better compatibility without SharedArrayBuffer requirements in some contexts) -->
-    <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
-    <script src="https://unpkg.com/@ffmpeg/core@0.11.6/dist/ffmpeg-core.js"></script>
+    <!-- Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- FFmpeg WASM (Local) -->
+    <script src="/vendor/ffmpeg.min.js"></script>
+    <!-- WaveSurfer.js -->
+    <script src="https://unpkg.com/wavesurfer.js@7/dist/wavesurfer.min.js"></script>
 
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400&display=swap');
+    <style type="text/tailwindcss">
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
+
+        :root {
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --glass-bg: rgba(15, 23, 42, 0.6);
+            --neon-blue: #3b82f6;
+            --neon-purple: #8b5cf6;
+        }
 
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #0f172a;
-            /* Slate 900 */
-            color: #e2e8f0;
+            background-color: #020617;
+            /* Slate 950 */
+            color: #f1f5f9;
+            background-image:
+                radial-gradient(circle at 15% 50%, rgba(59, 130, 246, 0.08), transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(139, 92, 246, 0.08), transparent 25%);
+            overflow-x: hidden;
         }
 
         .mono {
@@ -26,571 +41,910 @@
 
         /* Custom Scrollbar */
         ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
+            width: 6px;
+            height: 6px;
         }
 
         ::-webkit-scrollbar-track {
-            background: #1e293b;
+            background: transparent;
         }
 
         ::-webkit-scrollbar-thumb {
-            background: #475569;
-            border-radius: 4px;
+            background: #334155;
+            border-radius: 3px;
         }
 
         ::-webkit-scrollbar-thumb:hover {
-            background: #64748b;
+            background: #475569;
         }
 
-        .drop-zone {
-            transition: all 0.3s ease;
-            background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='16' ry='16' stroke='%23334155FF' stroke-width='2' stroke-dasharray='12%2c 12' stroke-dashoffset='0' stroke-linecap='square'/%3e%3c/svg%3e");
-        }
-
-        .drop-zone.active {
-            background-color: rgba(59, 130, 246, 0.1);
-            background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='16' ry='16' stroke='%233B82F6FF' stroke-width='3' stroke-dasharray='12%2c 12' stroke-dashoffset='0' stroke-linecap='square'/%3e%3c/svg%3e");
+        /* Glassmorphism Classes */
+        .glass {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
         }
 
         .glass-panel {
-            background: rgba(30, 41, 59, 0.7);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            @apply glass rounded-2xl shadow-xl;
         }
 
-        .tab-btn.active {
-            background-color: #3b82f6;
-            /* Blue 500 */
-            color: white;
-            box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.5);
-        }
+        /* Animations */
+        @keyframes pulse-glow {
 
-        .spinner {
-            border: 3px solid rgba(255, 255, 255, 0.1);
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            border-left-color: #3b82f6;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            0% {
-                transform: rotate(0deg);
-            }
-
+            0%,
             100% {
-                transform: rotate(360deg);
+                box-shadow: 0 0 15px rgba(59, 130, 246, 0.1);
             }
+
+            50% {
+                box-shadow: 0 0 25px rgba(59, 130, 246, 0.3);
+            }
+        }
+
+        .animate-glow {
+            animation: pulse-glow 3s infinite;
+        }
+
+        .sidebar-item {
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .sidebar-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 3px;
+            background: var(--neon-blue);
+            transform: scaleY(0);
+            transition: transform 0.2s ease;
+        }
+
+        .sidebar-item.active {
+            background: rgba(59, 130, 246, 0.1);
+            color: white;
+        }
+
+        .sidebar-item.active::before {
+            transform: scaleY(1);
+        }
+
+        /* Range Slider */
+        input[type=range] {
+            @apply w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            @apply appearance-none w-4 h-4 bg-blue-500 rounded-full shadow-lg border-2 border-slate-900 transition-transform;
+        }
+
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        /* Dropzone */
+        .dropzone-overlay {
+            background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='16' ry='16' stroke='%233B82F640' stroke-width='2' stroke-dasharray='12%2c 12' stroke-dashoffset='0' stroke-linecap='square'/%3e%3c/svg%3e");
+            transition: all 0.3s ease;
+        }
+
+        .dropzone-overlay.drag-active {
+            background-color: rgba(59, 130, 246, 0.1);
+            background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='16' ry='16' stroke='%233B82F6FF' stroke-width='3' stroke-dasharray='12%2c 12' stroke-dashoffset='0' stroke-linecap='square'/%3e%3c/svg%3e");
         }
     </style>
 </head>
 
-<body class="min-h-screen flex flex-col items-center p-4 selection:bg-blue-500 selection:text-white">
+<body class="h-screen flex flex-col md:flex-row overflow-hidden selection:bg-blue-500/30 selection:text-blue-200">
 
-    <!-- Header -->
-    <header class="w-full max-w-4xl mt-6 mb-8 text-center">
-        <div class="inline-flex items-center justify-center p-3 mb-4 rounded-full bg-blue-500/10 text-blue-400">
-            <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z">
-                </path>
-            </svg>
-            <span class="font-bold tracking-wide uppercase text-sm">Beta v1.0</span>
-        </div>
-        <h1 class="text-4xl md:text-6xl font-extrabold tracking-tight text-white mb-2">
-            Audio<span class="text-blue-500">Forge</span>
-        </h1>
-        <p class="text-slate-400 text-lg max-w-2xl mx-auto">
-            Secure, client-side audio tools. Format conversion, bitrate optimization, and video extraction running
-            entirely in your browser.
-        </p>
-    </header>
-
-    <!-- Engine Status Banner -->
+    <!-- Engine Status Notification -->
     <div id="engine-status"
-        class="hidden w-full max-w-4xl mb-6 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20 text-yellow-200 text-sm flex items-center justify-between">
-        <span id="engine-msg">Initializing FFmpeg Engine...</span>
-        <div class="spinner ml-2" id="engine-spinner"></div>
+        class="fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-2 rounded-full glass border-slate-700/50 transform transition-all duration-500 translate-y-0 opacity-100">
+        <div class="relative w-3 h-3">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-3 w-3 bg-yellow-500"></span>
+        </div>
+        <span class="text-xs font-medium text-slate-300">Loading FFmpeg Core (Local)...</span>
     </div>
 
-    <!-- Main Tool Container -->
-    <main class="w-full max-w-4xl glass-panel rounded-2xl shadow-2xl overflow-hidden relative">
+    <!-- SIDEBAR -->
+    <!-- Mobile Overlay -->
+    <div id="mobile-overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/50 z-20 hidden md:hidden glass">
+    </div>
 
-        <!-- Tabs -->
-        <div class="flex border-b border-slate-700/50 bg-slate-800/50">
-            <button onclick="switchTab('converter')" id="tab-converter"
-                class="tab-btn flex-1 py-4 text-sm font-medium text-slate-400 hover:text-white transition-colors active">
-                Universal Converter
-            </button>
-            <button onclick="switchTab('optimizer')" id="tab-optimizer"
-                class="tab-btn flex-1 py-4 text-sm font-medium text-slate-400 hover:text-white transition-colors">
-                Bitrate Optimizer
-            </button>
-            <button onclick="switchTab('extractor')" id="tab-extractor"
-                class="tab-btn flex-1 py-4 text-sm font-medium text-slate-400 hover:text-white transition-colors">
-                Audio Extractor
+    <aside id="sidebar"
+        class="fixed inset-y-0 left-0 w-64 transform -translate-x-full md:translate-x-0 md:relative md:flex flex-col glass border-r border-slate-800 shrink-0 z-30 transition-transform duration-300 ease-in-out bg-slate-900/90 backdrop-blur-xl">
+        <!-- Brand -->
+        <div class="p-6 flex items-center justify-between border-b border-slate-800/50">
+            <div class="flex items-center gap-3">
+                <div
+                    class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-violet-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
+                    <i data-lucide="waves" class="text-white w-5 h-5"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg tracking-tight text-white leading-none">AudioForge</h1>
+                    <span class="text-xs text-blue-400 font-medium tracking-wide">ULTIMATE</span>
+                </div>
+            </div>
+            <!-- Mobile Close Button -->
+            <button onclick="toggleSidebar()" class="md:hidden text-slate-400 hover:text-white">
+                <i data-lucide="x" class="w-6 h-6"></i>
             </button>
         </div>
 
-        <!-- Content Area -->
-        <div class="p-6 md:p-8">
+        <!-- Navigation -->
+        <nav class="flex-1 p-4 space-y-1">
+            <p class="px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 mt-2">Tools</p>
 
-            <!-- Tab Content: Converter -->
-            <div id="view-converter" class="tab-content block">
-                <div class="mb-6">
-                    <h2 class="text-2xl font-bold text-white mb-2">Universal Converter</h2>
-                    <p class="text-slate-400 text-sm">Convert audio files between WAV, MP3, FLAC, and OGG formats.</p>
-                </div>
+            <button onclick="switchView('converter')" id="nav-converter"
+                class="sidebar-item active w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 group">
+                <i data-lucide="refresh-cw" class="w-5 h-5 group-hover:text-blue-400 transition-colors"></i>
+                <span class="text-sm font-medium">Converter</span>
+            </button>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <!-- Options -->
-                    <div class="space-y-4">
-                        <label class="block">
-                            <span class="text-slate-300 text-sm font-medium">Target Format</span>
-                            <select id="convert-format"
-                                class="mt-2 block w-full bg-slate-800 border border-slate-700 rounded-lg py-2.5 px-3 text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                <option value="mp3">MP3 (Compressed)</option>
-                                <option value="wav">WAV (Lossless)</option>
-                                <option value="flac">FLAC (Lossless Compressed)</option>
-                                <option value="ogg">OGG (Vorbis)</option>
-                            </select>
-                        </label>
-                        <div class="p-4 bg-slate-800/50 rounded-lg border border-slate-700/50 text-xs text-slate-400">
-                            <p class="mb-2"><strong class="text-slate-300">Tip:</strong></p>
-                            <ul class="list-disc pl-4 space-y-1">
-                                <li><strong>MP3:</strong> Best for compatibility.</li>
-                                <li><strong>WAV:</strong> Best for editing (large file size).</li>
-                                <li><strong>FLAC:</strong> Archival quality.</li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
+            <button onclick="switchView('optimizer')" id="nav-optimizer"
+                class="sidebar-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 group">
+                <i data-lucide="gauge" class="w-5 h-5 group-hover:text-amber-400 transition-colors"></i>
+                <span class="text-sm font-medium">Optimizer</span>
+            </button>
+
+            <button onclick="switchView('extractor')" id="nav-extractor"
+                class="sidebar-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 group">
+                <i data-lucide="film" class="w-5 h-5 group-hover:text-purple-400 transition-colors"></i>
+                <span class="text-sm font-medium">Extractor</span>
+            </button>
+
+            <div class="my-4 border-t border-slate-800/50"></div>
+
+            <p class="px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">History</p>
+            <div id="history-list" class="space-y-1 overflow-y-auto max-h-48 px-1">
+                <div class="text-xs text-slate-600 px-2 italic">No recent files</div>
             </div>
+        </nav>
 
-            <!-- Tab Content: Optimizer -->
-            <div id="view-optimizer" class="tab-content hidden">
-                <div class="mb-6">
-                    <h2 class="text-2xl font-bold text-white mb-2">Bitrate Optimizer</h2>
-                    <p class="text-slate-400 text-sm">Reduce file size by optimizing bitrate. Ideal for web streaming.
-                    </p>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="space-y-4">
-                        <label class="block">
-                            <span class="text-slate-300 text-sm font-medium">Target Bitrate</span>
-                            <select id="optimize-bitrate"
-                                class="mt-2 block w-full bg-slate-800 border border-slate-700 rounded-lg py-2.5 px-3 text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                <option value="320k">320 kbps (High Quality)</option>
-                                <option value="256k">256 kbps (Standard)</option>
-                                <option value="192k">192 kbps (Balanced)</option>
-                                <option value="128k">128 kbps (Web/Stream)</option>
-                                <option value="64k">64 kbps (Voice Only)</option>
-                            </select>
-                        </label>
-                        <div class="text-xs text-slate-500 mt-2">Output will be MP3 format.</div>
-                    </div>
-                </div>
+        <!-- Footer -->
+        <div class="p-4 border-t border-slate-800/50 bg-slate-900/30">
+            <div class="flex items-center gap-3">
+                <div class="w-2 h-2 rounded-full bg-green-500" id="status-dot"></div>
+                <span class="text-xs text-slate-400 mono" id="status-label">System Ready</span>
             </div>
+        </div>
+    </aside>
 
-            <!-- Tab Content: Extractor -->
-            <div id="view-extractor" class="tab-content hidden">
-                <div class="mb-6">
-                    <h2 class="text-2xl font-bold text-white mb-2">Audio Extractor</h2>
-                    <p class="text-slate-400 text-sm">Strip audio tracks from video files (MP4, MKV) to MP3.</p>
-                </div>
-                <div class="p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg text-sm text-blue-200 mb-4">
-                    Supports <strong>.mp4</strong>, <strong>.mkv</strong>, <strong>.mov</strong>, and
-                    <strong>.webm</strong> inputs.
-                </div>
-            </div>
+    <!-- MAIN CONTENT -->
+    <main class="flex-1 relative flex flex-col h-full overflow-hidden bg-slate-950/50">
 
-            <!-- Shared Drop Zone -->
-            <div class="mt-8">
-                <div id="drop-area"
-                    class="drop-zone relative group rounded-2xl h-48 flex flex-col items-center justify-center cursor-pointer text-center p-4">
-                    <input type="file" id="file-input" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                        accept="audio/*,video/*">
-
-                    <div id="upload-prompt">
-                        <div
-                            class="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform shadow-lg shadow-black/20">
-                            <svg class="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12">
-                                </path>
-                            </svg>
-                        </div>
-                        <h3 class="text-lg font-semibold text-white">Click to upload or drag & drop</h3>
-                        <p class="text-slate-400 text-sm mt-1" id="file-types-hint">Supported: WAV, MP3, OGG, FLAC, MP4,
-                            MKV</p>
-                    </div>
-
-                    <div id="file-info" class="hidden text-center z-10">
-                        <div
-                            class="w-12 h-12 bg-green-500/20 text-green-400 rounded-full flex items-center justify-center mx-auto mb-3">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                        </div>
-                        <p class="text-white font-medium truncate max-w-xs mx-auto" id="filename-display">file.mp3</p>
-                        <p class="text-slate-400 text-xs mt-1" id="filesize-display">2.4 MB</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Action Area -->
-            <div class="mt-6 flex flex-col items-center">
-                <button id="process-btn" disabled
-                    class="w-full md:w-auto px-8 py-3 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-700 disabled:text-slate-500 disabled:cursor-not-allowed text-white font-bold rounded-lg shadow-lg shadow-blue-500/20 transition-all transform hover:-translate-y-0.5 active:translate-y-0">
-                    Start Processing
+        <!-- Top Bar (Mobile Menu Toggle could go here) -->
+        <header
+            class="h-16 flex items-center justify-between px-4 md:px-6 border-b border-slate-800/50 glass z-10 shrink-0">
+            <div class="flex items-center gap-3">
+                <button onclick="toggleSidebar()"
+                    class="md:hidden p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800/50">
+                    <i data-lucide="menu" class="w-6 h-6"></i>
                 </button>
+                <h2 id="page-title" class="text-lg md:text-xl font-semibold text-white flex items-center gap-2">
+                    <i data-lucide="refresh-cw" class="w-5 h-5 text-blue-400"></i>
+                    Universal Converter
+                </h2>
+            </div>
+            <div class="flex items-center gap-4">
+                <button onclick="document.getElementById('file-input').click()"
+                    class="flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-white text-xs md:text-sm font-medium shadow-lg shadow-blue-500/20 transition-all hover:scale-105 active:scale-95">
+                    <i data-lucide="upload" class="w-4 h-4"></i>
+                    <span class="hidden sm:inline">Upload New</span>
+                    <span class="sm:hidden">Upload</span>
+                </button>
+            </div>
+        </header>
 
-                <!-- Progress Bar -->
-                <div id="progress-container" class="w-full mt-6 hidden">
-                    <div class="flex justify-between text-xs text-slate-400 mb-1">
-                        <span id="status-text">Processing...</span>
-                        <span id="percent-text">0%</span>
+        <!-- Dynamic Content Area -->
+        <div class="flex-1 overflow-y-auto p-4 md:p-8 relative">
+
+            <!-- Empty State / Dropzone -->
+            <div id="empty-state"
+                class="absolute inset-0 m-4 md:m-8 rounded-2xl dropzone-overlay flex flex-col items-center justify-center cursor-pointer group"
+                onclick="document.getElementById('file-input').click()">
+                <div
+                    class="w-20 h-20 bg-slate-800/50 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-2xl shadow-blue-500/10 border border-slate-700">
+                    <i data-lucide="upload-cloud"
+                        class="w-10 h-10 text-slate-400 group-hover:text-blue-400 transition-colors"></i>
+                </div>
+                <h3 class="text-2xl font-bold text-white mb-2">Drop your file here</h3>
+                <p class="text-slate-400 max-w-sm text-center">Support for MP3, WAV, FLAC, OGG, and Video files (MP4,
+                    MKV)</p>
+                <div class="mt-8 flex gap-3 opacity-50">
+                    <div class="h-12 w-12 rounded bg-slate-800 border-2 border-slate-700/50"></div>
+                    <div class="h-12 w-12 rounded bg-slate-800 border-2 border-slate-700/50 translate-y-2"></div>
+                    <div class="h-12 w-12 rounded bg-slate-800 border-2 border-slate-700/50"></div>
+                </div>
+                <input type="file" id="file-input" class="hidden" accept="audio/*,video/*">
+            </div>
+
+            <!-- Workspace (Hidden initially) -->
+            <div id="workspace" class="hidden max-w-5xl mx-auto space-y-6">
+
+                <!-- File Card & Waveform -->
+                <div class="glass-panel p-1 relative overflow-hidden">
+                    <div class="absolute inset-0 bg-gradient-to-tr from-blue-500/5 to-purple-500/5 pointer-events-none">
                     </div>
-                    <div class="w-full bg-slate-700 rounded-full h-2.5 overflow-hidden">
-                        <div id="progress-bar"
-                            class="bg-gradient-to-r from-blue-500 to-indigo-500 h-2.5 rounded-full transition-all duration-300"
-                            style="width: 0%"></div>
+
+                    <div class="p-4 md:p-6 border-b border-slate-800/50 flex items-start justify-between">
+                        <div class="flex items-center gap-4">
+                            <div
+                                class="w-12 h-12 rounded-xl bg-slate-800 flex items-center justify-center text-blue-400 shadow-inner">
+                                <i data-lucide="music" class="w-6 h-6" id="file-icon"></i>
+                            </div>
+                            <div>
+                                <h3 id="filename" class="text-lg font-semibold text-white truncate max-w-md">
+                                    filename.mp3</h3>
+                                <div class="flex items-center gap-3 text-xs text-slate-400 font-mono mt-1">
+                                    <span id="filesize">0 MB</span>
+                                    <span class="w-1 h-1 rounded-full bg-slate-600"></span>
+                                    <span id="filetype">MP3</span>
+                                    <span class="w-1 h-1 rounded-full bg-slate-600"></span>
+                                    <span id="duration">0:00</span>
+                                </div>
+                            </div>
+                        </div>
+                        <button onclick="resetWorkspace()"
+                            class="p-2 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-red-400 transition-colors">
+                            <i data-lucide="x" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+
+                    <!-- Waveform Container -->
+                    <div class="relative h-32 bg-slate-900/50 w-full group">
+                        <div id="waveform" class="w-full h-full opacity-80 group-hover:opacity-100 transition-opacity">
+                        </div>
+                        <!-- Loading Waveform Overlay -->
+                        <div id="wave-loader"
+                            class="absolute inset-0 flex items-center justify-center bg-slate-900/80 z-10 transition-opacity duration-300">
+                            <div class="flex gap-1">
+                                <span class="w-1 h-4 bg-blue-500 animate-[pulse_0.6s_infinite]"></span>
+                                <span class="w-1 h-6 bg-blue-500 animate-[pulse_0.6s_0.1s_infinite]"></span>
+                                <span class="w-1 h-8 bg-blue-500 animate-[pulse_0.6s_0.2s_infinite]"></span>
+                                <span class="w-1 h-6 bg-blue-500 animate-[pulse_0.6s_0.3s_infinite]"></span>
+                                <span class="w-1 h-4 bg-blue-500 animate-[pulse_0.6s_0.4s_infinite]"></span>
+                            </div>
+                        </div>
+                        <!-- Play Button Overlay -->
+                        <button id="play-pause-btn"
+                            class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 bg-blue-500/90 hover:bg-blue-400 text-white rounded-full flex items-center justify-center shadow-lg transform scale-90 opacity-0 group-hover:scale-100 group-hover:opacity-100 transition-all z-20">
+                            <i data-lucide="play" class="w-5 h-5 ml-1 fill-current"></i>
+                        </button>
                     </div>
                 </div>
 
-                <!-- Terminal / Log -->
-                <div id="log-container"
-                    class="w-full mt-6 bg-slate-900 rounded-lg border border-slate-700/50 p-4 h-32 overflow-y-auto hidden">
-                    <div class="mono text-xs text-slate-400 space-y-1" id="logs">
-                        <div class="text-blue-400">> Ready to initialize.</div>
-                    </div>
-                </div>
+                <!-- Controls Grid -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-                <!-- Download -->
-                <div id="download-area" class="mt-6 hidden">
-                    <a id="download-link" href="#" download
-                        class="inline-flex items-center px-6 py-3 bg-green-600 hover:bg-green-500 text-white font-bold rounded-lg shadow-lg shadow-green-500/20 transition-all">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
-                        </svg>
-                        Download Result
-                    </a>
-                    <button onclick="resetUI()" class="ml-4 text-slate-400 hover:text-white underline text-sm">Convert
-                        another</button>
+                    <!-- Settings Panel -->
+                    <div class="lg:col-span-2 space-y-6">
+
+                        <!-- Tool-Specific Settings -->
+
+                        <!-- ID: CONVERTER SETTINGS -->
+                        <div id="tool-settings-converter" class="glass-panel p-6 space-y-6 tool-section">
+                            <div class="flex items-center justify-between">
+                                <h4 class="text-sm font-semibold text-slate-300 uppercase tracking-wider">Conversion
+                                    Settings</h4>
+                                <span class="text-xs text-slate-500 border border-slate-700 rounded px-2 py-0.5">Step
+                                    1</span>
+                            </div>
+
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                <!-- Formats -->
+                                <button
+                                    class="format-btn active ring-2 ring-blue-500 bg-slate-800 text-white p-3 rounded-xl flex flex-col items-center gap-2 hover:bg-slate-700 transition-all"
+                                    data-fmt="mp3">
+                                    <span class="font-bold">MP3</span>
+                                    <span class="text-[10px] text-slate-400 uppercase">Universal</span>
+                                </button>
+                                <button
+                                    class="format-btn bg-slate-800/50 text-slate-400 p-3 rounded-xl flex flex-col items-center gap-2 hover:bg-slate-700 hover:text-white transition-all"
+                                    data-fmt="wav">
+                                    <span class="font-bold">WAV</span>
+                                    <span class="text-[10px] text-slate-500 uppercase">Lossless</span>
+                                </button>
+                                <button
+                                    class="format-btn bg-slate-800/50 text-slate-400 p-3 rounded-xl flex flex-col items-center gap-2 hover:bg-slate-700 hover:text-white transition-all"
+                                    data-fmt="flac">
+                                    <span class="font-bold">FLAC</span>
+                                    <span class="text-[10px] text-slate-500 uppercase">Hi-Res</span>
+                                </button>
+                                <button
+                                    class="format-btn bg-slate-800/50 text-slate-400 p-3 rounded-xl flex flex-col items-center gap-2 hover:bg-slate-700 hover:text-white transition-all"
+                                    data-fmt="ogg">
+                                    <span class="font-bold">OGG</span>
+                                    <span class="text-[10px] text-slate-500 uppercase">Web opt</span>
+                                </button>
+                            </div>
+
+                            <div class="space-y-3">
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-slate-400">Quality / Bitrate</span>
+                                    <span class="text-blue-400 font-mono" id="quality-val">192 kbps</span>
+                                </div>
+                                <input type="range" id="quality-slider" min="64" max="320" step="32" value="192">
+                                <div class="flex justify-between text-[10px] text-slate-600 font-mono uppercase">
+                                    <span>Low (64)</span>
+                                    <span>High (320)</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ID: OPTIMIZER SETTINGS -->
+                        <div id="tool-settings-optimizer" class="glass-panel p-6 space-y-6 tool-section hidden">
+                            <div class="flex items-center justify-between">
+                                <h4 class="text-sm font-semibold text-slate-300 uppercase tracking-wider">Compression
+                                    Target</h4>
+                                <span
+                                    class="text-xs text-amber-500 border border-amber-900/50 bg-amber-500/10 rounded px-2 py-0.5">Mode:
+                                    Optimize</span>
+                            </div>
+
+                            <div
+                                class="p-4 bg-amber-900/10 border border-amber-500/10 rounded-xl flex gap-3 text-amber-200/80 text-sm">
+                                <i data-lucide="info" class="w-5 h-5 shrink-0"></i>
+                                <p>Drastically reduce file size for web streaming or mobile storage. Quality may be
+                                    affected at lower bitrates.</p>
+                            </div>
+
+                            <div class="space-y-4">
+                                <label
+                                    class="flex items-center justify-between p-3 rounded-lg bg-slate-800/50 border border-slate-700 cursor-pointer hover:border-slate-600 transition-colors">
+                                    <div class="flex items-center gap-3">
+                                        <div
+                                            class="w-4 h-4 rounded-full border border-slate-500 flex items-center justify-center">
+                                            <div class="w-2 h-2 rounded-full bg-blue-500 hidden peer-checked:block">
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <span class="block text-sm font-medium text-white">Aggressive
+                                                (64kbps)</span>
+                                            <span class="block text-xs text-slate-500">Best for speech/podcasts</span>
+                                        </div>
+                                    </div>
+                                    <input type="radio" name="opt-level" value="64k" class="hidden">
+                                </label>
+
+                                <label
+                                    class="flex items-center justify-between p-3 rounded-lg bg-slate-800/50 border border-slate-700 cursor-pointer hover:border-slate-600 transition-colors ring-1 ring-blue-500 bg-blue-500/5">
+                                    <div class="flex items-center gap-3">
+                                        <div
+                                            class="w-4 h-4 rounded-full border border-blue-500 flex items-center justify-center">
+                                            <div class="w-2 h-2 rounded-full bg-blue-500"></div>
+                                        </div>
+                                        <div>
+                                            <span class="block text-sm font-medium text-white">Balanced (128kbps)</span>
+                                            <span class="block text-xs text-slate-500">Standard web quality</span>
+                                        </div>
+                                    </div>
+                                    <input type="radio" name="opt-level" value="128k" checked class="hidden">
+                                </label>
+
+                                <label
+                                    class="flex items-center justify-between p-3 rounded-lg bg-slate-800/50 border border-slate-700 cursor-pointer hover:border-slate-600 transition-colors">
+                                    <div class="flex items-center gap-3">
+                                        <div
+                                            class="w-4 h-4 rounded-full border border-slate-500 flex items-center justify-center">
+                                            <div class="w-2 h-2 rounded-full bg-blue-500 hidden peer-checked:block">
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <span class="block text-sm font-medium text-white">Light (192kbps)</span>
+                                            <span class="block text-xs text-slate-500">Minimal quality loss</span>
+                                        </div>
+                                    </div>
+                                    <input type="radio" name="opt-level" value="192k" class="hidden">
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- ID: EXTRACTOR SETTINGS -->
+                        <div id="tool-settings-extractor" class="glass-panel p-6 space-y-6 tool-section hidden">
+                            <div class="flex items-center justify-between">
+                                <h4 class="text-sm font-semibold text-slate-300 uppercase tracking-wider">Extraction
+                                    Options</h4>
+                                <span
+                                    class="text-xs text-purple-400 border border-purple-900/50 bg-purple-500/10 rounded px-2 py-0.5">Mode:
+                                    Extract</span>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="bg-slate-800/50 p-4 rounded-xl border border-slate-700">
+                                    <label class="text-xs text-slate-500 font-bold uppercase mb-2 block">Output
+                                        Format</label>
+                                    <select id="extract-format"
+                                        class="w-full bg-slate-900 border border-slate-700 text-white text-sm rounded-lg p-2.5 focus:ring-2 focus:ring-purple-500 outline-none">
+                                        <option value="mp3">MP3 Audio</option>
+                                        <option value="wav">WAV Audio</option>
+                                        <option value="aac">AAC (M4A) Audio</option>
+                                    </select>
+                                </div>
+                                <div class="bg-slate-800/50 p-4 rounded-xl border border-slate-700">
+                                    <label
+                                        class="text-xs text-slate-500 font-bold uppercase mb-2 block">Handling</label>
+                                    <div class="flex items-center gap-2 mt-2">
+                                        <input type="checkbox" id="extract-segment"
+                                            class="w-4 h-4 rounded bg-slate-700 border-slate-600 text-purple-600 focus:ring-purple-500">
+                                        <span class="text-sm text-slate-300">Extract only selected region</span>
+                                    </div>
+                                    <p class="text-[10px] text-slate-500 mt-1 pl-6">Use wave timeline to select region
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Command Center / Output -->
+                    <div class="space-y-6">
+
+                        <!-- Action Card -->
+                        <div
+                            class="glass-panel p-6 flex flex-col justify-between min-h-[200px] relative overflow-hidden">
+                            <!-- Background Decor -->
+                            <div
+                                class="absolute -right-6 -top-6 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl pointer-events-none">
+                            </div>
+
+                            <div>
+                                <h4 class="text-base font-bold text-white mb-2">Command Center</h4>
+                                <p class="text-sm text-slate-400" id="cmd-desc">Ready to process file.</p>
+                            </div>
+
+                            <div class="mt-8 space-y-4">
+                                <button id="process-btn"
+                                    class="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-blue-500/20 transition-all hover:-translate-y-1 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 relative overflow-hidden">
+                                    <span class="relative z-10 flex items-center justify-center gap-2">
+                                        <i data-lucide="zap" class="w-5 h-5"></i>
+                                        <span id="btn-text">Start Processing</span>
+                                    </span>
+                                    <!-- Progress Layer -->
+                                    <div id="btn-progress"
+                                        class="absolute inset-0 bg-white/10 w-0 transition-all duration-300"></div>
+                                </button>
+
+                                <div id="progress-stats"
+                                    class="hidden flex justify-between text-xs font-mono text-slate-400">
+                                    <span id="time-elapsed">00:00</span>
+                                    <span id="percent-val">0%</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Terminal Log -->
+                        <div class="glass-panel p-4 bg-slate-950/80 border-slate-800 font-mono text-xs h-48 overflow-y-auto"
+                            id="terminal">
+                            <div class="text-slate-500">AudioForge System [Version 2.0.0]</div>
+                            <div class="text-slate-500 mb-2">(c) 2026 Local Browser Environment.</div>
+                            <div class="text-green-500">> System Initialized.</div>
+                            <div class="text-blue-400">> Waiting for input...</div>
+                        </div>
+
+                        <!-- Result Area (Hidden) -->
+                        <div id="result-area"
+                            class="hidden glass-panel p-4 border border-green-500/30 bg-green-500/5 animate-fade-in">
+                            <div class="flex items-center gap-3 mb-3">
+                                <div
+                                    class="w-8 h-8 rounded-full bg-green-500/20 text-green-400 flex items-center justify-center">
+                                    <i data-lucide="check" class="w-5 h-5"></i>
+                                </div>
+                                <h4 class="font-bold text-white">Success!</h4>
+                            </div>
+                            <a id="download-link" href="#"
+                                class="block w-full text-center py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg text-sm font-semibold transition-colors">
+                                Download File
+                            </a>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </main>
 
-    <footer class="mt-12 text-slate-500 text-sm text-center">
-        <p>&copy; 2026 AudioForge. All processing happens locally in your browser.</p>
-    </footer>
-
     <!-- LOGIC -->
     <script>
-        // --- Global State ---
-        let currentTab = 'converter';
-        let currentFile = null;
-        let ffmpeg = null;
-        let engineReady = false;
-        let simulationMode = false;
-
-        // --- DOM Elements ---
-        const els = {
-            tabs: ['converter', 'optimizer', 'extractor'],
-            dropZone: document.getElementById('drop-area'),
-            fileInput: document.getElementById('file-input'),
-            uploadPrompt: document.getElementById('upload-prompt'),
-            fileInfo: document.getElementById('file-info'),
-            filename: document.getElementById('filename-display'),
-            filesize: document.getElementById('filesize-display'),
-            processBtn: document.getElementById('process-btn'),
-            progressContainer: document.getElementById('progress-container'),
-            progressBar: document.getElementById('progress-bar'),
-            percentText: document.getElementById('percent-text'),
-            statusText: document.getElementById('status-text'),
-            logContainer: document.getElementById('log-container'),
-            logs: document.getElementById('logs'),
-            downloadArea: document.getElementById('download-area'),
-            downloadLink: document.getElementById('download-link'),
-            engineStatus: document.getElementById('engine-status'),
-            engineMsg: document.getElementById('engine-msg'),
-            engineSpinner: document.getElementById('engine-spinner')
+        // --- STATE MANAGEMENT ---
+        const state = {
+            currentFile: null,
+            fileType: null, // 'audio' or 'video'
+            mode: 'converter', // converter, optimizer, extractor
+            ffmpegLoaded: false,
+            isPlaying: false,
+            processing: false
         };
 
-        // --- Initialization ---
-        window.addEventListener('load', initEngine);
+        const elements = {
+            dropzone: document.getElementById('empty-state'),
+            fileInput: document.getElementById('file-input'),
+            workspace: document.getElementById('workspace'),
+            terminal: document.getElementById('terminal'),
+            processBtn: document.getElementById('process-btn'),
+            btnText: document.getElementById('btn-text'),
+            btnProgress: document.getElementById('btn-progress'),
+            engineStatus: document.getElementById('engine-status'),
+            waveLoader: document.getElementById('wave-loader'),
+            playPauseBtn: document.getElementById('play-pause-btn'),
+            pageTitle: document.getElementById('page-title'),
+            navItems: document.querySelectorAll('.sidebar-item'),
+            toolSections: document.querySelectorAll('.tool-section'),
+            resultArea: document.getElementById('result-area'),
+            downloadLink: document.getElementById('download-link')
+        };
 
-        async function initEngine() {
-            log('Initializing system...');
-            els.engineStatus.classList.remove('hidden');
+        let wavesurfer;
+        let ffmpeg;
 
-            try {
-                // Check if FFmpeg global is available from script tag
-                if (typeof FFmpeg === 'undefined') {
-                    throw new Error('FFmpeg script not loaded');
-                }
-
-                const { createFFmpeg } = FFmpeg;
-
-                // Attempt to create FFmpeg instance
-                // log: true enables console logging from the engine
-                ffmpeg = createFFmpeg({ log: true, corePath: 'https://unpkg.com/@ffmpeg/core@0.11.6/dist/ffmpeg-core.js' });
-
-                await ffmpeg.load();
-                engineReady = true;
-
-                els.engineMsg.textContent = "Engine Ready (WASM)";
-                els.engineMsg.classList.add('text-green-400');
-                els.engineMsg.classList.remove('text-yellow-200');
-                els.engineSpinner.classList.add('hidden');
-
-                log('Audio Engine loaded successfully.');
-
-                // Hide banner after 2s
-                setTimeout(() => els.engineStatus.classList.add('hidden'), 2000);
-
-            } catch (e) {
-                console.error(e);
-                log('⚠️ WASM Engine failed to load. Switching to Simulation Mode.');
-                simulationMode = true;
-                engineReady = true; // Ready to "simulate"
-
-                els.engineMsg.innerHTML = "Restricted Mode (Simulation Only)";
-                els.engineStatus.classList.remove('bg-yellow-500/10', 'border-yellow-500/20');
-                els.engineStatus.classList.add('bg-red-500/10', 'border-red-500/20', 'text-red-200');
-                els.engineSpinner.classList.add('hidden');
-            }
-        }
-
-        // --- Tab Logic ---
-        function switchTab(tabName) {
-            currentTab = tabName;
-
-            // UI Toggle
-            els.tabs.forEach(t => {
-                const btn = document.getElementById(`tab-${t}`);
-                const view = document.getElementById(`view-${t}`);
-
-                if (t === tabName) {
-                    btn.classList.add('active');
-                    view.classList.remove('hidden');
-                } else {
-                    btn.classList.remove('active');
-                    view.classList.add('hidden');
-                }
-            });
-
-            // Update hints based on tab
-            const hint = document.getElementById('file-types-hint');
-            if (tabName === 'extractor') {
-                hint.textContent = "Supported: MP4, MKV, MOV, WEBM";
-                els.fileInput.accept = "video/*";
-            } else {
-                hint.textContent = "Supported: WAV, MP3, OGG, FLAC";
-                els.fileInput.accept = "audio/*";
-            }
-
-            // Reset if file type doesn't match new tab requirement? 
-            // We'll keep the file but users might get an error if they try to extract audio from an image etc.
-        }
-
-        // --- File Handling ---
-        els.fileInput.addEventListener('change', handleFileSelect);
-        els.dropZone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            els.dropZone.classList.add('active');
-        });
-        els.dropZone.addEventListener('dragleave', () => els.dropZone.classList.remove('active'));
-        els.dropZone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            els.dropZone.classList.remove('active');
-            if (e.dataTransfer.files.length) {
-                els.fileInput.files = e.dataTransfer.files;
-                handleFileSelect();
-            }
-        });
-
-        function handleFileSelect() {
-            if (!els.fileInput.files.length) return;
-
-            currentFile = els.fileInput.files[0];
-
-            // Update UI
-            els.uploadPrompt.classList.add('hidden');
-            els.fileInfo.classList.remove('hidden');
-            els.filename.textContent = currentFile.name;
-            els.filesize.textContent = formatSize(currentFile.size);
-            els.processBtn.disabled = false;
-
-            // Reset results
-            els.downloadArea.classList.add('hidden');
-            els.progressContainer.classList.add('hidden');
-            els.logContainer.classList.add('hidden');
-
-            log(`File selected: ${currentFile.name} (${currentFile.type})`);
-        }
-
-        // --- Processing Logic ---
-        els.processBtn.addEventListener('click', async () => {
-            if (!currentFile || !engineReady) return;
-
-            els.processBtn.disabled = true;
-            els.processBtn.textContent = "Processing...";
-            els.progressContainer.classList.remove('hidden');
-            els.logContainer.classList.remove('hidden');
-            updateProgress(0);
-
-            try {
-                if (simulationMode) {
-                    await runSimulation();
-                } else {
-                    await runFFmpeg();
-                }
-            } catch (err) {
-                log('Error: ' + err.message);
-                els.processBtn.disabled = false;
-                els.processBtn.textContent = "Start Processing";
-                alert("An error occurred during processing. Check logs.");
-            }
-        });
-
-        async function runFFmpeg() {
-            const { fetchFile } = FFmpeg;
-            const inputName = 'input_file';
-            const fileExt = currentFile.name.split('.').pop();
-            const safeInputName = `input.${fileExt}`;
-
-            log('Writing file to memory...');
-            ffmpeg.FS('writeFile', safeInputName, await fetchFile(currentFile));
-
-            let command = [];
-            let outputFilename = '';
-
-            // Build Command based on Tab
-            if (currentTab === 'converter') {
-                const format = document.getElementById('convert-format').value;
-                outputFilename = `converted.${format}`;
-                command = ['-i', safeInputName, outputFilename];
-                log(`Starting Conversion: ${currentFile.name} -> ${outputFilename}`);
-            }
-            else if (currentTab === 'optimizer') {
-                const bitrate = document.getElementById('optimize-bitrate').value;
-                outputFilename = `optimized.mp3`;
-                // -b:a sets audio bitrate
-                command = ['-i', safeInputName, '-b:a', bitrate, outputFilename];
-                log(`Starting Optimization: ${currentFile.name} -> ${bitrate} MP3`);
-            }
-            else if (currentTab === 'extractor') {
-                outputFilename = `extracted.mp3`;
-                // -vn disables video, -q:a 2 is high quality VBR mp3
-                command = ['-i', safeInputName, '-vn', '-acodec', 'libmp3lame', '-q:a', '2', outputFilename];
-                log(`Starting Extraction: ${currentFile.name} -> MP3`);
-            }
-
-            // Bind Progress
-            ffmpeg.setProgress(({ ratio }) => {
-                const pct = Math.round(ratio * 100);
-                if (pct > 0 && pct <= 100) updateProgress(pct);
-            });
-
-            // Run
-            await ffmpeg.run(...command);
-
-            // Read Result
-            log('Processing complete. Reading output...');
-            const data = ffmpeg.FS('readFile', outputFilename);
-
-            // Create Download Link
-            const blob = new Blob([data.buffer], { type: getMimeType(outputFilename) });
-            prepareDownload(blob, outputFilename);
-
-            // Cleanup
-            ffmpeg.FS('unlink', safeInputName);
-            ffmpeg.FS('unlink', outputFilename);
-        }
-
-        async function runSimulation() {
-            log('Running in SIMULATION MODE (No real conversion)...');
-            log(`Job Type: ${currentTab.toUpperCase()}`);
-            log(`File: ${currentFile.name}`);
-
-            const steps = 20;
-            for (let i = 0; i <= steps; i++) {
-                await new Promise(r => setTimeout(r, 150)); // Artificial delay
-                updateProgress((i / steps) * 100);
-                if (i % 5 === 0) log(`Encoding frame ${i * 100}...`);
-            }
-
-            log('Simulation complete.');
-            // Just return the original file for the "download" in simulation to prove the flow
-            prepareDownload(currentFile, `simulated_output_${currentFile.name}`);
-        }
-
-        // --- Utilities ---
-        function updateProgress(percent) {
-            els.progressBar.style.width = `${percent}%`;
-            els.percentText.textContent = `${percent}%`;
-            if (percent === 100) els.statusText.textContent = "Finished";
-        }
-
-        function log(msg) {
-            const line = document.createElement('div');
-            line.textContent = `> ${msg}`;
-            els.logs.appendChild(line);
-            els.logContainer.scrollTop = els.logContainer.scrollHeight;
-        }
-
-        function prepareDownload(blob, filename) {
-            const url = URL.createObjectURL(blob);
-            els.downloadLink.href = url;
-            els.downloadLink.download = filename;
-
-            els.downloadArea.classList.remove('hidden');
-            els.processBtn.textContent = "Completed";
-
-            // Confetti effect or success state could go here
-        }
-
-        function resetUI() {
-            els.processBtn.disabled = false;
-            els.processBtn.textContent = "Start Processing";
-            els.downloadArea.classList.add('hidden');
-            els.progressContainer.classList.add('hidden');
-            els.logContainer.classList.add('hidden');
-            els.fileInput.value = '';
-            els.fileInfo.classList.add('hidden');
-            els.uploadPrompt.classList.remove('hidden');
-            currentFile = null;
-            els.logs.innerHTML = '';
-            updateProgress(0);
-        }
-
-        function formatSize(bytes) {
-            if (bytes === 0) return '0 B';
+        // --- UTILS ---
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 Bytes';
             const k = 1024;
-            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
             const i = Math.floor(Math.log(bytes) / Math.log(k));
             return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
         }
 
-        function getMimeType(filename) {
-            const ext = filename.split('.').pop().toLowerCase();
-            const map = {
-                'mp3': 'audio/mpeg',
-                'wav': 'audio/wav',
-                'ogg': 'audio/ogg',
-                'flac': 'audio/flac'
-            };
-            return map[ext] || 'application/octet-stream';
+        function formatTime(seconds) {
+            const m = Math.floor(seconds / 60);
+            const s = Math.floor(seconds % 60);
+            return `${m}:${s.toString().padStart(2, '0')}`;
         }
 
+        function log(msg, color = 'text-slate-400') {
+            const div = document.createElement('div');
+            div.className = color;
+            div.textContent = `> ${msg}`;
+            elements.terminal.appendChild(div);
+            elements.terminal.scrollTop = elements.terminal.scrollHeight;
+        }
+
+        function addToHistory(filename) {
+            const list = document.getElementById('history-list');
+            if (list.querySelector('.italic')) list.innerHTML = '';
+
+            const item = document.createElement('div');
+            item.className = 'flex items-center justify-between p-2 rounded bg-slate-800/50 border border-slate-700/50';
+            item.innerHTML = `
+                <span class="text-xs text-slate-300 truncate max-w-[140px]">${filename}</span>
+                <i data-lucide="clock" class="w-3 h-3 text-slate-500"></i>
+            `;
+            list.prepend(item);
+            lucide.createIcons();
+        }
+
+        // --- MOBILE NAV ---
+        window.toggleSidebar = () => {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('mobile-overlay');
+            const isClosed = sidebar.classList.contains('-translate-x-full');
+
+            if (isClosed) {
+                sidebar.classList.remove('-translate-x-full');
+                overlay.classList.remove('hidden');
+            } else {
+                sidebar.classList.add('-translate-x-full');
+                overlay.classList.add('hidden');
+            }
+        };
+
+        // --- INITIALIZATION ---
+        window.onload = async () => {
+            lucide.createIcons();
+            initFFmpeg();
+        };
+
+        async function initFFmpeg() {
+            // Check for file:// protocol
+            if (window.location.protocol === 'file:') {
+                const overlay = document.createElement('div');
+                overlay.className = 'fixed inset-0 z-[100] bg-slate-950/90 backdrop-blur-md flex flex-col items-center justify-center text-center p-8';
+                overlay.innerHTML = `
+                    <div class="p-6 bg-red-500/10 border border-red-500/50 rounded-2xl max-w-lg shadow-2xl">
+                        <div class="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i data-lucide="alert-octagon" class="w-8 h-8 text-red-500"></i>
+                        </div>
+                        <h2 class="text-2xl font-bold text-white mb-2">Protocol Error</h2>
+                        <p class="text-slate-300 mb-6">
+                            This application <strong>cannot</strong> run directly from the file system (<code>file://</code>) due to browser security restrictions on WebAssembly and Fetch API.
+                        </p>
+                        <div class="text-left bg-slate-900 p-4 rounded-lg font-mono text-xs text-slate-400 mb-6 overflow-x-auto">
+                            <div class="mb-2 text-slate-500"># Option 1: VS Code Live Server</div>
+                            <div class="text-blue-400">Right-click index.html -> "Open with Live Server"</div>
+                            <br>
+                            <div class="mb-2 text-slate-500"># Option 2: Python</div>
+                            <div class="text-green-400">python -m http.server 8000</div>
+                            <br>
+                            <div class="mb-2 text-slate-500"># Option 3: Node.js</div>
+                            <div class="text-yellow-400">npx serve .</div>
+                        </div>
+                        <button onclick="location.reload()" class="px-6 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg font-medium transition-colors">
+                            Retry after starting server
+                        </button>
+                    </div>
+                `;
+                document.body.appendChild(overlay);
+                lucide.createIcons();
+                throw new Error("Cannot run on file:// protocol");
+            }
+
+            try {
+                if (typeof FFmpeg === 'undefined') throw new Error("FFmpeg script not loaded");
+
+                const { createFFmpeg } = FFmpeg;
+
+                // Point to LOCAL files
+                ffmpeg = createFFmpeg({
+                    log: true,
+                    corePath: '/vendor/ffmpeg-core.js'
+                });
+
+                await ffmpeg.load();
+
+                state.ffmpegLoaded = true;
+                log('FFmpeg Core Loaded (Local).', 'text-green-400');
+
+                // Hide status
+                elements.engineStatus.querySelector('span.animate-ping').remove();
+                elements.engineStatus.querySelector('span:last-child').textContent = "Engine Ready";
+                elements.engineStatus.classList.add('bg-green-500/10', 'border-green-500/50');
+                setTimeout(() => elements.engineStatus.classList.add('-translate-y-20', 'opacity-0'), 2000);
+
+                document.getElementById('status-dot').className = "w-2 h-2 rounded-full bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.5)]";
+
+            } catch (e) {
+                console.error(e);
+                log('Failed to load FFmpeg. Check console.', 'text-red-400');
+                elements.engineStatus.querySelector('span:last-child').textContent = "Engine Error";
+                elements.engineStatus.classList.add('bg-red-500/10', 'border-red-500/50');
+            }
+        }
+
+        // --- NAVIGATION ---
+        window.switchView = (mode) => {
+            state.mode = mode;
+
+            // Sidebar UI
+            elements.navItems.forEach(el => el.classList.remove('active'));
+            document.getElementById(`nav-${mode}`).classList.add('active');
+
+            // Title Update
+            const titles = {
+                'converter': 'Universal Converter',
+                'optimizer': 'Bitrate Optimizer',
+                'extractor': 'Audio Extractor'
+            };
+            const icons = {
+                'converter': 'refresh-cw',
+                'optimizer': 'gauge',
+                'extractor': 'film'
+            };
+
+            elements.pageTitle.innerHTML = `
+                <i data-lucide="${icons[mode]}" class="w-5 h-5 text-blue-400"></i>
+                ${titles[mode]}
+            `;
+            lucide.createIcons();
+
+            // Sections UI
+            elements.toolSections.forEach(sec => sec.classList.add('hidden'));
+            document.getElementById(`tool-settings-${mode}`).classList.remove('hidden');
+
+            // Reset Result
+            elements.resultArea.classList.add('hidden');
+            elements.processBtn.disabled = !state.currentFile;
+            elements.processBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            if (!state.currentFile) elements.processBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        };
+
+        // --- FILE HANDLING ---
+        elements.fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length) handleFile(e.target.files[0]);
+        });
+
+        // Drag & Drop
+        const dz = elements.dropzone;
+        dz.addEventListener('dragover', (e) => { e.preventDefault(); dz.classList.add('drag-active'); });
+        dz.addEventListener('dragleave', () => dz.classList.remove('drag-active'));
+        dz.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dz.classList.remove('drag-active');
+            if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+        });
+
+        async function handleFile(file) {
+            state.currentFile = file;
+            state.fileType = file.type.startsWith('video') ? 'video' : 'audio';
+
+            // UI Updates
+            elements.dropzone.classList.add('hidden');
+            elements.workspace.classList.remove('hidden');
+
+            document.getElementById('filename').textContent = file.name;
+            document.getElementById('filesize').textContent = formatBytes(file.size);
+            document.getElementById('filetype').textContent = state.fileType.toUpperCase();
+
+            // Icon
+            const iconName = state.fileType === 'video' ? 'film' : 'music';
+            document.getElementById('file-icon').dataset.lucide = iconName;
+            lucide.createIcons();
+
+            log(`File loaded: ${file.name}`);
+            elements.processBtn.disabled = false;
+            elements.processBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+
+            // Init Waveform
+            initWavesurfer(file);
+
+            addToHistory(file.name);
+        }
+
+        function initWavesurfer(file) {
+            if (wavesurfer) wavesurfer.destroy();
+
+            elements.waveLoader.classList.remove('hidden', 'opacity-0');
+
+            const isVideo = state.fileType === 'video';
+            const url = URL.createObjectURL(file);
+
+            wavesurfer = WaveSurfer.create({
+                container: '#waveform',
+                waveColor: '#334155',
+                progressColor: '#3b82f6',
+                cursorColor: '#f472b6',
+                barWidth: 2,
+                barGap: 3,
+                barRadius: 3,
+                height: 128,
+                normalize: true,
+                backend: 'MediaElement' // Better for large files
+            });
+
+            wavesurfer.load(url);
+
+            wavesurfer.on('ready', () => {
+                elements.waveLoader.classList.add('opacity-0');
+                setTimeout(() => elements.waveLoader.classList.add('hidden'), 300);
+
+                const dur = wavesurfer.getDuration();
+                document.getElementById('duration').textContent = formatTime(dur);
+                log(`Waveform generated. Duration: ${dur.toFixed(2)}s`);
+            });
+
+            wavesurfer.on('finish', () => {
+                state.isPlaying = false;
+                updatePlayBtn();
+            });
+
+            // Play/Pause Click
+            elements.playPauseBtn.onclick = () => {
+                wavesurfer.playPause();
+                state.isPlaying = !state.isPlaying;
+                updatePlayBtn();
+            };
+        }
+
+        function updatePlayBtn() {
+            const icon = state.isPlaying ? 'pause' : 'play';
+            elements.playPauseBtn.innerHTML = `<i data-lucide="${icon}" class="w-5 h-5 ml-1 fill-current"></i>`;
+            lucide.createIcons();
+        }
+
+        window.resetWorkspace = () => {
+            if (wavesurfer) { wavesurfer.destroy(); wavesurfer = null; }
+            state.currentFile = null;
+            elements.workspace.classList.add('hidden');
+            elements.dropzone.classList.remove('hidden');
+            elements.fileInput.value = '';
+            elements.processBtn.disabled = true;
+            elements.resultArea.classList.add('hidden');
+        };
+
+        // --- FORMAT SELECTION LOGIC ---
+        const formatBtns = document.querySelectorAll('.format-btn');
+        formatBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                formatBtns.forEach(b => {
+                    b.classList.remove('active', 'ring-2', 'ring-blue-500', 'bg-slate-800', 'text-white');
+                    b.classList.add('bg-slate-800/50', 'text-slate-400');
+                });
+                btn.classList.add('active', 'ring-2', 'ring-blue-500', 'bg-slate-800', 'text-white');
+                btn.classList.remove('bg-slate-800/50', 'text-slate-400');
+            });
+        });
+
+        const qualitySlider = document.getElementById('quality-slider');
+        qualitySlider.addEventListener('input', (e) => {
+            document.getElementById('quality-val').textContent = e.target.value + ' kbps';
+        });
+
+        // --- PROCESSING LOGIC ---
+        elements.processBtn.addEventListener('click', async () => {
+            if (state.processing || !state.currentFile) return;
+
+            state.processing = true;
+            elements.processBtn.disabled = true;
+            elements.btnText.textContent = "Processing...";
+            document.getElementById('progress-stats').classList.remove('hidden');
+            elements.resultArea.classList.add('hidden');
+
+            const startTime = Date.now();
+            const updateTimer = setInterval(() => {
+                const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                document.getElementById('time-elapsed').textContent = `00:${elapsed.toString().padStart(2, '0')}`;
+            }, 1000);
+
+            try {
+                if (!ffmpeg) throw new Error("FFmpeg not ready");
+
+                const { fetchFile } = FFmpeg;
+                const inFile = 'input_file';
+                const fileExt = state.currentFile.name.split('.').pop();
+                const safeIn = `input.${fileExt}`;
+
+                log('Writing file to memory...', 'text-blue-300');
+                ffmpeg.FS('writeFile', safeIn, await fetchFile(state.currentFile));
+
+                // Determine Command
+                let args = ['-i', safeIn];
+                let outExt = 'mp3';
+
+                if (state.mode === 'converter') {
+                    const fmtBtn = document.querySelector('.format-btn.active');
+                    outExt = fmtBtn ? fmtBtn.dataset.fmt : 'mp3';
+                    const bitrate = qualitySlider.value + 'k';
+
+                    if (outExt === 'mp3' || outExt === 'ogg') {
+                        args.push('-b:a', bitrate);
+                    }
+                    args.push(`output.${outExt}`);
+                }
+                else if (state.mode === 'optimizer') {
+                    outExt = 'mp3'; // Default for optimizer
+                    const optLevel = document.querySelector('input[name="opt-level"]:checked').value;
+                    args.push('-b:a', optLevel);
+                    args.push(`optimized.${outExt}`);
+                }
+                else if (state.mode === 'extractor') {
+                    const format = document.getElementById('extract-format').value;
+                    outExt = format;
+                    args.push('-vn'); // No video
+                    args.push(`extracted.${outExt}`);
+                }
+
+                log(`Running FFmpeg: ${args.join(' ')}`);
+
+                await ffmpeg.run(...args);
+
+                const outFile = args[args.length - 1];
+                const data = ffmpeg.FS('readFile', outFile);
+
+                // Create Download Link
+                const url = URL.createObjectURL(new Blob([data.buffer], { type: `audio/${outExt}` }));
+                elements.downloadLink.href = url;
+                elements.downloadLink.download = `audioforge_${outFile}`;
+
+                elements.resultArea.classList.remove('hidden');
+                log('Processing complete!', 'text-green-500');
+
+            } catch (e) {
+                console.error(e);
+                log(`Error: ${e.message}`, 'text-red-500');
+            } finally {
+                clearInterval(updateTimer);
+                state.processing = false;
+                elements.processBtn.disabled = false;
+                elements.btnText.textContent = "Start Processing";
+                elements.btnProgress.style.width = '0%';
+                document.getElementById('progress-stats').classList.add('hidden');
+            }
+        });
     </script>
 </body>
 
