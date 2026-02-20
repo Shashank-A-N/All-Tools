@@ -1,7 +1,7 @@
 {
-  "name": "PDF & Image Toolkit",
-  "short_name": "PDFToolkit",
-  "description": "AI-Powered PDF & Image Tools — 40+ tools",
+  "name": "PDF, Image, Text, Video & Audio Toolkit",
+  "short_name": "AllToolkit",
+  "description": "AI-Powered PDF, Image, Text, Video & Audio Tools — 40+ tools",
   "start_url": "index.html",
   "scope": ".",
   "display": "standalone",
