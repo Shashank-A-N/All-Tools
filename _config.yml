@@ -1,3 +1,4 @@
-url: "https://shashank-a-n.github.io/All-Tools/"
+url: "https://shashank-a-n.github.io"
+baseurl: "/All-Tools"
 plugins:
   - jekyll-sitemap
