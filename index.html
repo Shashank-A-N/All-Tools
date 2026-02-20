@@ -3226,7 +3226,7 @@
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 // Ensure you have a sw.js file in your root folder
-                navigator.serviceWorker.register('/sw.js')
+                navigator.serviceWorker.register('./sw.js', { scope: './' })
                     .then(reg => console.log('Service Worker Registered'))
                     .catch(err => console.log('Service Worker Failed', err));
             });
