@@ -1,0 +1,179 @@
+/* text-to-speech-gen/style.css */
+
+:root {
+    --glass-bg: rgba(20, 20, 20, 0.4);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --violet-500: #8b5cf6;
+    --fuchsia-500: #d946ef;
+    --blue-500: #3b82f6;
+    --blue-400: #60a5fa;
+    --scrollbar-bg: rgba(0, 0, 0, 0.2);
+    --scrollbar-thumb: rgba(139, 92, 246, 0.5);
+}
+
+[data-theme="light"] {
+    --glass-bg: rgba(255, 255, 255, 0.7);
+    --glass-border: rgba(0, 0, 0, 0.1);
+    --scrollbar-bg: rgba(0, 0, 0, 0.05);
+    --scrollbar-thumb: rgba(139, 92, 246, 0.3);
+    background-color: #f1f5f9;
+    color: #0f172a;
+}
+
+[data-theme="light"] .text-white {
+    color: #0f172a !important;
+}
+
+[data-theme="light"] .text-slate-200 {
+    color: #1e293b !important;
+}
+
+[data-theme="light"] .text-slate-300 {
+    color: #334155 !important;
+}
+
+[data-theme="light"] .text-slate-400 {
+    color: #475569 !important;
+}
+
+[data-theme="light"] .bg-black\/40,
+[data-theme="light"] .bg-black\/50,
+[data-theme="light"] .bg-black\/20 {
+    background-color: rgba(255, 255, 255, 0.5) !important;
+    color: #0f172a !important;
+}
+
+[data-theme="light"] .border-white\/10 {
+    border-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+[data-theme="cyberpunk"] {
+    --glass-bg: rgba(10, 0, 20, 0.6);
+    --glass-border: rgba(0, 255, 255, 0.3);
+    --violet-500: #0ff;
+    --fuchsia-500: #f0f;
+    background-color: #050014;
+    color: #e2e8f0;
+}
+
+[data-theme="cyberpunk"] .bg-gradient-to-br,
+[data-theme="cyberpunk"] .bg-gradient-to-r {
+    background-image: linear-gradient(to bottom right, #0ff, #f0f) !important;
+}
+
+.glass-panel {
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-color: var(--glass-border);
+}
+
+.glass-header {
+    background: rgba(10, 10, 10, 0.7);
+}
+
+[data-theme="light"] .glass-header {
+    background: rgba(255, 255, 255, 0.8);
+}
+
+/* Custom Scrollbar for Textarea & App */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--scrollbar-bg);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--violet-500);
+}
+
+/* Custom Slider */
+.custom-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+    outline: none;
+}
+
+[data-theme="light"] .custom-slider {
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.custom-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--slider-color, #fff);
+    cursor: pointer;
+    box-shadow: 0 0 10px var(--slider-color, rgba(255, 255, 255, 0.5));
+    transition: transform 0.1s;
+}
+
+.custom-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+}
+
+/* Toast Animations */
+@keyframes slideInUp {
+    from {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+    }
+
+    to {
+        opacity: 0;
+    }
+}
+
+.toast-enter {
+    animation: slideInUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.toast-exit {
+    animation: fadeOut 0.3s ease forwards;
+}
+
+/* Highlighted Word */
+.highlight-word {
+    background-color: rgba(139, 92, 246, 0.4);
+    color: white;
+    border-radius: 2px;
+    padding: 0 2px;
+    margin: 0 -2px;
+    box-shadow: 0 0 8px rgba(139, 92, 246, 0.6);
+    transition: background-color 0.1s, color 0.1s;
+}
+
+[data-theme="light"] .highlight-word {
+    color: #000;
+}
+
+/* Utlity Classes */
+.word-wrap-break-word {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
