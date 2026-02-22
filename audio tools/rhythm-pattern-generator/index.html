@@ -4,296 +4,141 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rhythm Pattern Generator - Shadow Audio</title>
+    <title>S H A D O W // S E Q U E N C E R</title>
+
+    <!-- Dependencies -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link
-        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;500;700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;500;700&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="../../styles.css">
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+    <!-- Local Styles -->
+    <link rel="stylesheet" href="../../styles.css"> <!-- Global -->
+    <link rel="stylesheet" href="css/style.css"> <!-- Module Specific -->
 </head>
 
-<body class="bg-gray-900 text-white font-sans antialiased overflow-x-hidden">
+<body class="bg-[#050510] text-white h-screen flex flex-col overflow-hidden">
 
     <!-- Navbar -->
-    <nav
-        class="sticky top-0 z-50 glass-effect border-b border-white/5 px-6 py-4 flex items-center justify-between backdrop-blur-md">
+    <nav class="h-16 border-b border-white/5 flex items-center justify-between px-6 bg-black/40 backdrop-blur-md z-50">
         <div class="flex items-center gap-3">
-            <a href="../index.html" class="flex items-center gap-2 group">
-                <div
-                    class="relative w-10 h-10 flex items-center justify-center bg-purple-600/20 rounded-lg border border-purple-500/30 group-hover:border-purple-500/50 transition-all">
-                    <i class="fas fa-drum text-purple-400 text-xl group-hover:scale-110 transition-transform"></i>
-                </div>
-                <div>
-                    <h1 class="text-xl font-orbitron font-bold tracking-widest text-white">SHADOW<span
-                            class="text-purple-500">AUDIO</span></h1>
-                    <span class="text-xs text-slate-400 font-mono tracking-wider">SEQUENCER</span>
-                </div>
+            <div class="w-8 h-8 rounded bg-purple-600/20 flex items-center justify-center border border-purple-500/50">
+                <i class="fas fa-wave-square text-purple-400"></i>
+            </div>
+            <div class="hidden md:block">
+                <h1 class="text-xl font-orbitron tracking-widest leading-none">SHADOW<span
+                        class="text-purple-500">SEQ</span></h1>
+                <div class="text-[10px] text-slate-500 font-mono tracking-[0.3em]">ADVANCED RHYTHM ENGINE</div>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-6">
+            <!-- Transport -->
+            <div class="flex items-center bg-slate-900/50 rounded-lg p-1 border border-white/5">
+                <button id="stop-btn"
+                    class="w-10 h-8 hover:bg-slate-700/50 rounded transition-colors text-slate-400 hover:text-white">
+                    <i class="fas fa-stop"></i>
+                </button>
+                <div class="w-px h-4 bg-white/10 mx-1"></div>
+                <button id="play-btn"
+                    class="w-12 h-8 bg-amber-600 hover:bg-amber-500 rounded text-white shadow-[0_0_15px_rgba(245,158,11,0.3)] transition-all">
+                    <i class="fas fa-play"></i>
+                </button>
+            </div>
+
+            <!-- Tempo -->
+            <div class="flex flex-col items-center">
+                <span class="text-[10px] text-slate-500 font-bold">BPM</span>
+                <input type="number" id="bpm-input" value="120"
+                    class="bg-transparent w-12 text-center font-mono font-bold text-lg text-amber-500 focus:outline-none border-b border-transparent focus:border-amber-500/50">
+            </div>
+
+            <a href="../index.html"
+                class="w-8 h-8 flex items-center justify-center hover:bg-white/5 rounded-full transition-colors text-slate-400 hover:text-white">
+                <i class="fas fa-times"></i>
             </a>
         </div>
-        <a href="../index.html" class="text-slate-400 hover:text-white transition-colors"><i
-                class="fas fa-times text-xl"></i></a>
     </nav>
 
-    <!-- Main Content -->
-    <main class="container mx-auto px-4 py-12 max-w-5xl">
-        <div class="flex flex-col lg:flex-row justify-between items-end mb-8 relative z-10">
-            <div>
-                <h2
-                    class="text-4xl font-bold font-orbitron text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-amber-500">
-                    Beat Sequencer</h2>
-                <p class="text-slate-400 text-sm">Design rhythm patterns.</p>
+    <!-- Main Layout -->
+    <main class="flex-1 flex flex-col lg:flex-row gap-4 p-4 overflow-hidden relative">
+
+        <!-- Left Panel: Sequencer & Visuals -->
+        <div class="flex-[3] flex flex-col gap-4 min-w-0 h-full lg:h-auto overflow-y-auto lg:overflow-visible">
+
+            <!-- Visualizer Area -->
+            <div class="h-48 glass-panel rounded-xl p-4 relative overflow-hidden group shrink-0 order-2 lg:order-none">
+                <div class="absolute top-2 left-4 text-xs font-mono text-slate-500 z-10">FREQUENCY SPECTRUM</div>
+                <canvas id="visualizer" class="opacity-80 group-hover:opacity-100 transition-opacity"></canvas>
             </div>
 
-            <div class="flex gap-4 items-center bg-black/40 p-2 rounded-xl border border-white/10 mt-4 lg:mt-0">
-                <div class="px-4">
-                    <label class="text-[10px] text-slate-500 font-bold block mb-1">TEMPO</label>
-                    <div class="flex items-center gap-2">
-                        <input type="number" id="bpm" value="120" min="60" max="200"
-                            class="bg-transparent w-12 font-mono text-xl text-amber-500 focus:outline-none">
-                        <span class="text-amber-500/50 text-xs">BPM</span>
+            <!-- Sequencer Grid -->
+            <div
+                class="flex-1 glass-panel rounded-xl p-6 overflow-y-auto overflow-x-auto min-h-[300px] order-1 lg:order-none">
+                <div class="flex justify-between items-center mb-4 sticky left-0">
+                    <h2 class="font-orbitron text-slate-300 tracking-wider text-sm"><i
+                            class="fas fa-th mr-2 text-purple-500"></i>PATTERN GRID</h2>
+                    <div class="flex gap-2">
+                        <button id="load-pattern-btn"
+                            class="text-xs px-3 py-1 bg-slate-800 rounded hover:bg-slate-700 transition"
+                            title="Load Pattern"><i class="fas fa-folder-open md:mr-1"></i> <span
+                                class="hidden md:inline">LOAD</span></button>
+                        <button id="save-pattern-btn"
+                            class="text-xs px-3 py-1 bg-slate-800 rounded hover:bg-slate-700 transition"
+                            title="Save Pattern"><i class="fas fa-save md:mr-1"></i> <span
+                                class="hidden md:inline">SAVE</span></button>
+                        <button class="text-xs px-3 py-1 bg-slate-800 rounded hover:bg-slate-700 transition"
+                            onclick="document.dispatchEvent(new Event('export-wav'))" title="Export WAV"><i
+                                class="fas fa-file-export md:mr-1"></i> <span
+                                class="hidden md:inline">WAV</span></button>
+                        <div class="w-px h-6 bg-white/10 mx-1"></div>
+                        <button class="text-xs px-3 py-1 bg-slate-800 rounded hover:bg-slate-700 transition"
+                            onclick="document.dispatchEvent(new Event('randomize'))" title="Randomize"><i
+                                class="fas fa-random md:mr-1"></i>
+                            <span class="hidden md:inline">RAND</span></button>
                     </div>
                 </div>
-                <button id="play-btn"
-                    class="w-12 h-12 rounded-lg bg-amber-600/80 hover:bg-amber-500 flex items-center justify-center transition-all shadow-[0_0_15px_rgba(217,119,6,0.2)]">
-                    <i class="fas fa-play text-white"></i>
-                </button>
-                <button id="clear-btn"
-                    class="w-12 h-12 rounded-lg bg-slate-800 hover:bg-slate-700 flex items-center justify-center transition-all">
-                    <i class="fas fa-trash text-slate-400"></i>
-                </button>
+
+                <div id="sequencer-grid" class="w-full">
+                    <!-- Grid injected by JS -->
+                </div>
             </div>
         </div>
 
-        <div class="glass p-6 md:p-8 rounded-3xl border border-white/5 shadow-2xl overflow-x-auto">
+        <!-- Right Panel: Controls & Mixer -->
+        <div class="flex-1 min-w-[250px] flex flex-col gap-4">
 
-            <div id="sequencer-grid" class="min-w-[700px]">
-                <!-- Header -->
-                <div
-                    class="grid grid-cols-[100px_repeat(16,1fr)] gap-1 mb-2 text-center text-[10px] text-slate-600 font-mono">
-                    <div></div>
-                    <!-- Beat Markers -->
-                    <script>
-                        for (let i = 1; i <= 16; i++) {
-                            document.write(`<div class="${(i - 1) % 4 === 0 ? 'text-amber-500/80 font-bold' : ''}">${i}</div>`);
-                        }
-                    </script>
+            <!-- Synth Params -->
+            <div class="flex-1 glass-panel rounded-xl p-5 overflow-y-auto">
+                <div class="flex items-center justify-between mb-4 border-b border-white/5 pb-2">
+                    <h2 class="font-orbitron text-slate-300 tracking-wider text-sm"><i
+                            class="fas fa-sliders-h mr-2 text-amber-500"></i>SYNTH</h2>
+                    <div class="text-[10px] text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded">SELECTED</div>
                 </div>
-
-                <!-- Rows -->
-                <div id="rows-container" class="space-y-2">
-                    <!-- Kick -->
-                    <div class="grid grid-cols-[100px_repeat(16,1fr)] gap-1 items-center sequencer-row"
-                        data-sound="kick">
-                        <div class="flex items-center justify-between pr-4">
-                            <span class="text-xs font-bold text-slate-300">KICK</span>
-                            <div class="w-2 h-2 rounded-full bg-slate-800 indicator"></div>
-                        </div>
-                        <!-- Steps handled by JS -->
-                    </div>
-                    <!-- Snare -->
-                    <div class="grid grid-cols-[100px_repeat(16,1fr)] gap-1 items-center sequencer-row"
-                        data-sound="snare">
-                        <div class="flex items-center justify-between pr-4">
-                            <span class="text-xs font-bold text-slate-300">SNARE</span>
-                            <div class="w-2 h-2 rounded-full bg-slate-800 indicator"></div>
-                        </div>
-                    </div>
-                    <!-- HiHat -->
-                    <div class="grid grid-cols-[100px_repeat(16,1fr)] gap-1 items-center sequencer-row"
-                        data-sound="hihat">
-                        <div class="flex items-center justify-between pr-4">
-                            <span class="text-xs font-bold text-slate-300">HI-HAT</span>
-                            <div class="w-2 h-2 rounded-full bg-slate-800 indicator"></div>
-                        </div>
-                    </div>
-                    <!-- Clamp -->
-                    <div class="grid grid-cols-[100px_repeat(16,1fr)] gap-1 items-center sequencer-row"
-                        data-sound="clap">
-                        <div class="flex items-center justify-between pr-4">
-                            <span class="text-xs font-bold text-slate-300">CLAP</span>
-                            <div class="w-2 h-2 rounded-full bg-slate-800 indicator"></div>
-                        </div>
+                <div id="synth-controls">
+                    <!-- Controls injected by JS -->
+                    <div class="text-center text-slate-500 text-sm mt-10">Select an instrument track to edit parameters
                     </div>
                 </div>
             </div>
 
+            <!-- Mixer -->
+            <div class="h-48 glass-panel rounded-xl p-4 overflow-x-auto">
+                <div class="text-[10px] text-slate-500 font-mono mb-2 text-center">MIXER CONSOLE</div>
+                <div id="mixer-controls" class="flex justify-center gap-2 h-full pb-2">
+                    <!-- Mixer Strips injected by JS -->
+                </div>
+            </div>
         </div>
     </main>
 
-    <script type="module">
-        import { audioEngine } from '../shared/audio-utils.js';
-
-        // Initial State
-        const steps = 16;
-        const rows = document.querySelectorAll('.sequencer-row');
-        let isPlaying = false;
-        let currentStep = 0;
-        let tempo = 120;
-        let intervalId;
-
-        // Init Grid
-        rows.forEach(row => {
-            const sound = row.dataset.sound;
-            for (let i = 0; i < steps; i++) {
-                const stepBtn = document.createElement('button');
-                stepBtn.className = `h-10 rounded bg-slate-800/50 hover:bg-slate-700 transition-all border border-white/5 step-btn ${i % 4 === 0 ? 'border-l-white/10' : ''}`;
-                stepBtn.dataset.step = i;
-                stepBtn.onclick = () => toggleStep(stepBtn);
-                row.appendChild(stepBtn);
-            }
-        });
-
-        // Controls
-        const playBtn = document.getElementById('play-btn');
-        const clearBtn = document.getElementById('clear-btn');
-        const bpmInput = document.getElementById('bpm');
-
-        playBtn.onclick = togglePlay;
-        clearBtn.onclick = clearGrid;
-
-        bpmInput.addEventListener('change', (e) => {
-            tempo = Math.min(200, Math.max(60, e.target.value));
-            if (isPlaying) {
-                stop();
-                start();
-            }
-        });
-
-        function toggleStep(btn) {
-            btn.classList.toggle('active');
-            btn.classList.toggle('bg-amber-500');
-            btn.classList.toggle('shadow-[0_0_10px_#f59e0b]');
-        }
-
-        function clearGrid() {
-            document.querySelectorAll('.step-btn').forEach(btn => {
-                btn.className = btn.className.replace('active bg-amber-500 shadow-[0_0_10px_#f59e0b]', '');
-            });
-        }
-
-        function togglePlay() {
-            if (isPlaying) stop();
-            else start();
-        }
-
-        function start() {
-            const ctx = audioEngine.init();
-            isPlaying = true;
-            playBtn.innerHTML = '<i class="fas fa-stop text-white"></i>';
-            currentStep = 0;
-            const ms = (60000 / tempo) / 4; // 16th notes
-
-            intervalId = setInterval(() => {
-                playStep(currentStep);
-                currentStep = (currentStep + 1) % steps;
-            }, ms);
-        }
-
-        function stop() {
-            isPlaying = false;
-            playBtn.innerHTML = '<i class="fas fa-play text-white"></i>';
-            clearInterval(intervalId);
-            resetIndicators();
-        }
-
-        function playStep(step) {
-            // Visuals
-            document.querySelectorAll('.step-btn').forEach(b => b.classList.remove('brightness-150'));
-
-            rows.forEach(row => {
-                const btn = row.children[step + 1]; // +1 because of Label div
-                const sound = row.dataset.sound;
-
-                // Highlight current column
-                btn.classList.add('brightness-150');
-
-                if (btn.classList.contains('active')) {
-                    playSound(sound);
-                    // Flash indicator
-                    const ind = row.querySelector('.indicator');
-                    ind.classList.add('bg-amber-400', 'shadow-[0_0_10px_#f59e0b]');
-                    setTimeout(() => ind.classList.remove('bg-amber-400', 'shadow-[0_0_10px_#f59e0b]'), 100);
-                }
-            });
-        }
-
-        function playSound(type) {
-            const ctx = audioEngine.context;
-            const t = ctx.currentTime;
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-
-            osc.connect(gain);
-            gain.connect(ctx.destination);
-
-            if (type === 'kick') {
-                osc.frequency.setValueAtTime(150, t);
-                osc.frequency.exponentialRampToValueAtTime(0.01, t + 0.5);
-                gain.gain.setValueAtTime(1, t);
-                gain.gain.exponentialRampToValueAtTime(0.01, t + 0.5);
-                osc.start(t);
-                osc.stop(t + 0.5);
-            } else if (type === 'snare') {
-                // Noise buffer would be better, but using high osc for synth snare
-                const noise = ctx.createBufferSource();
-                const buffer = ctx.createBuffer(1, ctx.sampleRate * 0.2, ctx.sampleRate);
-                const data = buffer.getChannelData(0);
-                for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
-                noise.buffer = buffer;
-
-                const noiseFilter = ctx.createBiquadFilter();
-                noiseFilter.type = 'highpass';
-                noiseFilter.frequency.value = 1000;
-
-                noise.connect(noiseFilter);
-                noiseFilter.connect(gain);
-
-                gain.gain.setValueAtTime(0.7, t);
-                gain.gain.exponentialRampToValueAtTime(0.01, t + 0.2);
-                noise.start(t);
-            } else if (type === 'hihat') {
-                // High freq noise/square
-                // Simplified short logic
-                osc.type = 'square';
-                osc.frequency.setValueAtTime(800, t); // Metallic
-                const filter = ctx.createBiquadFilter();
-                filter.type = 'highpass';
-                filter.frequency.value = 5000;
-                osc.disconnect();
-                osc.connect(filter);
-                filter.connect(gain);
-
-                gain.gain.setValueAtTime(0.3, t);
-                gain.gain.exponentialRampToValueAtTime(0.01, t + 0.05);
-                osc.start(t);
-                osc.stop(t + 0.1);
-            } else if (type === 'clap') {
-                // Short noise burst
-                const noise = ctx.createBufferSource();
-                const buffer = ctx.createBuffer(1, ctx.sampleRate * 0.1, ctx.sampleRate);
-                const data = buffer.getChannelData(0);
-                for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
-                noise.buffer = buffer;
-
-                const filter = ctx.createBiquadFilter();
-                filter.type = 'bandpass';
-                filter.frequency.value = 1500;
-
-                noise.connect(filter);
-                filter.connect(gain);
-
-                gain.gain.setValueAtTime(0.5, t);
-                gain.gain.exponentialRampToValueAtTime(0.01, t + 0.1);
-                noise.start(t);
-            }
-        }
-
-        function resetIndicators() {
-            document.querySelectorAll('.step-btn').forEach(b => b.classList.remove('brightness-150'));
-            document.querySelectorAll('.indicator').forEach(i => i.classList.remove('bg-amber-400'));
-        }
-    </script>
+    <!-- Logic -->
+    <script type="module" src="js/app.js"></script>
 </body>
 
 </html>

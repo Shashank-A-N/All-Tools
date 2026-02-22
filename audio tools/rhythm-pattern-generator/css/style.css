@@ -1,0 +1,175 @@
+/* Cyberpunk / Neon Theme */
+:root {
+    --primary: #a855f7;
+    /* Purple */
+    --accent: #f59e0b;
+    /* Amber */
+    --bg-dark: #0f172a;
+    --glass: rgba(255, 255, 255, 0.05);
+    --border: rgba(255, 255, 255, 0.1);
+}
+
+body {
+    background-color: var(--bg-dark);
+    color: white;
+    font-family: 'Rajdhani', sans-serif;
+    overflow-x: hidden;
+}
+
+/* Glassmorphism */
+.glass-panel {
+    background: var(--glass);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--border);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: #1e293b;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #475569;
+    border-radius: 3px;
+}
+
+/* Step Sequencer Buttons */
+.step-btn {
+    position: relative;
+    overflow: hidden;
+}
+
+.step-btn.active::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.8) 0%, transparent 70%);
+    opacity: 0.3;
+}
+
+/* Vertical Range Input (Cross-browser is tricky, using transform) */
+input[type=range].vertical-range {
+    transform: rotate(270deg);
+}
+
+/* Range Input Styling */
+input[type=range] {
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+}
+
+input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    height: 16px;
+    width: 16px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    margin-top: -6px;
+    box-shadow: 0 0 10px var(--accent);
+}
+
+input[type=range]::-webkit-slider-runnable-track {
+    width: 100%;
+    height: 4px;
+    background: #334155;
+    border-radius: 2px;
+}
+
+/* Canvas Visualizer */
+#visualizer {
+    width: 100%;
+    height: 100%;
+    border-radius: 0.5rem;
+}
+
+/* Neon Glows */
+.glow-text {
+    text-shadow: 0 0 10px currentColor;
+}
+
+.glow-box {
+    box-shadow: 0 0 15px rgba(168, 85, 247, 0.3);
+}
+
+/* Animation */
+@keyframes pulse-ring {
+    0% {
+        transform: scale(0.8);
+        opacity: 0.5;
+    }
+
+    100% {
+        transform: scale(1.2);
+        opacity: 0;
+    }
+}
+
+.active-beat {
+    animation: pulse-ring 0.2s ease-out;
+}
+
+/* --- RESPONSIVE DESIGN --- */
+
+@media (max-width: 1024px) {
+
+    /* Stack Layout for Tablets/Mobile */
+    main {
+        flex-direction: column;
+        overflow-y: auto;
+    }
+
+    .glass-panel {
+        min-height: 200px;
+    }
+
+    /* Adjust Grid for smaller screens */
+    #sequencer-grid {
+        min-width: 600px;
+        /* Force scroll if too small */
+    }
+}
+
+@media (max-width: 768px) {
+
+    /* Mobile adjustments */
+    nav {
+        padding: 0 1rem;
+    }
+
+    nav .hidden-mobile {
+        display: none;
+    }
+
+    /* Mixer vertical stacking or horizontal scroll */
+    #mixer-controls {
+        justify-content: flex-start;
+    }
+
+    /* Larger touch targets */
+    .step-btn {
+        height: 2.5rem;
+        width: 100%;
+    }
+
+    input[type=range]::-webkit-slider-thumb {
+        height: 24px;
+        width: 24px;
+    }
+}
+@media (max-width: 1024px) {
+    .glass-panel {
+        min-height: 150px;
+    }
+}
