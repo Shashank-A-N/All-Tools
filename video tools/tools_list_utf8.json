@@ -1,0 +1,197 @@
+﻿[
+  {
+    "dir": "Audio Replacer",
+    "title": "Shadow Video - Audio Swap",
+    "desc": "No description available."
+  },
+  {
+    "dir": "audio-extractor",
+    "title": "SonicExtract Pro - Batch Audio Tool",
+    "desc": "Drag & drop multiple files"
+  },
+  {
+    "dir": "Bitrate Calculator",
+    "title": "Shadow Video - Bitrate Calc",
+    "desc": "No description available."
+  },
+  {
+    "dir": "bluring",
+    "title": "PrivacyBlur Ultimate - Pro Video Privacy Tool",
+    "desc": "Drop video file here or click to browse"
+  },
+  {
+    "dir": "Chroma Key",
+    "title": "Shadow Video - Chroma Key",
+    "desc": "Drag & drop or click to browse"
+  },
+  {
+    "dir": "compressor",
+    "title": "Video Compressor (Backend Edition)",
+    "desc": "High-speed server-side processing."
+  },
+  {
+    "dir": "converter",
+    "title": "VidCompress.io - Pro Video Tools",
+    "desc": "No description available."
+  },
+  {
+    "dir": "frame-grabber",
+    "title": "Frame Grabber Pro",
+    "desc": "Drag & drop or tap to browse"
+  },
+  {
+    "dir": "GIF to Video",
+    "title": "Shadow Video - GIF to Video",
+    "desc": "Drag & drop or click to browse"
+  },
+  {
+    "dir": "Loop Video",
+    "title": "Shadow Video - Loop",
+    "desc": "Drag & drop or click to browse"
+  },
+  {
+    "dir": "merge",
+    "title": "Fusion Studio - Mobile Optimized",
+    "desc": "No clips added"
+  },
+  {
+    "dir": "Metadata Viewer",
+    "title": "Shadow Video - Metadata",
+    "desc": "Drag & drop or click to browse"
+  },
+  {
+    "dir": "MetadataScrubber",
+    "title": "Metadata Scrubber | Privacy Tool",
+    "desc": "No description available."
+  },
+  {
+    "dir": "Mute Video",
+    "title": "Shadow Video - Mute",
+    "desc": "Drag & drop or click to browse"
+  },
+  {
+    "dir": "PIP Enabler",
+    "title": "Shadow Video - PIP",
+    "desc": "Drag & drop or click to browse"
+  },
+  {
+    "dir": "Redactor",
+    "title": "Redactor | Blur Tool",
+    "desc": "Upload video to auto-detect and blur sensitive regions."
+  },
+  {
+    "dir": "rotate",
+    "title": "Batch Video Rotator",
+    "desc": "Rotate and convert multiple videos locally."
+  },
+  {
+    "dir": "Screen Recorder",
+    "title": "Shadow Video - Screen Recorder",
+    "desc": "Click \"Start Recording\" to choose a screen"
+  },
+  {
+    "dir": "SecureCam",
+    "title": "Secure Cam | RAM Record",
+    "desc": "No description available."
+  },
+  {
+    "dir": "split",
+    "title": "SplitStream Pro - Batch Video Splitter",
+    "desc": "Local Batch Video Processor"
+  },
+  {
+    "dir": "Steganography",
+    "title": "Steganography | Hidden Data",
+    "desc": "Hide text or files inside a video container."
+  },
+  {
+    "dir": "subtitles",
+    "title": "AI Subtitle Generator",
+    "desc": "Upload a video to generate subtitles instantly using Whisper AI."
+  },
+  {
+    "dir": "Teleprompter",
+    "title": "Shadow Video - Teleprompter",
+    "desc": "No description available."
+  },
+  {
+    "dir": "Thumbnail Generator",
+    "title": "Shadow Video - Thumbnails",
+    "desc": "Drag & drop or click to browse"
+  },
+  {
+    "dir": "Video Cropper",
+    "title": "Shadow Video - Professional Cropper",
+    "desc": "No description available."
+  },
+  {
+    "dir": "Video Filters",
+    "title": "Shadow Video - Filters",
+    "desc": "No description available."
+  },
+  {
+    "dir": "Video Flip",
+    "title": "Shadow Video - Video Flip",
+    "desc": "Drag & drop or click to browse"
+  },
+  {
+    "dir": "Video Resizer",
+    "title": "Shadow Video - Resizer",
+    "desc": "No description available."
+  },
+  {
+    "dir": "Video Reverse",
+    "title": "Shadow Video - Video Reverse",
+    "desc": "Drag & drop or click to browse"
+  },
+  {
+    "dir": "Video Speed Controller",
+    "title": "SpeedControl Studio",
+    "desc": "Do not close this window or switch tabs."
+  },
+  {
+    "dir": "Video Sync",
+    "title": "Shadow Video - Sync",
+    "desc": "Drag & drop or click to browse"
+  },
+  {
+    "dir": "Video to GIF",
+    "title": "Shadow Video - Video to GIF",
+    "desc": "Drag & drop or click to browse"
+  },
+  {
+    "dir": "Video Watermark",
+    "title": "Shadow Video - Watermark",
+    "desc": "Drag & drop or click to browse"
+  },
+  {
+    "dir": "videodecoder",
+    "title": "Video Decoder | Deep Analysis",
+    "desc": "Load file to analyze structure"
+  },
+  {
+    "dir": "VideoEncoder",
+    "title": "Secure Encoder | Shadow Video",
+    "desc": "Support for MP4, WebM, MOV"
+  },
+  {
+    "dir": "VideoHasher",
+    "title": "Video Hasher | Integrity",
+    "desc": "No description available."
+  },
+  {
+    "dir": "VideoVault",
+    "title": "Shadow Vault | Encrypted Storage",
+    "desc": "FOLDER EMPTY"
+  },
+  {
+    "dir": "Volume Booster",
+    "title": "Shadow Video - Volume Booster",
+    "desc": "Drag & drop or click to browse"
+  },
+  {
+    "dir": "Webcam Recorder",
+    "title": "Shadow Video - Webcam Recorder",
+    "desc": "Click \"Activate Camera\" to enable input"
+  }
+]
