@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en" class="scroll-smooth antialiased">
 
 <head>
@@ -257,7 +257,7 @@
         <div id="apps-menu"
             class="nav-dropdown hidden absolute top-16 left-4 w-64 bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl p-2 z-[70]">
             <div class="grid grid-cols-2 gap-2">
-                <a href="#"
+                <a href="../index.html"
                     class="flex flex-col items-center justify-center p-4 rounded-lg bg-white/5 hover:bg-accent-500/10 hover:border-accent-500/30 border border-transparent transition-all group">
                     <i class="fas fa-home text-xl mb-2 text-slate-400 group-hover:text-accent-400"></i>
                     <span class="text-xs font-medium text-slate-300 group-hover:text-white">Home</span>
@@ -412,97 +412,399 @@
             <p class="text-slate-500">Refine your search parameters.</p>
         </div>
 
+        <!-- Workflow CTA Section -->
+        <div class="w-full max-w-7xl mx-auto mt-20 mb-10 px-4">
+            <div
+                class="relative rounded-3xl overflow-hidden bg-slate-900 border border-white/10 p-8 sm:p-12 shadow-2xl group">
+                <!-- Decorative Elements -->
+                <div
+                    class="absolute top-0 right-0 w-96 h-96 bg-accent-500/10 rounded-full blur-[100px] pointer-events-none group-hover:bg-accent-500/20 transition-all duration-700">
+                </div>
+                <div
+                    class="absolute bottom-0 left-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-[80px] pointer-events-none">
+                </div>
+
+                <div class="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
+                    <div class="flex-1 text-center md:text-left">
+                        <div
+                            class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent-500/10 border border-accent-500/30 text-accent-400 text-xs font-mono mb-4 shadow-[0_0_15px_-3px_rgba(52,211,153,0.2)]">
+                            <i class="fas fa-bolt"></i> NEW FEATURE
+                        </div>
+                        <h2 class="text-3xl sm:text-5xl font-display font-bold text-white mb-6">
+                            Automate Your Workflow
+                        </h2>
+                        <p class="text-slate-400 text-base sm:text-lg mb-8 max-w-xl mx-auto md:mx-0">
+                            String together multiple tools into a single, seamless pipeline. Save your customized
+                            operations processing pipeline and execute them with zero latency.
+                        </p>
+                        <a href="./workflow/index.html"
+                            class="inline-flex items-center justify-center gap-3 bg-accent-500 hover:bg-accent-400 text-slate-950 font-bold px-8 py-4 rounded-xl transition-all shadow-[0_0_20px_-5px_rgba(52,211,153,0.4)] hover:shadow-[0_0_25px_-5px_rgba(52,211,153,0.6)] hover:-translate-y-1 hover:scale-105">
+                            Open Workflow Builder <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </div>
+
+                    <!-- Visual Side -->
+                    <div class="hidden lg:flex flex-1 items-center justify-end relative w-full pr-8">
+                        <div
+                            class="relative w-full max-w-[340px] aspect-[4/3] bg-slate-950/80 backdrop-blur-md border border-white/10 rounded-2xl p-4 shadow-2xl transform rotate-2 hover:rotate-0 transition-all duration-700">
+                            <!-- Code/Builder mock UI -->
+                            <div class="flex items-center gap-2 mb-4 border-b border-white/5 pb-3">
+                                <div class="w-3 h-3 rounded-full bg-red-400/80"></div>
+                                <div class="w-3 h-3 rounded-full bg-yellow-400/80"></div>
+                                <div class="w-3 h-3 rounded-full bg-green-400/80"></div>
+                                <div class="ml-2 text-[10px] text-slate-500 font-mono tracking-widest flex-1">
+                                    SEQUENCE_RUNNER</div>
+                                <i class="fas fa-project-diagram text-slate-600"></i>
+                            </div>
+                            <div class="space-y-4">
+                                <!-- Node 1 -->
+                                <div
+                                    class="flex items-center gap-3 bg-slate-800/50 rounded-lg p-2.5 border border-white/5 mx-2">
+                                    <div
+                                        class="w-8 h-8 rounded-md bg-blue-500/20 text-blue-400 flex items-center justify-center text-sm">
+                                        <i class="fas fa-file-import"></i>
+                                    </div>
+                                    <div class="flex-1">
+                                        <div class="h-2 w-20 bg-slate-500 rounded mb-1"></div>
+                                        <div class="h-1.5 w-12 bg-slate-700 rounded"></div>
+                                    </div>
+                                    <i class="fas fa-chevron-down text-slate-600 text-[10px]"></i>
+                                </div>
+
+                                <div class="h-3 w-px bg-slate-700 mx-auto opacity-50 relative"></div>
+
+                                <!-- Node 2 -->
+                                <div
+                                    class="flex items-center gap-3 bg-slate-800/50 rounded-lg p-2.5 border border-white/5 mx-6">
+                                    <div
+                                        class="w-8 h-8 rounded-md bg-purple-500/20 text-purple-400 flex items-center justify-center text-sm">
+                                        <i class="fas fa-magic"></i>
+                                    </div>
+                                    <div class="flex-1">
+                                        <div class="h-2 w-24 bg-slate-500 rounded mb-1"></div>
+                                        <div class="h-1.5 w-16 bg-slate-700 rounded"></div>
+                                    </div>
+                                </div>
+
+                                <div class="h-3 w-px bg-slate-700 mx-auto opacity-50 relative"></div>
+
+                                <!-- Node 3 -->
+                                <div
+                                    class="flex items-center gap-3 bg-slate-800/50 rounded-lg p-2.5 border border-white/5 mx-10">
+                                    <div
+                                        class="w-8 h-8 rounded-md bg-accent-500/20 text-accent-400 flex items-center justify-center text-sm">
+                                        <i class="fas fa-download"></i>
+                                    </div>
+                                    <div class="h-2 w-16 bg-slate-500 rounded"></div>
+                                    <div
+                                        class="ml-auto px-1.5 py-0.5 rounded text-[8px] tracking-wider bg-green-500/20 text-green-400 font-mono">
+                                        DONE</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </main>
 
     <!-- Footer -->
-    <footer class="border-t border-white/5 bg-slate-950 py-12 relative z-10">
-        <div class="max-w-7xl mx-auto px-4 flex flex-col items-center justify-center">
-            <div class="flex items-center gap-2 mb-4 opacity-50 hover:opacity-100 transition-opacity">
-                <i class="fas fa-code text-accent-500"></i>
-                <span class="text-slate-500 text-sm font-mono">ENCODED_BY_SHADOW</span>
-            </div>
-            <p class="text-slate-600 text-sm text-center">
-                &copy; 2024 Shadow Text Operations. Neural Interface v3.
-            </p>
+    <div class="bg-slate-950/50 p-2 border-t border-white/5 flex items-center justify-between px-4">
+        <div class="flex gap-4 text-[10px] text-slate-500 font-mono">
+            <span class="hidden sm:inline"><i class="fas fa-arrow-up mr-1"></i><i
+                    class="fas fa-arrow-down mr-1"></i>Navigate</span>
+            <span class="hidden sm:inline"><i class="fas fa-level-down-alt mr-1 rotate-90"></i>Select</span>
+            <span class="sm:hidden">Tap to select</span>
         </div>
-    </footer>
-
-    <!-- Command Palette Modal -->
-    <div id="cmdPalette" class="fixed inset-0 z-[100] hidden">
-        <!-- Backdrop -->
-        <div class="absolute inset-0 cmd-palette-backdrop transition-opacity duration-300" onclick="toggleCmdPalette()">
-        </div>
-
-        <!-- Modal Content -->
-        <div class="absolute top-[10%] sm:top-[15%] left-1/2 -translate-x-1/2 w-[95%] sm:w-full max-w-2xl px-0 sm:px-4">
-            <div class="bg-slate-900 border border-white/10 rounded-xl shadow-2xl overflow-hidden transform transition-all duration-300 scale-95 opacity-0"
-                id="cmdContent">
-
-                <!-- Search Input -->
-                <div class="relative border-b border-white/5">
-                    <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"></i>
-                    <input type="text" id="cmdInput"
-                        class="w-full bg-transparent text-white p-4 pl-12 text-base sm:text-lg focus:outline-none placeholder-slate-600"
-                        placeholder="Type a command or search tools..." autocomplete="off">
-                    <div class="absolute right-4 top-1/2 -translate-y-1/2">
-                        <span
-                            class="text-xs text-slate-600 font-mono border border-slate-700 rounded px-1.5 py-0.5">ESC</span>
-                    </div>
-                </div>
-
-                <!-- Results List -->
-                <div class="max-h-[50vh] sm:max-h-[60vh] overflow-y-auto p-2" id="cmdResults">
-                    <!-- Recently Used -->
-                    <div id="cmdRecent" class="mb-2 hidden">
-                        <div class="px-3 py-2 text-xs font-mono text-slate-500 uppercase tracking-wider">Recently Used
-                        </div>
-                        <div id="cmdRecentList"></div>
-                    </div>
-
-                    <!-- All Tools -->
-                    <div class="px-3 py-2 text-xs font-mono text-slate-500 uppercase tracking-wider">Available Tools
-                    </div>
-                    <div id="cmdToolsList"></div>
-                </div>
-
-                <!-- Footer -->
-                <div class="bg-slate-950/50 p-2 border-t border-white/5 flex items-center justify-between px-4">
-                    <div class="flex gap-4 text-[10px] text-slate-500 font-mono">
-                        <span class="hidden sm:inline"><i class="fas fa-arrow-up mr-1"></i><i
-                                class="fas fa-arrow-down mr-1"></i>Navigate</span>
-                        <span class="hidden sm:inline"><i class="fas fa-level-down-alt mr-1 rotate-90"></i>Select</span>
-                        <span class="sm:hidden">Tap to select</span>
-                    </div>
-                </div>
-            </div>
-        </div>
+    </div>
+    </div>
+    </div>
     </div>
 
     <!-- Scripts -->
     <script>
         // --- Configuration & Data ---
         const tools = [
-            { title: "ASCII Art Generator", desc: "Convert text into complex ASCII masterpieces.", icon: "fa-font", color: "text-purple-400", bg: "bg-purple-500/10", category: "generator", link: "./ASCII Art Generator/index.html", tags: "art, drawing, text" },
-            { title: "Base64 Encoder", desc: "Securely encode and decode Base64 strings.", icon: "fa-code", color: "text-blue-400", bg: "bg-blue-500/10", category: "convert", link: "./Base64 Encoder/index.html", tags: "decode, encrypt" },
-            { title: "Binary Converter", desc: "Translate text to 0s and 1s instantly.", icon: "fa-terminal", color: "text-green-400", bg: "bg-green-500/10", category: "convert", link: "./Binary Converter/index.html", tags: "computer, logic" },
-            { title: "CSV to JSON", desc: "Transform spreadsheet data to JSON objects.", icon: "fa-file-csv", color: "text-orange-400", bg: "bg-orange-500/10", category: "convert", link: "./CSV to JSON/index.html", tags: "data, excel" },
-            { title: "Char Frequency", desc: "Deep analysis of character distribution.", icon: "fa-chart-bar", color: "text-pink-400", bg: "bg-pink-500/10", category: "analysis", link: "./Character Frequency/index.html", tags: "count, stats" },
-            { title: "Duplicate Remover", desc: "Clean lists by removing repetitive lines.", icon: "fa-eraser", color: "text-red-400", bg: "bg-red-500/10", category: "utility", link: "./Duplicate Line Remover/index.html", tags: "clean, list" },
-            { title: "Email Extractor", desc: "Scrape valid emails from unstructured text.", icon: "fa-envelope", color: "text-indigo-400", bg: "bg-indigo-500/10", category: "utility", link: "./Email Extractor/index.html", tags: "scrape, find" },
-            { title: "Find & Replace", desc: "Bulk text modification with precision.", icon: "fa-search", color: "text-teal-400", bg: "bg-teal-500/10", category: "utility", link: "./Find & Replace Tool/index.html", tags: "edit, word" },
-            { title: "Hex Converter", desc: "Convert text to Hexadecimal values.", icon: "fa-hashtag", color: "text-cyan-400", bg: "bg-cyan-500/10", category: "convert", link: "./Hex Converter/index.html", tags: "color, code" },
-            { title: "Line Sorter", desc: "Alphabetical and numerical line organizing.", icon: "fa-sort-alpha-down", color: "text-yellow-400", bg: "bg-yellow-500/10", category: "utility", link: "./Line Sorter/index.html", tags: "organize, list" },
-            { title: "Lorem Ipsum", desc: "Generate placeholder text for prototypes.", icon: "fa-paragraph", color: "text-gray-400", bg: "bg-gray-500/10", category: "generator", link: "./Lorem Ipsum Generator/index.html", tags: "dummy, text" },
-            { title: "Morse Code", desc: "Encode text into classic dots and dashes.", icon: "fa-broadcast-tower", color: "text-lime-400", bg: "bg-lime-500/10", category: "convert", link: "./Morse Code Translator/index.html", tags: "radio, secret" },
-            { title: "Password Gen", desc: "Create cryptographically strong passwords.", icon: "fa-key", color: "text-emerald-400", bg: "bg-emerald-500/10", category: "generator", link: "./Password Generator/index.html", tags: "security, lock" },
-            { title: "Slug Generator", desc: "Make strings URL-safe and SEO friendly.", icon: "fa-link", color: "text-amber-400", bg: "bg-amber-500/10", category: "convert", link: "./Slug Generator/index.html", tags: "url, web" },
-            { title: "Text Cleaner", desc: "Sanitize text by removing format artifacts.", icon: "fa-broom", color: "text-blue-400", bg: "bg-blue-500/10", category: "utility", link: "./Text Cleaner/index.html", tags: "format, strip" },
-            { title: "Diff Checker", desc: "Compare two text blocks for differences.", icon: "fa-columns", color: "text-rose-400", bg: "bg-rose-500/10", category: "analysis", link: "./Text Diff Checker/index.html", tags: "compare, code" },
-            { title: "Text Repeater", desc: "Repeat a string X times efficiently.", icon: "fa-redo", color: "text-violet-400", bg: "bg-violet-500/10", category: "generator", link: "./Text Repeater/index.html", tags: "loop, spam" },
-            { title: "URL Encoder", desc: "Encode special characters for web URLs.", icon: "fa-globe", color: "text-fuchsia-400", bg: "bg-fuchsia-500/10", category: "convert", link: "./URL Encoder/index.html", tags: "web, escape" },
-            { title: "Upside Down", desc: "Flip text 180 degrees for creative effect.", icon: "fa-retweet", color: "text-sky-400", bg: "bg-sky-500/10", category: "generator", link: "./Upside Down Text/index.html", tags: "flip, fun" },
-            { title: "Zalgo Glitch", desc: "Summon chaos with glitchy text overlays.", icon: "fa-bug", color: "text-purple-400", bg: "bg-purple-900/40", category: "generator", link: "./Zalgo Glitch Text/index.html", tags: "scary, weird" },
-            { title: "Handwritten", desc: "Convert digital type to human handwriting.", icon: "fa-pen-nib", color: "text-indigo-400", bg: "bg-indigo-500/10", category: "generator", link: "./text-Handwritten/index.html", tags: "paper, script" },
+            {
+                "title": "Workflow Builder",
+                "desc": "Create custom multi-step automated sequences.",
+                "icon": "fa-project-diagram",
+                "color": "text-emerald-400",
+                "bg": "bg-emerald-500/10",
+                "category": "utility",
+                "link": "./workflow/index.html",
+                "tags": "utility, Workflow Builder, text, automation"
+            },
+            {
+                "title": "- Base64 Converter",
+                "desc": "No description available.",
+                "icon": "fa-code",
+                "color": "text-blue-400",
+                "bg": "bg-blue-500/10",
+                "category": "convert",
+                "link": "./Base64 Encoder/index.html",
+                "tags": "convert,   Base64 Converter, text"
+            },
+            {
+                "title": "- Binary Converter",
+                "desc": "No description available.",
+                "icon": "fa-code",
+                "color": "text-blue-400",
+                "bg": "bg-blue-500/10",
+                "category": "convert",
+                "link": "./Binary Converter/index.html",
+                "tags": "convert,   Binary Converter, text"
+            },
+            {
+                "title": "- CSV to JSON",
+                "desc": "No description available.",
+                "icon": "fa-file-csv",
+                "color": "text-blue-400",
+                "bg": "bg-blue-500/10",
+                "category": "convert",
+                "link": "./CSV to JSON/index.html",
+                "tags": "convert,   CSV to JSON, text"
+            },
+            {
+                "title": "- Diff Checker",
+                "desc": "No description available.",
+                "icon": "fa-columns",
+                "color": "text-blue-400",
+                "bg": "bg-blue-500/10",
+                "category": "utility",
+                "link": "./Text Diff Checker/index.html",
+                "tags": "utility,   Diff Checker, text"
+            },
+            {
+                "title": "- Duplicate Remover",
+                "desc": "No description available.",
+                "icon": "fa-copy",
+                "color": "text-blue-400",
+                "bg": "bg-blue-500/10",
+                "category": "utility",
+                "link": "./Duplicate Line Remover/index.html",
+                "tags": "utility,   Duplicate Remover, text"
+            },
+            {
+                "title": "- Email Extractor",
+                "desc": "No description available.",
+                "icon": "fa-envelope",
+                "color": "text-blue-400",
+                "bg": "bg-blue-500/10",
+                "category": "utility",
+                "link": "./Email Extractor/index.html",
+                "tags": "utility,   Email Extractor, text"
+            },
+            {
+                "title": "- Find & Replace",
+                "desc": "No description available.",
+                "icon": "fa-search",
+                "color": "text-blue-400",
+                "bg": "bg-blue-500/10",
+                "category": "utility",
+                "link": "./Find & Replace Tool/index.html",
+                "tags": "utility,   Find   Replace, text"
+            },
+            {
+                "title": "- Frequency Analyzer",
+                "desc": "No description available.",
+                "icon": "fa-chart-bar",
+                "color": "text-blue-400",
+                "bg": "bg-blue-500/10",
+                "category": "analysis",
+                "link": "./Character Frequency/index.html",
+                "tags": "analysis,   Frequency Analyzer, text"
+            },
+            {
+                "title": "- Hex Converter",
+                "desc": "No description available.",
+                "icon": "fa-hashtag",
+                "color": "text-blue-400",
+                "bg": "bg-blue-500/10",
+                "category": "convert",
+                "link": "./Hex Converter/index.html",
+                "tags": "convert,   Hex Converter, text"
+            },
+            {
+                "title": "- Line Sorter",
+                "desc": "No description available.",
+                "icon": "fa-sort-amount-down",
+                "color": "text-blue-400",
+                "bg": "bg-blue-500/10",
+                "category": "utility",
+                "link": "./Line Sorter/index.html",
+                "tags": "utility,   Line Sorter, text"
+            },
+            {
+                "title": "- Lorem Ipsum",
+                "desc": "No description available.",
+                "icon": "fa-paragraph",
+                "color": "text-blue-400",
+                "bg": "bg-blue-500/10",
+                "category": "generator",
+                "link": "./Lorem Ipsum Generator/index.html",
+                "tags": "generator,   Lorem Ipsum, text"
+            },
+            {
+                "title": "- Morse Code",
+                "desc": "No description available.",
+                "icon": "fa-broadcast-tower",
+                "color": "text-blue-400",
+                "bg": "bg-blue-500/10",
+                "category": "utility",
+                "link": "./Morse Code Translator/index.html",
+                "tags": "utility,   Morse Code, text"
+            },
+            {
+                "title": "- Password Generator",
+                "desc": "No description available.",
+                "icon": "fa-magic",
+                "color": "text-blue-400",
+                "bg": "bg-blue-500/10",
+                "category": "generator",
+                "link": "./Password Generator/index.html",
+                "tags": "generator,   Password Generator, text"
+            },
+            {
+                "title": "- Slug Generator",
+                "desc": "No description available.",
+                "icon": "fa-magic",
+                "color": "text-blue-400",
+                "bg": "bg-blue-500/10",
+                "category": "generator",
+                "link": "./Slug Generator/index.html",
+                "tags": "generator,   Slug Generator, text"
+            },
+            {
+                "title": "- Text Cleaner",
+                "desc": "No description available.",
+                "icon": "fa-font",
+                "color": "text-blue-400",
+                "bg": "bg-blue-500/10",
+                "category": "utility",
+                "link": "./Text Cleaner/index.html",
+                "tags": "utility,   Text Cleaner, text"
+            },
+            {
+                "title": "- Text Repeater",
+                "desc": "No description available.",
+                "icon": "fa-font",
+                "color": "text-blue-400",
+                "bg": "bg-blue-500/10",
+                "category": "utility",
+                "link": "./Text Repeater/index.html",
+                "tags": "utility,   Text Repeater, text"
+            },
+            {
+                "title": "- Upside Down",
+                "desc": "No description available.",
+                "icon": "fa-download",
+                "color": "text-blue-400",
+                "bg": "bg-blue-500/10",
+                "category": "utility",
+                "link": "./Upside Down Text/index.html",
+                "tags": "utility,   Upside Down, text"
+            },
+            {
+                "title": "- URL Encoder",
+                "desc": "No description available.",
+                "icon": "fa-code",
+                "color": "text-blue-400",
+                "bg": "bg-blue-500/10",
+                "category": "convert",
+                "link": "./URL Encoder/index.html",
+                "tags": "convert,   URL Encoder, text"
+            },
+            {
+                "title": "- Zalgo Glitch",
+                "desc": "No description available.",
+                "icon": "fa-tools",
+                "color": "text-blue-400",
+                "bg": "bg-blue-500/10",
+                "category": "utility",
+                "link": "./Zalgo Glitch Text/index.html",
+                "tags": "utility,   Zalgo Glitch, text"
+            },
+            {
+                "title": "CipherSuite X - Ultimate Cryptography Tool",
+                "desc": "Verify file authenticity via Hashing",
+                "icon": "fa-file",
+                "color": "text-blue-400",
+                "bg": "bg-blue-500/10",
+                "category": "utility",
+                "link": "./Security & Cryptography/index.html",
+                "tags": "utility, CipherSuite X   Ultimate Cryptography Tool, text"
+            },
+            {
+                "title": "DevText Suite",
+                "desc": "SEARCH • EXTRACT • VALIDATE • SYNC",
+                "icon": "fa-font",
+                "color": "text-blue-400",
+                "bg": "bg-blue-500/10",
+                "category": "utility",
+                "link": "./Search & Extraction/index.html",
+                "tags": "utility, DevText Suite, text"
+            },
+            {
+                "title": "Format Forge // 2077",
+                "desc": "Advanced Data Translation Protocol",
+                "icon": "fa-tools",
+                "color": "text-blue-400",
+                "bg": "bg-blue-500/10",
+                "category": "utility",
+                "link": "./Format Conversion/index.html",
+                "tags": "utility, Format Forge    2077, text"
+            },
+            {
+                "title": "Handwriter - Text to Document Converter",
+                "desc": "No description available.",
+                "icon": "fa-exchange-alt",
+                "color": "text-blue-400",
+                "bg": "bg-blue-500/10",
+                "category": "utility",
+                "link": "./text-Handwritten/index.html",
+                "tags": "utility, Handwriter   Text to Document Converter, text"
+            },
+            {
+                "title": "Shadow ASCII - Art Generator",
+                "desc": "No description available.",
+                "icon": "fa-magic",
+                "color": "text-blue-400",
+                "bg": "bg-blue-500/10",
+                "category": "generator",
+                "link": "./ASCII Art Generator/index.html",
+                "tags": "generator, Shadow ASCII   Art Generator, text"
+            },
+            {
+                "title": "Text Analysis Studio Pro",
+                "desc": "Ready to analyze",
+                "icon": "fa-font",
+                "color": "text-blue-400",
+                "bg": "bg-blue-500/10",
+                "category": "analysis",
+                "link": "./text-analysis/index.html",
+                "tags": "analysis, Text Analysis Studio Pro, text"
+            },
+            {
+                "title": "TextForge - Text Transformation Suite",
+                "desc": "No description available.",
+                "icon": "fa-font",
+                "color": "text-blue-400",
+                "bg": "bg-blue-500/10",
+                "category": "utility",
+                "link": "./Text Transformation/index.html",
+                "tags": "utility, TextForge   Text Transformation Suite, text"
+            },
+            {
+                "title": "Text to Speech Gen",
+                "desc": "Convert text into lifelike speech.",
+                "icon": "fa-comment-dots",
+                "color": "text-purple-400",
+                "bg": "bg-purple-500/10",
+                "category": "generator",
+                "link": "./text-to-speech-gen/index.html",
+                "tags": "generator, Text to Speech, text, TTS"
+            }
         ];
 
         // --- Core Logic: Text Scramble Effect ---

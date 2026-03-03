@@ -1,0 +1,132 @@
+﻿[
+  {
+    "dir": "ASCII Art Generator",
+    "title": "Shadow ASCII - Art Generator",
+    "desc": "No description available."
+  },
+  {
+    "dir": "Base64 Encoder",
+    "title": "- Base64 Converter",
+    "desc": "No description available."
+  },
+  {
+    "dir": "Binary Converter",
+    "title": "- Binary Converter",
+    "desc": "No description available."
+  },
+  {
+    "dir": "Character Frequency",
+    "title": "- Frequency Analyzer",
+    "desc": "No description available."
+  },
+  {
+    "dir": "CSV to JSON",
+    "title": "- CSV to JSON",
+    "desc": "No description available."
+  },
+  {
+    "dir": "Duplicate Line Remover",
+    "title": "- Duplicate Remover",
+    "desc": "No description available."
+  },
+  {
+    "dir": "Email Extractor",
+    "title": "- Email Extractor",
+    "desc": "No description available."
+  },
+  {
+    "dir": "Find & Replace Tool",
+    "title": "- Find & Replace",
+    "desc": "No description available."
+  },
+  {
+    "dir": "Format Conversion",
+    "title": "Format Forge // 2077",
+    "desc": "Advanced Data Translation Protocol"
+  },
+  {
+    "dir": "Hex Converter",
+    "title": "- Hex Converter",
+    "desc": "No description available."
+  },
+  {
+    "dir": "Line Sorter",
+    "title": "- Line Sorter",
+    "desc": "No description available."
+  },
+  {
+    "dir": "Lorem Ipsum Generator",
+    "title": "- Lorem Ipsum",
+    "desc": "No description available."
+  },
+  {
+    "dir": "Morse Code Translator",
+    "title": "- Morse Code",
+    "desc": "No description available."
+  },
+  {
+    "dir": "Password Generator",
+    "title": "- Password Generator",
+    "desc": "No description available."
+  },
+  {
+    "dir": "Search & Extraction",
+    "title": "DevText Suite",
+    "desc": "SEARCH • EXTRACT • VALIDATE • SYNC"
+  },
+  {
+    "dir": "Security & Cryptography",
+    "title": "CipherSuite X - Ultimate Cryptography Tool",
+    "desc": "Verify file authenticity via Hashing"
+  },
+  {
+    "dir": "Slug Generator",
+    "title": "- Slug Generator",
+    "desc": "No description available."
+  },
+  {
+    "dir": "Text Cleaner",
+    "title": "- Text Cleaner",
+    "desc": "No description available."
+  },
+  {
+    "dir": "Text Diff Checker",
+    "title": "- Diff Checker",
+    "desc": "No description available."
+  },
+  {
+    "dir": "Text Repeater",
+    "title": "- Text Repeater",
+    "desc": "No description available."
+  },
+  {
+    "dir": "Text Transformation",
+    "title": "TextForge - Text Transformation Suite",
+    "desc": "No description available."
+  },
+  {
+    "dir": "text-analysis",
+    "title": "Text Analysis Studio Pro",
+    "desc": "Ready to analyze"
+  },
+  {
+    "dir": "text-Handwritten",
+    "title": "Handwriter - Text to Document Converter",
+    "desc": "No description available."
+  },
+  {
+    "dir": "Upside Down Text",
+    "title": "- Upside Down",
+    "desc": "No description available."
+  },
+  {
+    "dir": "URL Encoder",
+    "title": "- URL Encoder",
+    "desc": "No description available."
+  },
+  {
+    "dir": "Zalgo Glitch Text",
+    "title": "- Zalgo Glitch",
+    "desc": "No description available."
+  }
+]
