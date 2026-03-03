@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en" class="scroll-smooth antialiased">
 
 <head>
@@ -415,14 +415,83 @@
 
         <!-- No Results State -->
         <div id="noResults" class="hidden flex-col items-center justify-center py-20 text-center">
-            <div
-                class="w-16 h-16 bg-slate-800/50 rounded-full flex items-center justify-center mb-4 ring-1 ring-white/10">
+            <div class="w-16 h-16 bg-slate-800/50 rounded-full flex items-center justify-center mb-4 ring-1 ring-white/10">
                 <i class="fas fa-search text-slate-600 text-2xl"></i>
             </div>
             <h3 class="text-xl font-display font-medium text-white mb-2">No tools located</h3>
             <p class="text-slate-500">Refine your search parameters.</p>
         </div>
 
+        <!-- Workflow CTA Section -->
+        <div class="w-full max-w-7xl mx-auto mt-20 mb-10 px-4">
+            <div class="relative rounded-3xl overflow-hidden bg-slate-900 border border-white/10 p-8 sm:p-12 shadow-2xl group">
+                <!-- Decorative Elements -->
+                <div class="absolute top-0 right-0 w-96 h-96 bg-accent-500/10 rounded-full blur-[100px] pointer-events-none group-hover:bg-accent-500/20 transition-all duration-700"></div>
+                <div class="absolute bottom-0 left-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-[80px] pointer-events-none"></div>
+                
+                <div class="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
+                    <div class="flex-1 text-center md:text-left">
+                        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent-500/10 border border-accent-500/30 text-accent-400 text-xs font-mono mb-4 shadow-[0_0_15px_-3px_rgba(52,211,153,0.2)]">
+                            <i class="fas fa-bolt"></i> NEW FEATURE
+                        </div>
+                        <h2 class="text-3xl sm:text-5xl font-display font-bold text-white mb-6">
+                            Automate Your Workflow
+                        </h2>
+                        <p class="text-slate-400 text-base sm:text-lg mb-8 max-w-xl mx-auto md:mx-0">
+                            String together multiple tools into a single, seamless pipeline. Save your customized operations processing pipeline and execute them with zero latency.
+                        </p>
+                        <a href="./workflow/index.html" class="inline-flex items-center justify-center gap-3 bg-accent-500 hover:bg-accent-400 text-slate-950 font-bold px-8 py-4 rounded-xl transition-all shadow-[0_0_20px_-5px_rgba(52,211,153,0.4)] hover:shadow-[0_0_25px_-5px_rgba(52,211,153,0.6)] hover:-translate-y-1 hover:scale-105">
+                            Open Workflow Builder <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </div>
+                    
+                    <!-- Visual Side -->
+                    <div class="hidden lg:flex flex-1 items-center justify-end relative w-full pr-8">
+                        <div class="relative w-full max-w-[340px] aspect-[4/3] bg-slate-950/80 backdrop-blur-md border border-white/10 rounded-2xl p-4 shadow-2xl transform rotate-2 hover:rotate-0 transition-all duration-700">
+                            <!-- Code/Builder mock UI -->
+                            <div class="flex items-center gap-2 mb-4 border-b border-white/5 pb-3">
+                                <div class="w-3 h-3 rounded-full bg-red-400/80"></div>
+                                <div class="w-3 h-3 rounded-full bg-yellow-400/80"></div>
+                                <div class="w-3 h-3 rounded-full bg-green-400/80"></div>
+                                <div class="ml-2 text-[10px] text-slate-500 font-mono tracking-widest flex-1">SEQUENCE_RUNNER</div>
+                                <i class="fas fa-project-diagram text-slate-600"></i>
+                            </div>
+                            <div class="space-y-4">
+                                <!-- Node 1 -->
+                                <div class="flex items-center gap-3 bg-slate-800/50 rounded-lg p-2.5 border border-white/5 mx-2">
+                                    <div class="w-8 h-8 rounded-md bg-blue-500/20 text-blue-400 flex items-center justify-center text-sm"><i class="fas fa-file-import"></i></div>
+                                    <div class="flex-1">
+                                      <div class="h-2 w-20 bg-slate-500 rounded mb-1"></div>
+                                      <div class="h-1.5 w-12 bg-slate-700 rounded"></div>
+                                    </div>
+                                    <i class="fas fa-chevron-down text-slate-600 text-[10px]"></i>
+                                </div>
+                                
+                                <div class="h-3 w-px bg-slate-700 mx-auto opacity-50 relative"></div>
+
+                                <!-- Node 2 -->
+                                <div class="flex items-center gap-3 bg-slate-800/50 rounded-lg p-2.5 border border-white/5 mx-6">
+                                    <div class="w-8 h-8 rounded-md bg-purple-500/20 text-purple-400 flex items-center justify-center text-sm"><i class="fas fa-magic"></i></div>
+                                    <div class="flex-1">
+                                      <div class="h-2 w-24 bg-slate-500 rounded mb-1"></div>
+                                      <div class="h-1.5 w-16 bg-slate-700 rounded"></div>
+                                    </div>
+                                </div>
+
+                                <div class="h-3 w-px bg-slate-700 mx-auto opacity-50 relative"></div>
+
+                                <!-- Node 3 -->
+                                <div class="flex items-center gap-3 bg-slate-800/50 rounded-lg p-2.5 border border-white/5 mx-10">
+                                    <div class="w-8 h-8 rounded-md bg-accent-500/20 text-accent-400 flex items-center justify-center text-sm"><i class="fas fa-download"></i></div>
+                                    <div class="h-2 w-16 bg-slate-500 rounded"></div>
+                                    <div class="ml-auto px-1.5 py-0.5 rounded text-[8px] tracking-wider bg-green-500/20 text-green-400 font-mono">DONE</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </main>
 
     <!-- Footer -->
@@ -481,6 +550,16 @@
     <script>
         // --- Configuration & Data ---
         const tools = [
+            {
+                "title": "Workflow Builder",
+                "desc": "Create custom multi-step automated sequences.",
+                "icon": "fa-project-diagram",
+                "color": "text-emerald-400",
+                "bg": "bg-emerald-500/10",
+                "category": "utility",
+                "link": "./workflow/index.html",
+                "tags": "utility, Workflow Builder, audio, automation"
+            },
             {
                 "title": "10-Band Equalizer - Shadow Audio",
                 "desc": "Fine-tune frequencies across the spectrum.",
@@ -608,7 +687,7 @@
                 "color": "text-emerald-400",
                 "bg": "bg-emerald-500/10",
                 "category": "convert",
-                "link": "./Format & Encoding Tools/index.html",
+                "link": "./Format%20%26%20Encoding%20Tools/index.html",
                 "tags": "convert, AudioForge   Universal Audio Tools, audio"
             },
             {
